@@ -32,20 +32,8 @@
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     padding: 20px;
-    opacity: 0;
-    transform: translateY(40px);
     transition: all 0.6s ease;
-}
-
-.image {
-    width: 100%;
-    height: 400px;
-    /* chiều cao bạn muốn */
-
-    border-radius: 8px;
-    margin-bottom: 15px;
-    object-fit: cover;
-
+    margin:5px
 }
 
 .cardTitle {

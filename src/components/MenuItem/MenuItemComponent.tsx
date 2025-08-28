@@ -1,10 +1,33 @@
 "use client";
 import { useRevealOnScroll } from "@/src/hooks/useRevealOnScroll";
 import styles from "./MenuItem.module.css";
+import useSWR from "swr";
+import { MenuItem } from "@/src/Types";
+import { getMenuItems } from "@/src/lib/api";
+import Image from "next/image";
 
 export default function MenuItemComponent() {
   useRevealOnScroll(".reveal");
+  const { data: menuItems, error, isLoading } = useSWR<MenuItem[]>(
+    "menuitem",
+    getMenuItems
+  );
 
+  if (isLoading) {
+    return (
+      <div className={styles.loading_screen}>
+        <div className={styles.loading_text}>Đang tải menu...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-500">
+        Failed to load menu items. Please try again later.
+      </div>
+    );
+  }
   return (
     <section className={styles.section}>
       <div className={`${styles.textBlock} reveal`}>
@@ -16,41 +39,26 @@ export default function MenuItemComponent() {
       </div>
 
       <div className={styles.cards}>
-        <div className={`${styles.card} reveal`}>
-          <img src="/img1.jpg" alt="Visual Design Editor" className={styles.image} />
-          <h3 className={styles.cardTitle}>Visual Design Editor</h3>
-          <p className={styles.cardDesc}>
-            Build and customize your site visually. Changing element options ex.
-            color, size and see result instantly!
-          </p>
-        </div>
+        {menuItems &&
+          menuItems.slice(0, 8).map((item,key) => (
+            <div key={key} className={`${styles.card} reveal`}>
+              <Image
+                src={
+                  item.images?.[0]
+                    ? `http://localhost:8083/public/images/MenuItemImages/${item.images[0]}`
+                    : "/default.jpeg"
 
-        <div className={`${styles.card} reveal`}>
-          <img src="/img2.jpg" alt="Widgets" className={styles.image} />
-          <h3 className={styles.cardTitle}>110+ Predefined Widgets</h3>
-          <p className={styles.cardDesc}>
-            Theme is packed with design widgets and options, they are highly
-            flexible for any creations.
-          </p>
-        </div>
+                }
+                alt={item.name || `menu-${key}`}
+                width={270}
+                height={334}
+                className="w-full h-[400px] rounded-lg mb-4 object-cover transform transition-transform duration-300 hover:scale-105"
 
-        <div className={`${styles.card} reveal`}>
-          <img src="/img3.jpg" alt="Templates" className={styles.image} />
-          <h3 className={styles.cardTitle}>Templates Collection</h3>
-          <p className={styles.cardDesc}>
-            We created ready to use templates for various kind of cafe and
-            restaurant related websites.
-          </p>
-        </div>
-
-          <div className={`${styles.card} reveal`}>
-          <img src="/img4.jpg" alt="Templates" className={styles.image} />
-          <h3 className={styles.cardTitle}>Templates Collection</h3>
-          <p className={styles.cardDesc}>
-            We created ready to use templates for various kind of cafe and
-            restaurant related websites.
-          </p>
-        </div>
+              />
+              <h3 className={styles.cardTitle}>{item.name}</h3>
+              <p className={styles.cardDesc}>{item.description}</p>
+            </div>
+          ))}
       </div>
     </section>
   );
