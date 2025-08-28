@@ -1,0 +1,158 @@
+.bgContainer {
+    background: #111940;
+    height: 100vh;
+    width: 100%;
+    /* Thay max-content để bao phủ toàn màn hình */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    /* Để dễ dàng điều chỉnh với header */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* Căn giữa theo chiều dọc */
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    padding: 0 20px;
+    position: relative;
+    /* Để điều chỉnh với header */
+    z-index: 1;
+    /* Đảm bảo nội dung nằm trên background */
+}
+
+.contentWrapper {
+    padding-top: 120px;
+    /* Điều chỉnh để tránh bị header che, phụ thuộc vào chiều cao header */
+}
+
+.title {
+    font-size: 100px;
+    color: white;
+    font-weight: bold;
+    line-height: 1.2;
+    margin-bottom: 10px;
+}
+
+.typingText {
+    color: white;
+    font-weight: bold;
+    margin-top: 10px;
+    min-height: 72px;
+    /* Đảm bảo không bị co lại */
+    display: flex;
+    justify-content: center;
+}
+
+.description {
+    font-size: 25px;
+    color: white;
+    max-width: 700px;
+    /* Giới hạn chiều rộng tối đa */
+    margin: 20px auto 0 auto;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.menuSection {
+    padding: 50px 20px;
+    background: #fff;
+    /* Nền trắng cho phần menu */
+    text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .title {
+        font-size: 48px;
+    }
+
+    .description {
+        max-width: 70%;
+    }
+
+    .contentWrapper {
+        padding-top: 100px;
+        /* Giảm padding-top trên tablet */
+    }
+}
+
+@media (max-width: 768px) {
+    .title {
+        font-size: 36px;
+    }
+
+    .typingText {
+        font-size: 18px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .description {
+        max-width: 90%;
+        font-size: 14px;
+    }
+
+    .contentWrapper {
+        padding-top: 80px;
+        /* Điều chỉnh cho mobile */
+    }
+
+    .bgContainer {
+        height: 90vh;
+        /* Giảm chiều cao trên mobile */
+    }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 28px;
+    }
+
+    .typingText {
+        font-size: 16px;
+    }
+
+    .description {
+        max-width: 95%;
+        font-size: 13px;
+    }
+
+    .contentWrapper {
+        padding-top: 60px;
+        /* Điều chỉnh cho màn hình nhỏ */
+    }
+
+    .bgContainer {
+        height: 85vh;
+        /* Giảm thêm chiều cao */
+    }
+}
+
+/* ImageSlider (giả định style nếu bạn cần) */
+.imgContainer {
+    flex: 1;
+    height: 400px;
+    /* Giảm chiều cao mặc định */
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    /* Giới hạn chiều rộng tối đa */
+}
+
+@media (max-width: 768px) {
+    .imgContainer {
+        height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .imgContainer {
+        height: 200px;
+    }
+}

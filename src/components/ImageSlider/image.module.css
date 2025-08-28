@@ -1,0 +1,41 @@
+.loading_screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  height: 100vh;
+  color: #fff;
+}
+
+/* Text "Đang tải menu..." */
+.loading_text {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.5rem;
+  animation: flicker 1.5s infinite;
+}
+
+/* Thanh loading */
+.loading_bar {
+  position: relative;
+  width: 16rem;   /* 256px */
+  height: 1rem;   /* 16px */
+  background-color: #333;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+
+/* Nhấp nháy text */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Hiệu ứng chạy ngang */
+@keyframes slide {
+  0% { left: -50%; }
+  100% { left: 100%; }
+}
