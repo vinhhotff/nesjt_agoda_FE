@@ -7,10 +7,11 @@ import useSWR from "swr";
 import styles from "./image.module.css";
 
 const ImageSlider = () => {
-  const { data: menuItems, error, isLoading } = useSWR<MenuItem[]>(
-    "menuitem",
-    getMenuItems
-  );
+  const {
+    data: menuItems,
+    error,
+    isLoading,
+  } = useSWR<MenuItem[]>("menuitem", getMenuItems);
 
   if (isLoading) {
     return (
@@ -33,7 +34,9 @@ const ImageSlider = () => {
 
   return (
     <div className="w-full flex justify-center mt-10">
-      <div className="overflow-hidden w-[90%]"> {/* 80% màn hình */}
+      <div className="overflow-hidden w-[90%]">
+        {" "}
+        {/* 80% màn hình */}
         <div className={styles.sliderTrack}>
           {duplicatedItems.map((site, i) => (
             <div
@@ -41,11 +44,7 @@ const ImageSlider = () => {
               className="flex-shrink-0 w-60 h-76 rounded-2xl overflow-hidden shadow-lg bg-white mr-4"
             >
               <Image
-                src={
-                  site.images?.[0]
-                    ? `http://localhost:8083/public/images/MenuItemImages/${site.images[0]}`
-                    : "/default.jpeg"
-                }
+                src={site.images?.[0]?.trim() || "/default.jpeg"}
                 alt={site.name || `menu-${i}`}
                 width={270}
                 height={334}

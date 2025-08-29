@@ -6,9 +6,10 @@ import styles from "./header.module.css";
 
 const links = [
   { id: 1, title: "Home", url: "/" },
-  { id: 2, title: "About", url: "/about" },
-  { id: 3, title: "Contact", url: "/contact" },
-  { id: 4, title: "Reservation", url: "/reservation" },
+  { id: 2, title: "Menu", url: "/menu" },
+  { id: 3, title: "About", url: "/about" },
+  { id: 4, title: "Contact", url: "/contact" },
+  { id: 5, title: "Reservation", url: "/reservation" },
 ];
 
 const Header = () => {

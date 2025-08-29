@@ -1,5 +1,6 @@
 import axios from "axios";
 import Cookies from "js-cookie";
+import { PaginatedMenuItem } from "../Types";
 
 //instance baseURL
 
@@ -55,4 +56,38 @@ export const getMenuItems = async () => {
     console.error('Error fetching menu items:', error);
     throw error; // Ném lỗi để xử lý ở frontend
   }
+};
+
+export const getMenuItemsPaginate = async (
+    page: number = 1,
+    limit: number = 10,
+    qs: string = ""
+  ): Promise<PaginatedMenuItem> => {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+    if (qs) params.append("qs", qs);
+  
+    const res = await api.get(`/menu-items/paginate?${params.toString()}`);
+    console.log("Fetching menu items with URL:", `/menu-items/paginate?page=${page}&limit=${limit}&${qs}`);
+    if (!res.data || !res.data.data)
+      throw new Error("Failed to fetch menu items");
+  
+    return {
+      items: res.data.data.results || [],
+      total: res.data.data.total || res.data.data.results.length,
+      page: page,
+      limit: limit,
+    };
+  };
+/* --------------------               
+        About             
+---------------------- */
+
+export const getAbout = async () => {   
+    
+        const response = await api.get('/about');
+        console.log("Fetched about data:", response.data);
+        return response.data.data;
+    
 };

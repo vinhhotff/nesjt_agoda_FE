@@ -61,7 +61,7 @@ export default function Login() {
         <div className={styles.pageContainer}>
             <div className={styles.left}>
                 <Image
-                    src="/foodLogin.jpg"
+                    src="/register.jpg"
                     alt="Login"
                     fill
                     className={styles.leftImage}

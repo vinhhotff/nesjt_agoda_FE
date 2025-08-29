@@ -18,29 +18,31 @@ export interface Order {
     quantity: number;
   }[];
   totalAmount: number;
-  status?: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'served';
+  status?: "pending" | "confirmed" | "preparing" | "ready" | "served";
   createdAt: string;
   updatedAt: string;
 }
 
 export interface MenuItem {
-  _id: string;
-  name: string;
-  price: number;
-  description: string;
-  isAvailable: boolean;
-  category?: string;
-  images?: string;
-  createdAt: string;
-  updatedAt: string;
+  _id: string
+  name: string
+  description: string
+  images: string[]
+  price: number
+  available: boolean
+  category: string
+  preparationTime: number
+  allergens: string[]
+  isVegetarian: boolean
+  isVegan: boolean
 }
 
 export interface Payment {
   _id: string;
   guest: string | Guest;
   amount: number;
-  method: 'cash' | 'QR' | 'card';
-  status?: 'pending' | 'completed' | 'failed';
+  method: "cash" | "QR" | "card";
+  status?: "pending" | "completed" | "failed";
   createdAt: string;
   updatedAt: string;
 }
@@ -48,7 +50,7 @@ export interface Payment {
 export interface Table {
   _id: string;
   tableName: string;
-  status: 'available' | 'occupied';
+  status: "available" | "occupied";
   qrCode?: string;
   createdAt: string;
   updatedAt: string;
@@ -59,7 +61,7 @@ export interface User {
   _id?: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'STAFF' | 'USER' | 'admin' | 'staff' | 'user';
+  role: "ADMIN" | "STAFF" | "USER" | "admin" | "staff" | "user";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -77,8 +79,14 @@ export interface CartItem extends OrderItem {
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  loginAdmin: (credentials: { email: string; password: string }) => Promise<boolean>;
-  loginStaff: (credentials: { email: string; password: string }) => Promise<boolean>;
+  loginAdmin: (credentials: {
+    email: string;
+    password: string;
+  }) => Promise<boolean>;
+  loginStaff: (credentials: {
+    email: string;
+    password: string;
+  }) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
 }
@@ -131,14 +139,52 @@ export interface MenuItemFormData {
 
 export interface TableFormData {
   tableName: string;
-  status: 'available' | 'occupied';
+  status: "available" | "occupied";
 }
 
 export interface PaymentFormData {
   guest: string;
   amount: number;
-  method: 'cash' | 'QR' | 'card';
+  method: "cash" | "QR" | "card";
 }
 
-export type Role = 'ADMIN' | 'STAFF' | 'GUEST';
+export type Role = "ADMIN" | "STAFF" | "GUEST";
 
+export type Section =
+  | {
+      type: "text";
+      title: string;
+      content: string;
+      order: number;
+    }
+  | {
+      type: "image";
+      title: string;
+      url: string;
+      order: number;
+    }
+  | {
+      type: "team";
+      title: string;
+      teamMembers: { name: string; role: string; photo: string }[];
+      order: number;
+    }
+  | {
+      type: "quote";
+      quote: string;
+      order: number;
+    }
+  | {
+      type: "video";
+      title: string;
+      url: string;
+      order: number;
+    };
+
+
+export interface PaginatedMenuItem {
+  items: MenuItem[]
+  total: number
+  page: number
+  limit: number
+}
