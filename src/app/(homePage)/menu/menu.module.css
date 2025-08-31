@@ -158,6 +158,36 @@
   font-weight: 700;
   font-size: 1rem;
   color: #facc15;
+  margin: 0;
+}
+
+.priceAndButton {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.addToCartButton {
+  background-color: #facc15;
+  color: #111827;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.addToCartButton:hover:not(:disabled) {
+  background-color: #fde047;
+  transform: scale(1.05);
+}
+
+.addToCartButton:disabled {
+  background-color: #374151;
+  cursor: not-allowed;
+  color: #9ca3af;
 }
 
 .pagination {

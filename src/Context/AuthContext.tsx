@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, use, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '../Types';
 import { login, refresh } from '../lib/api';
 import { toast } from 'react-toastify';
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
 
       const userData = localStorage.getItem('user');
-      const tokenData = localStorage.getItem('accesstoken') || Cookies.get(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!);
+      const tokenData = Cookies.get(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!);
 
       if (userData && tokenData) {
         try {
@@ -37,7 +37,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         } catch {
           localStorage.removeItem('user');
-          localStorage.removeItem('accesstoken');
           Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!);
           setLoading(false);
         }
@@ -49,7 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (response.data && response.data.data && response.data.data.user) {
             setUser(response.data.data.user);
             localStorage.setItem('user', JSON.stringify(response.data.data.user));
-            localStorage.setItem('accesstoken', response.data.data.accessToken);
             Cookies.set(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!, response.data.data.accessToken, {
               expires: 1,
               secure: process.env.NODE_ENV === 'production',
@@ -85,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('accesstoken', accessToken);
       Cookies.set(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!, accessToken, {
         expires: 1,
         secure: process.env.NODE_ENV === 'production',
@@ -134,7 +131,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Store user data and token
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('accessToken', accessToken);
 
         // Show success toast
         toast.success(`Welcome back, Admin ${userData.name}!`);
@@ -161,30 +157,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return false;
   }
-  async function logout(redirectTo?: string) {
-    try {
-      // Call logout API to remove refresh token from server
-      await logout();
-      console.log('Logout API called successfully');
-    } catch (error) {
-      console.error('Logout API failed:', error);
-      // Continue with logout process even if API fails
-    }
-
-    // Clear local storage and cookies
-    Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!);
+  async function logout(redirectTo: string = "/") {
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('accessToken');
-
-    // Show success message
-    toast.success('Logged out successfully');
-
-    // Redirect to specified page or default to login after a short delay to allow toast to be seen
-    const finalRedirectTo = redirectTo || '/login';
+    Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!)
+    localStorage.removeItem("user");
+    toast.success("Logged out successfully");
     setTimeout(() => {
-      window.location.href = finalRedirectTo;
-    }, 1500);
+      window.location.href = redirectTo;
+    }, 500);
   }
   return (
     <AuthContext.Provider value={{ user, loading, login: loginUser, loginAdmin: loginAdmin, logout }}>

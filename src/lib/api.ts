@@ -1,6 +1,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
-import { PaginatedMenuItem } from "../Types";
+import { OrderType, PaginatedMenuItem } from "../Types";
+import { CreateOnlineOrderDto } from "../Types";
 
 //instance baseURL
 
@@ -11,7 +12,9 @@ interface RegisterResponse {
     success: boolean;
     message: string;
 }
-
+/* --------------------               
+        Auth             
+---------------------- */
 export const login = async (email: string, password: string) => {
     const data = { email, password }
     const response = await api.post('/auth/login', data);
@@ -31,16 +34,15 @@ export const register = async (name: string, email: string, password: string): P
     }
 };
 
-export const logout = async () => {
-    try {
-        const response = await api.post('/auth/logout');
-        return response.data;
-    } catch (error) {
-        console.error("Error logging out:", error);
-        return null;
-    }
-}
-
+export const logout = async (): Promise<boolean> => {
+  try {
+    await api.post("/auth/logout");
+    return true;
+  } catch (error) {
+    console.error("Error logging out:", error);
+    return false;
+  }
+};
 
 /* --------------------               
         MenuItem             
@@ -80,6 +82,26 @@ export const getMenuItemsPaginate = async (
       limit: limit,
     };
   };
+
+/* --------------------               
+        Order
+---------------------- */
+export const createOnlineOrder = async (orderData: CreateOnlineOrderDto) => {
+  try {
+    // ép orderType luôn là DELIVERY
+    const payload: CreateOnlineOrderDto = {
+      ...orderData,
+      orderType: OrderType.DELIVERY,
+    };
+
+    const response = await api.post('/orders/online', payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating online order:", error);
+    throw error;
+  }
+};
+
 /* --------------------               
         About             
 ---------------------- */

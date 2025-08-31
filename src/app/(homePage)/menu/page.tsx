@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getMenuItemsPaginate } from "@/src/lib/api";
-import { MenuItem, PaginatedMenuItem } from "@/src/Types";
+import { IMenuItem, PaginatedMenuItem } from "@/src/Types";
 
 import styles from "./menu.module.css";
 import MenuGrid from "./MenuGrid";
@@ -71,7 +71,7 @@ export default function Page() {
       data?.items.flatMap((item) => [
         ...(item.isVegetarian ? ["Vegetarian"] : []),
         ...(item.isVegan ? ["Vegan"] : []),
-        ...item.allergens,
+        ...item.allergens!,
       ])
     )
   );

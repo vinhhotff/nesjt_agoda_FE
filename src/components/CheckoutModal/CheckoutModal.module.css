@@ -1,0 +1,154 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1010; /* Higher than cart modal */
+}
+
+.modal {
+  background-color: #1f2937;
+  color: #f9fafb;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #374151;
+}
+
+.header h2 {
+  margin: 0;
+  color: #facc15;
+  font-size: 1.25rem;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.form {
+  padding: 1.5rem;
+}
+
+.form p {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #d1d5db;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #d1d5db;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="tel"] {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  color: #f9fafb;
+  font-size: 1rem;
+}
+
+.formGroup input:disabled {
+  background-color: #4b5563;
+  cursor: not-allowed;
+}
+
+/* New Styles for Radio Buttons */
+/* Radio Buttons Container */
+.radioGroup {
+  display: flex;
+  gap: 1rem;
+  background-color: #374151;
+  padding: 0.75rem;
+  border-radius: 10px;
+  justify-content: space-between;
+}
+
+/* Label style */
+.radioGroup label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.95rem;
+  background-color: #4b5563;
+  color: #d1d5db;
+  transition: all 0.25s ease;
+  border: 2px solid transparent;
+}
+
+/* Hover effect */
+.radioGroup label:hover {
+  background-color: #6b7280;
+  color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Hide the default radio */
+.radioGroup input[type="radio"] {
+  display: none;
+}
+
+/* Checked style */
+.radioGroup input[type="radio"]:checked + label {
+  background-color: #facc15;
+  color: #111827;
+  font-weight: 600;
+  border-color: #fbbf24;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.7);
+  transform: scale(1.03);
+}
+
+.footer {
+  padding: 1.5rem;
+  border-top: 1px solid #374151;
+  margin-top: 1rem;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #facc15;
+  color: #111827;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover {
+  background-color: #fde047;
+}

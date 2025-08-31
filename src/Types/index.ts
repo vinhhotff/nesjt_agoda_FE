@@ -14,7 +14,7 @@ export interface Order {
   _id: string;
   guest: string | Guest;
   items: {
-    menuItem: string | MenuItem;
+    menuItem: string | IMenuItem;
     quantity: number;
   }[];
   totalAmount: number;
@@ -23,18 +23,43 @@ export interface Order {
   updatedAt: string;
 }
 
-export interface MenuItem {
-  _id: string
-  name: string
-  description: string
-  images: string[]
-  price: number
-  available: boolean
-  category: string
-  preparationTime: number
-  allergens: string[]
-  isVegetarian: boolean
-  isVegan: boolean
+export interface IMenuItem {
+  _id: string;
+  name: string;
+  description?: string;
+  images?: string[];
+  price: number;
+  available: boolean;
+  category: string;
+  preparationTime?: number;
+  allergens?: string[];
+  isVegetarian?: boolean;
+  isVegan?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Matches the backend DTO
+export enum OrderType {
+  DINE_IN = "DINE_IN",
+  DELIVERY = "DELIVERY",
+  PICKUP = "PICKUP",
+}
+
+class OrderItemDto {
+  item!: string; // MenuItem ID
+  quantity!: number;
+  note?: string;
+}
+
+export class CreateOnlineOrderDto {
+  items!: OrderItemDto[];
+  customerName!: string;
+  customerPhone!: string;
+  orderType!: OrderType;
+  deliveryAddress?: string;
+  specialInstructions?: string;
+  user?: string; // Optional: if the user is logged in
 }
 
 export interface Payment {
@@ -61,6 +86,7 @@ export interface User {
   _id?: string;
   email: string;
   name: string;
+  avatarUrl: string;
   role: "ADMIN" | "STAFF" | "USER" | "admin" | "staff" | "user";
   createdAt?: string;
   updatedAt?: string;
@@ -68,7 +94,7 @@ export interface User {
 
 // Frontend Types
 export interface OrderItem {
-  menuItem: MenuItem;
+  menuItem: IMenuItem;
   quantity: number;
 }
 
@@ -93,7 +119,7 @@ export interface AuthContextType {
 
 export interface GuestOrderContextType {
   cart: CartItem[];
-  addToCart: (item: MenuItem, quantity: number) => void;
+  addToCart: (item: IMenuItem, quantity: number) => void;
   removeFromCart: (menuItemId: string) => void;
   updateQuantity: (menuItemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -181,10 +207,9 @@ export type Section =
       order: number;
     };
 
-
 export interface PaginatedMenuItem {
-  items: MenuItem[]
-  total: number
-  page: number
-  limit: number
+  items: IMenuItem[];
+  total: number;
+  page: number;
+  limit: number;
 }
