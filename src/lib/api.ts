@@ -88,13 +88,7 @@ export const getMenuItemsPaginate = async (
 ---------------------- */
 export const createOnlineOrder = async (orderData: CreateOnlineOrderDto) => {
   try {
-    // ép orderType luôn là DELIVERY
-    const payload: CreateOnlineOrderDto = {
-      ...orderData,
-      orderType: OrderType.DELIVERY,
-    };
-
-    const response = await api.post('/orders/online', payload);
+    const response = await api.post('/orders/online', orderData);
     return response.data;
   } catch (error) {
     console.error("Error creating online order:", error);

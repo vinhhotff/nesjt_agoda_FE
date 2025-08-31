@@ -40,7 +40,6 @@ export default function CheckoutModal({ isOpen, onClose, onSubmit }: Props) {
       deliveryAddress: orderType === OrderType.DELIVERY ? deliveryAddress : undefined,
       user: user?._id,
     };
-
     try {
       console.log("Placing order with data:", orderData);
       await createOnlineOrder(orderData);

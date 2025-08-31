@@ -97,6 +97,16 @@ const Header = () => {
             </Link>
           ))}
 
+          
+        </div>
+
+        <div className={styles.rightItems}>
+          <div className={styles.cartIcon} onClick={() => setIsCartOpen(true)}>
+            🛒
+            {cartItemCount > 0 && (
+              <span className={styles.cartBadge}>{cartItemCount}</span>
+            )}
+          </div>
           {!user ? (
             <Button url="/login" text="Login" />
           ) : (
@@ -133,15 +143,6 @@ const Header = () => {
               )}
             </div>
           )}
-        </div>
-
-        <div className={styles.rightItems}>
-          <div className={styles.cartIcon} onClick={() => setIsCartOpen(true)}>
-            🛒
-            {cartItemCount > 0 && (
-              <span className={styles.cartBadge}>{cartItemCount}</span>
-            )}
-          </div>
           <div
             className={styles.menuToggle}
             onClick={() => setMenuOpen(!menuOpen)}

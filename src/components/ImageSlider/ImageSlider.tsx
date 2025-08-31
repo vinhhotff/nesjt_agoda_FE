@@ -1,7 +1,7 @@
 "use client";
 
 import { getMenuItems } from "@/src/lib/api";
-import { MenuItem } from "@/src/Types";
+import { IMenuItem } from "@/src/Types";
 import Image from "next/image";
 import useSWR from "swr";
 import styles from "./image.module.css";
@@ -11,7 +11,7 @@ const ImageSlider = () => {
     data: menuItems,
     error,
     isLoading,
-  } = useSWR<MenuItem[]>("menuitem", getMenuItems);
+  } = useSWR<IMenuItem[]>("menuitem", getMenuItems);
 
   if (isLoading) {
     return (
