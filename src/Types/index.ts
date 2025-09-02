@@ -3,6 +3,7 @@ export interface Guest {
   _id: string;
   tableName: string;
   guestName: string;
+  phoneNumber?: string;
   orders: Order[];
   payment: Payment[];
   isPaid: boolean;
@@ -16,9 +17,10 @@ export interface Order {
   items: {
     menuItem: string | IMenuItem;
     quantity: number;
+    price?: number;
   }[];
   totalAmount: number;
-  status?: "pending" | "confirmed" | "preparing" | "ready" | "served";
+  status?: "pending" | "cancelled" | "preparing" | "served";
   createdAt: string;
   updatedAt: string;
 }
@@ -32,7 +34,7 @@ export interface IMenuItem {
   available: boolean;
   category: string;
   preparationTime?: number;
-  allergens?: string[];
+  tag?: string[];
   isVegetarian?: boolean;
   isVegan?: boolean;
   createdAt: Date;
@@ -159,7 +161,7 @@ export interface MenuItemFormData {
   name: string;
   price: number;
   description: string;
-  isAvailable: boolean;
+  available: boolean;
   category?: string;
 }
 
@@ -212,4 +214,11 @@ export interface PaginatedMenuItem {
   total: number;
   page: number;
   limit: number;
+}
+export interface PaginatedUser {
+  items: User[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

@@ -1,11 +1,11 @@
 'use client'
 import React from "react";
-import { MenuItem } from "@/src/Types";
+import { IMenuItem } from "@/src/Types";
 import MenuCard from "./MenuCard";
 import styles from "./menu.module.css";
 
 interface Props {
-  items: MenuItem[];
+  items: IMenuItem[];
 }
 
 export default function MenuGrid({ items }: Props) {

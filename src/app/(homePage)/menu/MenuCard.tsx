@@ -34,7 +34,7 @@ export default function MenuCard({ item }: Props) {
         <div className={styles.menuTags}>
           {item.isVegetarian && <span className={`${styles.menuTag} ${styles.vegetarian}`}>Vegetarian</span>}
           {item.isVegan && <span className={`${styles.menuTag} ${styles.vegan}`}>Vegan</span>}
-          {item.allergens?.map((a, idx) => <span key={idx} className={`${styles.menuTag} ${styles.allergen}`}>{a}</span>)}
+          {item.tag?.map((a, idx) => <span key={idx} className={`${styles.menuTag} ${styles.allergen}`}>{a}</span>)}
         </div>
         <div className={styles.priceAndButton}>
           <p className={styles.menuPrice}>{item.price.toLocaleString()} VND</p>

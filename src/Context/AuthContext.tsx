@@ -131,6 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Store user data and token
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
+        Cookies.set(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!, accessToken, {
+          expires: 1, // or whatever your expiration logic is
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          path: '/',
+        });
 
         // Show success toast
         toast.success(`Welcome back, Admin ${userData.name}!`);
@@ -159,8 +165,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
   async function logout(redirectTo: string = "/") {
     setUser(null);
-    Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!)
     localStorage.removeItem("user");
+    Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!)
+    Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME_REFRESH!)
     toast.success("Logged out successfully");
     setTimeout(() => {
       window.location.href = redirectTo;
@@ -173,4 +180,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default AuthContext
+export { AuthContext }

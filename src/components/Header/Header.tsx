@@ -97,7 +97,7 @@ const Header = () => {
             </Link>
           ))}
 
-          
+
         </div>
 
         <div className={styles.rightItems}>
@@ -132,6 +132,13 @@ const Header = () => {
                     onClick={() => setProfileOpen(false)}
                   >
                     Profile
+                  </Link>
+                  <Link
+                    href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
+                    className={styles.dropdownItem}
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    Dashboard
                   </Link>
                   <button
                     onClick={handleLogout}

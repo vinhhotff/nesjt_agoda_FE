@@ -11,16 +11,18 @@ export default function CategoryFilter({ categories, selected, toggleCategory }:
   return (
     <div className={styles.filterBox}>
       <div className={styles.filterTitle}>CATEGORIES</div>
-      {categories.map((cat) => (
-        <div
-          key={cat}
-          className={styles.filterItem}
-          style={{ fontWeight: selected.includes(cat) ? "600" : "400" }}
-          onClick={() => toggleCategory(cat)}
-        >
-          {cat}
-        </div>
-      ))}
+      {categories.map((cat) => {
+        const isActive = selected.includes(cat);
+        return (
+          <div
+            key={cat}
+            className={`${styles.filterItem} ${isActive ? styles.activeItem : ""}`}
+            onClick={() => toggleCategory(cat)}
+          >
+            {cat}
+          </div>
+        );
+      })}
     </div>
   );
 }

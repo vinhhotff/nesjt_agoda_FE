@@ -9,3 +9,18 @@
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+.btn-logout {
+  width: 100%;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  color: #fff;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.card-analytics {
+  @apply p-6 bg-white rounded-xl shadow hover:shadow-lg transition;
+}

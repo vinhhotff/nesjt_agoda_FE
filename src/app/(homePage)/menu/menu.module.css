@@ -14,22 +14,29 @@
 }
 
 .filterColumn {
-  width: 250px;
-  flex-shrink: 0;
+  display: flex;
+  flex-direction: row; /* đổi từ column -> row */
+  gap: 1rem; /* khoảng cách giữa 2 filter */
+  flex: 0 0 25%; 
+  max-width: 500px;
 }
 
 .menuColumn {
-  flex-grow: 1;
+  flex: 1; /* chiếm phần còn lại */
 }
+
 
 .searchBar {
   margin-bottom: 1.25rem;
+  display: flex; 
+  justify-content: center; /* căn ngang giữa */
+  align-items: center;     /* căn dọc giữa (nếu cần) */
 }
 
 .searchBar input {
   padding: 0.625rem 0.875rem;
   width: 100%;
-  max-width: 400px;
+  max-width: 700px;
   border: 1px solid #374151;
   border-radius: 8px;
   font-size: 1rem;
@@ -53,6 +60,7 @@
   padding: 0.875rem;
   border-radius: 10px;
   border: 1px solid #374151;
+  width: 100%;
 }
 
 .filterTitle {
@@ -86,6 +94,9 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   transition: transform 0.2s, border 0.2s;
   border: 1px solid transparent;
+  display: flex;
+  flex-direction: column; /* để đẩy button luôn xuống dưới */
+  height: 100%; /* card luôn full chiều cao */
 }
 
 .menuCard:hover {
@@ -95,14 +106,17 @@
 
 .menuImage {
   width: 100%;
-  height: 180px;
-  object-fit: cover;
+  height: 180px; /* giữ ảnh cùng kích thước */
+  object-fit: cover; /* crop ảnh cho đồng đều */
+  flex-shrink: 0;
 }
-
 .menuContent {
+  flex: 1; /* chiếm toàn bộ không gian còn lại */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* đẩy nút xuống cuối */
   padding: 0.875rem;
 }
-
 .menuTitle {
   font-size: 1.125rem;
   font-weight: 600;
@@ -170,10 +184,11 @@
 
 .addToCartButton {
   background-color: #facc15;
+  font-size: 1 rem;
   color: #111827;
   border: none;
   border-radius: 6px;
-  padding: 0.5rem 1rem;
+  padding:  0.1rem;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.2s;
@@ -245,14 +260,14 @@
 /* Media Queries for Responsive Design */
 @media (max-width: 1024px) {
   .layout {
-    flex-direction: column;
   }
 
   .filterColumn {
     width: 100%;
-    max-width: 400px;
+    max-width: 300px;
     margin: 0 auto;
-  }
+    flex-direction: column; 
+ }
 
   .menuGrid {
     grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));

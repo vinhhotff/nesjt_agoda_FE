@@ -71,7 +71,7 @@ export default function Page() {
       data?.items.flatMap((item) => [
         ...(item.isVegetarian ? ["Vegetarian"] : []),
         ...(item.isVegan ? ["Vegan"] : []),
-        ...item.allergens!,
+        ...item.tag!,
       ])
     )
   );
@@ -89,7 +89,6 @@ export default function Page() {
         Failed to load menu items.
       </div>
     );
-
   return (
     <div className="pt-25 bg-[#101826]">
        <div className={styles.menuContainer}>
