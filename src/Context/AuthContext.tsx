@@ -1,7 +1,7 @@
 'use client'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '../Types';
-import { login, refresh } from '../lib/api';
+import { login, refresh, logout } from '../lib/api';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 
@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; role?: string }>;
   loginAdmin: (data: { email: string; password: string }) => Promise<boolean>;
-  logout: (redirectTo?: string) => void;
+  logoutUser: (redirectTo?: string) => void;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
@@ -43,22 +43,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!userData || !tokenData) {
-        try {
-          const response = await refresh();
-          if (response.data && response.data.data && response.data.data.user) {
-            setUser(response.data.data.user);
-            localStorage.setItem('user', JSON.stringify(response.data.data.user));
-            Cookies.set(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!, response.data.data.accessToken, {
-              expires: 1,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'strict',
-              path: '/',
-            });
-          } else {
+        const refreshToken = Cookies.get(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME_REFRESH!);
+        if (refreshToken) {
+          try {
+            const response = await refresh();
+            if (response.data && response.data.data && response.data.data.user) {
+              setUser(response.data.data.user);
+              localStorage.setItem('user', JSON.stringify(response.data.data.user));
+              Cookies.set(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!, response.data.data.accessToken, {
+                expires: 1,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                path: '/',
+              });
+            } else {
+              setUser(null);
+            }
+          } catch (error) {
+            console.error('Refresh error:', error);
             setUser(null);
           }
-        } catch (error) {
-          console.error('Refresh error:', error);
+        } else {
           setUser(null);
         }
       }
@@ -163,18 +168,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return false;
   }
-  async function logout(redirectTo: string = "/") {
+  async function logoutUser(redirectTo: string = "/") {
     setUser(null);
-    localStorage.removeItem("user");
-    Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!)
-    Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME_REFRESH!)
+    await logout();
     toast.success("Logged out successfully");
     setTimeout(() => {
       window.location.href = redirectTo;
     }, 500);
   }
   return (
-    <AuthContext.Provider value={{ user, loading, login: loginUser, loginAdmin: loginAdmin, logout }}>
+    <AuthContext.Provider value={{ user, loading, login: loginUser, loginAdmin: loginAdmin, logoutUser }}>
       {children}
     </AuthContext.Provider>
   );

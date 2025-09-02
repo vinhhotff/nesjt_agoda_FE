@@ -15,7 +15,7 @@ const navLinks = [
 ];
 
 const Aside = () => {
-  const { user, logout } = useAuth();
+  const { user, logoutUser } = useAuth();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -71,7 +71,7 @@ const Aside = () => {
                 Role: {user.role}
               </div>
               <button
-                onClick={() => logout()}
+                onClick={() => logoutUser()}
                 className="mt-4 w-full py-2 px-4 bg-red-500 hover:bg-red-600 rounded text-sm font-semibold transition"
               >
                 Logout

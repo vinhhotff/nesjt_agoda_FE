@@ -28,7 +28,7 @@ const Header = () => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const { user, logout } = useAuth();
+  const { user, logoutUser } = useAuth();
   const { cartItems, clearCart } = useCart();
   const router = useRouter();
 
@@ -75,7 +75,7 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    logout("/");
+    logoutUser("/");
     setProfileOpen(false);
   };
 

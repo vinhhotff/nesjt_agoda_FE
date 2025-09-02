@@ -115,7 +115,7 @@ export interface AuthContextType {
     email: string;
     password: string;
   }) => Promise<boolean>;
-  logout: () => Promise<void>;
+  logoutUser: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
 }
 
