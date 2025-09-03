@@ -28,7 +28,7 @@ const Header = () => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const { user, logoutUser } = useAuth();
+  const { user, logoutUser, loading } = useAuth();
   const { cartItems, clearCart } = useCart();
   const router = useRouter();
 
@@ -41,7 +41,6 @@ const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
   const handleOpenCheckout = () => {
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
@@ -78,7 +77,6 @@ const Header = () => {
     logoutUser("/");
     setProfileOpen(false);
   };
-
   return (
     <>
       <div className={`${styles.container} ${scrolled ? styles.scrolled : ""}`}>
@@ -117,7 +115,7 @@ const Header = () => {
                 className={styles.profileButton}
               >
                 <img
-                  src={user.avatarUrl || "/default-avatar.png"}
+                  src={user.avatarUrl || "/default-avatar.jpg"}
                   alt="profile"
                   className={styles.avatar}
                 />

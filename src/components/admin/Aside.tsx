@@ -49,14 +49,15 @@ const Aside = () => {
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setOpen(false)} // đóng menu khi click (mobile)
+                    onClick={() => setOpen(false)}
                     className={`block py-2 px-4 rounded-lg font-medium transition ${isActive
-                        ? "bg-orange-600"
-                        : "hover:bg-orange-500/70"
+                        ? "bg-[#edb021] text-[#101826] font-bold"
+                        : "text-white hover:bg-[#edb021] hover:text-[#101826]"
                       }`}
                   >
                     {link.label}
                   </Link>
+
                 );
               })}
             </nav>

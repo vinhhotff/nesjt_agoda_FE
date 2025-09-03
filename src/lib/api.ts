@@ -487,3 +487,58 @@ export const getGuestCount = async (): Promise<number> => {
     }
   }
 };
+
+// Đếm số payments
+export const getPaymentCount = async (): Promise<number> => {
+  try {
+    const res = await api.get("/payments/count");
+    return res.data.total || res.data.count || 0;
+  } catch (error) {
+    console.error("Error fetching payment count:", error);
+    // Fallback: lấy tất cả và đếm
+    try {
+      const payments = await getPayments({});
+      return payments?.length || 0;
+    } catch (fallbackError) {
+      console.error("Fallback count failed:", fallbackError);
+      return 0;
+    }
+  }
+};
+// api.ts
+
+export const getDashboardStats = async () => {
+  const [
+    menuItemCount,
+    orderCount,
+    userCount,
+    revenue,
+    tableCount,
+    guestCount,
+    paymentCount,
+    todayStats,
+    weeklyTrends,
+  ] = await Promise.all([
+    getMenuItemCount(),
+    getOrderCount(),
+    fetchUsersCount(),
+    getRevenue(),
+    getTableCount(),
+    getGuestCount(),
+    getPaymentCount(),
+    getTodayStats(),
+    getWeeklyTrends(),
+  ]);
+
+  return {
+    menuItemCount,
+    orderCount,
+    userCount,
+    revenue,
+    tableCount,
+    guestCount,
+    paymentCount,
+    todayStats,
+    weeklyTrends,
+  };
+};

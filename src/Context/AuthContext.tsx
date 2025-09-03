@@ -26,51 +26,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function checkAuth() {
       setLoading(true);
 
-      const userData = localStorage.getItem('user');
-      const tokenData = Cookies.get(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!);
-
-      if (userData && tokenData) {
-        try {
-          const user = JSON.parse(userData);
+      try {
+        const response = await refresh(); // gọi API
+        if (response.data?.data?.user) {
+          const user = response.data.data.user;
           setUser(user);
-          setLoading(false);
-          return;
-        } catch {
-          localStorage.removeItem('user');
-          Cookies.remove(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!);
-          setLoading(false);
-        }
-      }
-
-      if (!userData || !tokenData) {
-        const refreshToken = Cookies.get(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME_REFRESH!);
-        if (refreshToken) {
-          try {
-            const response = await refresh();
-            if (response.data && response.data.data && response.data.data.user) {
-              setUser(response.data.data.user);
-              localStorage.setItem('user', JSON.stringify(response.data.data.user));
-              Cookies.set(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!, response.data.data.accessToken, {
-                expires: 1,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                path: '/',
-              });
-            } else {
-              setUser(null);
-            }
-          } catch (error) {
-            console.error('Refresh error:', error);
-            setUser(null);
-          }
+          localStorage.setItem("user", JSON.stringify(user));
         } else {
           setUser(null);
+          localStorage.removeItem("user");
         }
+      } catch (err) {
+        console.error("Refresh error:", err);
+        setUser(null);
+        localStorage.removeItem("user");
       }
+
       setLoading(false);
     }
+
     checkAuth();
   }, []);
+
 
   async function loginUser(email: string, password: string): Promise<{ success: boolean; role?: string }> {
     try {
@@ -176,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.location.href = redirectTo;
     }, 500);
   }
+
   return (
     <AuthContext.Provider value={{ user, loading, login: loginUser, loginAdmin: loginAdmin, logoutUser }}>
       {children}

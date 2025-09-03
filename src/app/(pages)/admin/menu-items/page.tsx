@@ -13,13 +13,23 @@ export default function AdminMenuPage() {
   const { user, loading } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<IMenuItem | null>(null);
-  const [data, setData] = useState<PaginatedMenuItem>({ items: [], total: 0, page: 1, limit: 10 });
+  const [data, setData] = useState<PaginatedMenuItem>({
+    items: [],
+    total: 0,
+    page: 1,
+    limit: 10
+  });
   const [isLoading, setIsLoading] = useState(true);
 
-  async function loadMenuItems(page = 1) {
+  // state quản lý trang hiện tại
+  const [page, setPage] = useState(1);
+
+  async function loadMenuItems(pageNumber: number = 1) {
     setIsLoading(true);
-    const res = await getMenuItemsPaginate(page, data.limit);
+    const res = await getMenuItemsPaginate(pageNumber, data.limit);
+    console.log('API response for menu items:', res); // Dòng này để debug
     setData(res);
+    setPage(pageNumber); // cập nhật state page
     setIsLoading(false);
   }
 
@@ -36,7 +46,7 @@ export default function AdminMenuPage() {
   }
 
   function handleSave(form: { name: string; price: number; available: boolean; description: string }) {
-    if (editItem) updateMenuItem(editItem._id, form).then(() => loadMenuItems(data.page));
+    if (editItem) updateMenuItem(editItem._id, form).then(() => loadMenuItems(page));
     else console.log('TODO: call createMenuItem');
     setModalOpen(false);
   }
@@ -47,7 +57,7 @@ export default function AdminMenuPage() {
   }
 
   function handleDelete(id: string) {
-    if (confirm('Xóa món này?')) deleteMenuItem(id).then(() => loadMenuItems(data.page));
+    if (confirm('Xóa món này?')) deleteMenuItem(id).then(() => loadMenuItems(page));
   }
 
   return (
@@ -61,7 +71,12 @@ export default function AdminMenuPage() {
       ) : (
         <>
           <MenuItemTable items={data.items} onEdit={handleEdit} onDelete={handleDelete} />
-          <Pagination page={data.page} total={data.total} limit={data.limit} onPageChange={loadMenuItems} />
+          <Pagination
+            page={data.page}        // page hiện tại
+            total={data.total}      // tổng số món ăn từ API
+            limit={data.limit}      // số món mỗi trang
+            onPageChange={(p) => loadMenuItems(p)} // gọi API load trang mới
+          />
         </>
       )}
 
