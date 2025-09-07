@@ -115,7 +115,7 @@ const Header = () => {
                 className={styles.profileButton}
               >
                 <img
-                  src={user.avatarUrl || "/default-avatar.jpg"}
+                  src={user.avatar || "/default-avatar.jpg"}
                   alt="profile"
                   className={styles.avatar}
                 />

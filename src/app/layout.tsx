@@ -1,9 +1,8 @@
 import { Bounce, ToastContainer } from "react-toastify";
 import "./globals.css";
-import { AuthContext, AuthProvider } from "../Context/AuthContext";
+import { AuthProvider } from "../Context/AuthContext";
 import { CartProvider } from "../Context/CartContext"; // Import CartProvider
 import "react-toastify/dist/ReactToastify.css";
-import Header from "../components/Header/Header";
 
 export const metadata = {
   title: "Restaurant",

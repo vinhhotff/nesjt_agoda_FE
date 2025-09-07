@@ -2,7 +2,7 @@
 import { useRevealOnScroll } from "@/src/hooks/useRevealOnScroll";
 import styles from "./MenuItem.module.css";
 import useSWR from "swr";
-import { MenuItem } from "@/src/Types";
+import { IMenuItem } from "@/src/Types";
 import { getMenuItems } from "@/src/lib/api";
 import Image from "next/image";
 
@@ -12,7 +12,7 @@ export default function MenuItemComponent() {
     data: menuItems,
     error,
     isLoading,
-  } = useSWR<MenuItem[]>("menuitem", getMenuItems);
+  } = useSWR<IMenuItem[]>("menuitem", getMenuItems);
 
   if (isLoading) {
     return (

@@ -1,11 +1,12 @@
 'use client';
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useAuth } from "../../Context/AuthContext";
 import { useCart } from "../../Context/CartContext";
 import styles from "./CheckoutModal.module.css";
 import { createOnlineOrder } from "@/src/lib/api";
 import { CreateOnlineOrderDto, OrderType } from "@/src/Types";
 import { toast } from "react-toastify";
+import { useApplyVoucher } from "@/src/hooks/useVouchers";
 
 interface Props {
   isOpen: boolean;
@@ -15,11 +16,19 @@ interface Props {
 
 export default function CheckoutModal({ isOpen, onClose, onSubmit }: Props) {
   const { user } = useAuth();
-  const { cartItems, clearCart } = useCart();
+  const { cartItems, clearCart, getCartTotal } = useCart();
   const [name, setName] = useState(user?.name || "");
   const [phone, setPhone] = useState("");
   const [orderType, setOrderType] = useState<OrderType>(OrderType.PICKUP);
   const [deliveryAddress, setDeliveryAddress] = useState("");
+
+  // Voucher state
+  const [voucherCode, setVoucherCode] = useState("");
+  const { data: appliedVoucher, loading: applyingVoucher, error: voucherError, apply, clear } = useApplyVoucher();
+
+  const cartTotal = useMemo(() => getCartTotal(), [cartItems, getCartTotal]);
+  const discountAmount = appliedVoucher?.discountAmount || 0;
+  const finalTotal = appliedVoucher ? appliedVoucher.finalTotal : cartTotal;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,10 +55,24 @@ export default function CheckoutModal({ isOpen, onClose, onSubmit }: Props) {
       toast.success("Order placed successfully!");
       onSubmit(orderData);
       clearCart();
+      clear(); // reset voucher state
       onClose(); // Close modal on success
     } catch (err) {
       console.error("Error placing order:", err);
       toast.error("Failed to place order. Please try again.");
+    }
+  };
+
+  const onApplyVoucher = async () => {
+    try {
+      if (!voucherCode.trim()) {
+        toast.error('Please enter a voucher code');
+        return;
+      }
+      await apply({ code: voucherCode.trim(), orderTotal: cartTotal });
+      toast.success('Voucher applied');
+    } catch (e: any) {
+      toast.error(e?.message || 'Invalid or expired voucher');
     }
   };
 
@@ -130,6 +153,40 @@ export default function CheckoutModal({ isOpen, onClose, onSubmit }: Props) {
               />
             </div>
           )}
+
+          {/* Voucher input */}
+          <div className={styles.formGroup}>
+            <label htmlFor="voucher">Voucher Code</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                id="voucher"
+                placeholder="Enter voucher code"
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value)}
+              />
+              <button type="button" onClick={onApplyVoucher} disabled={applyingVoucher} className={styles.submitButton}>
+                {applyingVoucher ? 'Applying...' : 'Apply'}
+              </button>
+            </div>
+            {voucherError && (
+              <p style={{ color: 'red', marginTop: 4 }}>{voucherError}</p>
+            )}
+
+            {/* Totals */}
+            <div className={styles.totalRow}>
+              <div>Subtotal:</div>
+              <div>{cartTotal.toLocaleString()} VND</div>
+            </div>
+            <div className={styles.totalRow}>
+              <div>Discount:</div>
+              <div>- {discountAmount.toLocaleString()} VND</div>
+            </div>
+            <div className={styles.totalRow}>
+              <strong>Final total:</strong>
+              <strong>{finalTotal.toLocaleString()} VND</strong>
+            </div>
+          </div>
 
           <div className={styles.footer}>
             <button type="submit" className={styles.submitButton}>

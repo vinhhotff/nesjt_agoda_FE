@@ -18,7 +18,7 @@ export default function AdminDashboard() {
 
   const router = useRouter();
 
-  const isAuthorized = !loading && user && user.role.toUpperCase() === 'ADMIN';
+  const isAuthorized: boolean = !loading && !!user && user.role.toUpperCase() === 'ADMIN';
 
   const {
     coreStats,

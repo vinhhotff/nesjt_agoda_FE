@@ -1,8 +1,8 @@
 import { FC } from 'react';
-import { Order } from '@/src/Types';
+import { Order, Guest } from '@/src/Types';
 
 interface RecentOrdersProps {
-  orders: Order[];
+  orders: (Order & { totalAmount?: number })[];
   onView: (order: Order) => void; // Nhận order để xử lý trong cha
 }
 
@@ -34,9 +34,9 @@ const RecentOrders: FC<RecentOrdersProps> = ({ orders, onView }) => {
           {orders.map((o) => (
             <tr key={o._id} className="border-t">
               <td className="py-2 px-3">
-                {typeof o.guest === 'string' ? o.guest : o.guest?.guestName || 'N/A'}
+                {typeof o.guest === 'string' ? o.guest : (o.guest as unknown as Guest)?.guestName || 'N/A'}
               </td>
-              <td className="py-2 px-3">${o.totalAmount?.toLocaleString() || 0}</td>
+              <td className="py-2 px-3">${o.totalPrice?.toLocaleString() || o.totalAmount?.toLocaleString() || 0}</td>
               <td className="py-2 px-3">
                 <span className={`px-2 py-1 rounded text-sm ${statusColor[o.status||'pending'] || 'bg-gray-100 text-gray-700'}`}>
                   {o.status}
