@@ -1,35 +1,62 @@
 "use client";
 import React from 'react';
 import Image from 'next/image';
-import { IMenuItem } from '@/src/Types';
-import { useCart } from '@/src/Context/CartContext';
-import { toast } from 'react-toastify';
+import { MenuItem, menuAPI } from '@/services/menuApi';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Clock, Leaf, Carrot } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MenuGridProps {
-  items: IMenuItem[];
+  items: MenuItem[];
   className?: string;
+  onAddToCart?: (item: MenuItem) => void;
+  loading?: boolean;
 }
 
-const MenuGrid: React.FC<MenuGridProps> = ({ items, className = "" }) => {
-  const { addToCart } = useCart();
-
-  const handleAddToCart = (item: IMenuItem) => {
+const MenuGrid: React.FC<MenuGridProps> = ({ 
+  items, 
+  className = "",
+  onAddToCart,
+  loading = false
+}) => {
+  const handleAddToCart = (item: MenuItem) => {
     if (!item.available) {
       toast.error(`${item.name} is currently unavailable`);
       return;
     }
-    addToCart(item);
-    toast.success(`Added ${item.name} to cart!`);
+    if (onAddToCart) {
+      onAddToCart(item);
+    } else {
+      toast.success(`Added ${item.name} to favorites!`);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${className}`}>
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div className="h-48 bg-gray-200 animate-pulse" />
+            <div className="p-4 space-y-3">
+              <div className="h-4 bg-gray-200 animate-pulse rounded" />
+              <div className="h-3 bg-gray-200 animate-pulse rounded w-3/4" />
+              <div className="h-8 bg-gray-200 animate-pulse rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="text-6xl mb-4">🍽️</div>
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">
           No dishes found
         </h3>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-gray-500">
           Try adjusting your search or filters to find what you're looking for.
         </p>
       </div>

@@ -1,17 +1,28 @@
 "use client";
 import React from 'react';
-import SearchInput from '../common/SearchInput';
-import FilterChips from '../common/FilterChips';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search, X, Filter, Leaf, Carrot } from 'lucide-react';
 
 interface MenuFiltersProps {
   search: string;
   onSearchChange: (value: string) => void;
   categories: string[];
-  selectedCategories: string[];
-  onCategoryToggle: (category: string) => void;
+  selectedCategory?: string;
+  onCategoryChange: (category: string | undefined) => void;
   tags: string[];
   selectedTags: string[];
   onTagToggle: (tag: string) => void;
+  isVegan?: boolean;
+  onVeganChange: (value: boolean) => void;
+  isVegetarian?: boolean;
+  onVegetarianChange: (value: boolean) => void;
+  availableOnly?: boolean;
+  onAvailableOnlyChange: (value: boolean) => void;
+  onClearFilters: () => void;
   className?: string;
 }
 
@@ -19,84 +30,234 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
   search,
   onSearchChange,
   categories,
-  selectedCategories,
-  onCategoryToggle,
+  selectedCategory,
+  onCategoryChange,
   tags,
   selectedTags,
   onTagToggle,
+  isVegan = false,
+  onVeganChange,
+  isVegetarian = false,
+  onVegetarianChange,
+  availableOnly = true,
+  onAvailableOnlyChange,
+  onClearFilters,
   className = ""
 }) => {
-  const hasActiveFilters = selectedCategories.length > 0 || selectedTags.length > 0 || search.length > 0;
+  const hasActiveFilters = 
+    !!selectedCategory || 
+    selectedTags.length > 0 || 
+    search.length > 0 || 
+    isVegan || 
+    isVegetarian || 
+    !availableOnly;
 
-  const clearAllFilters = () => {
-    onSearchChange('');
-    selectedCategories.forEach(cat => onCategoryToggle(cat));
-    selectedTags.forEach(tag => onTagToggle(tag));
-  };
+  const activeFilterCount = 
+    (selectedCategory ? 1 : 0) +
+    selectedTags.length +
+    (search ? 1 : 0) +
+    (isVegan ? 1 : 0) +
+    (isVegetarian ? 1 : 0) +
+    (!availableOnly ? 1 : 0);
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       {/* Search */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-        <h3 className="font-semibold text-gray-800 dark:text-white mb-3">Search Menu</h3>
-        <SearchInput
-          value={search}
-          onChange={onSearchChange}
-          placeholder="Search for dishes..."
-        />
+      <div className="bg-white rounded-lg p-4 shadow-sm border">
+        <div className="flex items-center gap-2 mb-3">
+          <Search className="h-4 w-4 text-gray-500" />
+          <h3 className="font-semibold text-gray-800">Search Menu</h3>
+        </div>
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search dishes, ingredients..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-4 pr-10"
+          />
+          {search && (
+            <button
+              onClick={() => onSearchChange('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-blue-800 dark:text-blue-200">
-              Active Filters ({selectedCategories.length + selectedTags.length + (search ? 1 : 0)})
-            </h4>
-            <button
-              onClick={clearAllFilters}
-              className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-blue-600" />
+              <h4 className="font-medium text-blue-800">
+                Active Filters ({activeFilterCount})
+              </h4>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClearFilters}
+              className="text-blue-600 border-blue-300 hover:bg-blue-100"
             >
               Clear All
-            </button>
+            </Button>
           </div>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {search && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm dark:bg-blue-900 dark:text-blue-200">
-                Search: "{search}"
-              </span>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                Search: "{search.length > 20 ? search.substring(0, 20) + '...' : search}"
+                <button onClick={() => onSearchChange('')} className="ml-1">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
             )}
-            {selectedCategories.map(cat => (
-              <span key={cat} className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm dark:bg-green-900 dark:text-green-200">
-                Category: {cat}
-              </span>
-            ))}
+            {selectedCategory && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                Category: {selectedCategory}
+                <button onClick={() => onCategoryChange(undefined)} className="ml-1">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
             {selectedTags.map(tag => (
-              <span key={tag} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm dark:bg-purple-900 dark:text-purple-200">
-                Tag: {tag}
-              </span>
+              <Badge key={tag} variant="secondary" className="bg-purple-100 text-purple-800">
+                {tag}
+                <button onClick={() => onTagToggle(tag)} className="ml-1">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
             ))}
+            {isVegan && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                <Leaf className="h-3 w-3 mr-1" />
+                Vegan
+                <button onClick={() => onVeganChange(false)} className="ml-1">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {isVegetarian && (
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                <Carrot className="h-3 w-3 mr-1" />
+                Vegetarian
+                <button onClick={() => onVegetarianChange(false)} className="ml-1">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {!availableOnly && (
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                Show All Items
+                <button onClick={() => onAvailableOnlyChange(true)} className="ml-1">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
           </div>
         </div>
       )}
 
       {/* Categories Filter */}
-      <FilterChips
-        title="Categories"
-        items={categories}
-        selectedItems={selectedCategories}
-        onToggle={onCategoryToggle}
-        emptyMessage="No categories available"
-      />
+      <div className="bg-white rounded-lg p-4 shadow-sm border">
+        <h3 className="font-semibold text-gray-800 mb-3">Categories</h3>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <input
+              type="radio"
+              id="category-all"
+              name="category"
+              checked={!selectedCategory}
+              onChange={() => onCategoryChange(undefined)}
+              className="text-blue-600"
+            />
+            <label htmlFor="category-all" className="text-sm text-gray-600">
+              All Categories
+            </label>
+          </div>
+          {categories.map(category => (
+            <div key={category} className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id={`category-${category}`}
+                name="category"
+                checked={selectedCategory === category}
+                onChange={() => onCategoryChange(category)}
+                className="text-blue-600"
+              />
+              <label htmlFor={`category-${category}`} className="text-sm text-gray-700">
+                {category}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Tags Filter */}
-      <FilterChips
-        title="Dietary & Tags"
-        items={tags}
-        selectedItems={selectedTags}
-        onToggle={onTagToggle}
-        emptyMessage="No tags available"
-      />
+      {tags.length > 0 && (
+        <div className="bg-white rounded-lg p-4 shadow-sm border">
+          <h3 className="font-semibold text-gray-800 mb-3">Tags</h3>
+          <div className="flex flex-wrap gap-2">
+            {tags.map(tag => (
+              <Button
+                key={tag}
+                variant={selectedTags.includes(tag) ? "default" : "outline"}
+                size="sm"
+                onClick={() => onTagToggle(tag)}
+                className="text-xs"
+              >
+                {tag}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Dietary Preferences */}
+      <div className="bg-white rounded-lg p-4 shadow-sm border">
+        <h3 className="font-semibold text-gray-800 mb-3">Dietary Preferences</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Leaf className="h-4 w-4 text-green-600" />
+              <Label htmlFor="vegan-switch" className="text-sm font-medium">
+                Vegan Only
+              </Label>
+            </div>
+            <Switch
+              id="vegan-switch"
+              checked={isVegan}
+              onCheckedChange={onVeganChange}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Carrot className="h-4 w-4 text-orange-600" />
+              <Label htmlFor="vegetarian-switch" className="text-sm font-medium">
+                Vegetarian Only
+              </Label>
+            </div>
+            <Switch
+              id="vegetarian-switch"
+              checked={isVegetarian}
+              onCheckedChange={onVegetarianChange}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="available-switch" className="text-sm font-medium">
+              Available Only
+            </Label>
+            <Switch
+              id="available-switch"
+              checked={availableOnly}
+              onCheckedChange={onAvailableOnlyChange}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
