@@ -8,12 +8,12 @@ import {
   createMenuItem,
   deleteMenuItem,
 } from "@/src/lib/api";
-import AdminMenuHeader from "@/src/components/admin/Menu-item/AdminMenuHeader";
 import Pagination from "@/src/components/admin/Menu-item/Pagination";
 import MenuItemTable from "@/src/components/admin/Menu-item/MenuItemTable";
 import CreateMenuItemModal from "./create";
 import EditMenuItemModal from "@/src/components/admin/Menu-item/EditMenuItemModal";
-import Aside from "@/src/components/admin/Aside";
+import { AdminLayout } from "@/src/components/layout";
+import { LoadingSpinner } from "@/src/components/ui";
 import { useRouter } from "next/navigation";
 
 export default function AdminMenuPage() {
@@ -44,8 +44,8 @@ export default function AdminMenuPage() {
     loadMenuItems();
   }, []);
 
-  if (loading || !user) return <p className="p-12 text-center">Loading...</p>;
-  if (user.role !== "admin") return <p>Not authorized</p>;
+  if (loading || !user) return <LoadingSpinner size="lg" text="Loading..." className="min-h-screen" />;
+  if (user.role !== "admin") return <p className="text-center p-12">Not authorized</p>;
 
   // 👉 mở modal create
   function handleCreate() {
@@ -60,7 +60,12 @@ export default function AdminMenuPage() {
     description: string;
   }) {
     try {
-      await createMenuItem(form);
+      const fd = new FormData();
+      fd.append('name', form.name);
+      fd.append('price', String(form.price));
+      fd.append('available', String(form.available));
+      fd.append('description', form.description);
+      await createMenuItem(fd);
       await loadMenuItems(page);
     } catch (err) {
       console.error(err);
@@ -88,57 +93,45 @@ export default function AdminMenuPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      {/* Aside */}
-      <aside className="w-68 bg-gray-900 text-white p-4">
-        <Aside />
-      </aside>
-
-      {/* Main content */}
-      <main className="flex-1 p-6 overflow-y-auto bg-gray-100">
-        <AdminMenuHeader onCreate={handleCreate} />
-
-        {isLoading ? (
-          <div className="my-10 p-6 md:p-8 text-center text-lg font-medium text-gray-600 dark:text-gray-300">
-            Loading...
-          </div>
-        ) : (
-          <>
-            <MenuItemTable
-              items={data.items}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-            <Pagination
-              page={data.page}
-              total={data.total}
-              limit={data.limit}
-              onPageChange={(p) => loadMenuItems(p)}
-            />
-          </>
-        )}
-
-        {/* Create Modal */}
-        {modalOpen && (
-          <CreateMenuItemModal
-            onSubmit={handleSave}
-            onClose={() => setModalOpen(false)}
+    <AdminLayout>
+      {isLoading ? (
+        <LoadingSpinner size="lg" text="Loading menu items..." className="py-12" />
+      ) : (
+        <>
+          <MenuItemTable
+            items={data.items}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
-        )}
-
-        {/* Edit Modal */}
-        {editModalOpen && selectedItemId && (
-          <EditMenuItemModal
-            itemId={selectedItemId}
-            isOpen={editModalOpen}
-            onClose={() => {
-              setEditModalOpen(false);
-              setSelectedItemId(null);
-            }}
-            onSuccess={handleEditSuccess}
+          <Pagination
+            page={data.page}
+            total={data.total}
+            limit={data.limit}
+            onPageChange={(p) => loadMenuItems(p)}
           />
-        )}
-      </main>
-    </div>
+        </>
+      )}
+
+      {/* Create Modal */}
+      {modalOpen && (
+        <CreateMenuItemModal
+          onSubmit={handleSave}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {editModalOpen && selectedItemId && (
+        <EditMenuItemModal
+          itemId={selectedItemId}
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedItemId(null);
+          }}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+    </AdminLayout>
   );
 }

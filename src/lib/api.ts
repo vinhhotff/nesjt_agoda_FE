@@ -44,7 +44,7 @@ export const getRoleId = (role: string | Role): string => {
   if (typeof role === "string") {
     return role;
   }
-  return role?._id || (role as string);
+  return role?._id || "";
 };
 
 export const getRoleDisplay = (role: string | Role): string => {
@@ -97,6 +97,8 @@ export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true,
 });
+
+const DEBUG = process.env.NEXT_PUBLIC_DEBUG === 'true';
 
 interface RegisterResponse {
   success: boolean;
@@ -232,7 +234,7 @@ export const getUserPaginate = async (
     return result;
   } catch (error) {
     console.error("Error in getUserPaginate:", error);
-    console.error("Error details:", error.response?.data || error.message);
+    console.error("Error details:", (error as any)?.response?.data || (error as any)?.message);
     // Return empty result structure on error
     return {
       items: [],
@@ -317,13 +319,15 @@ export const getMenuItemsPaginate = async (
 
     const res = await api.get(`/menu-items/paginate?${params.toString()}`);
 
-    // Log the full API response for debugging
-    console.log("=== DEBUGGING MENU ITEMS PAGINATION ===");
-    console.log("Full API Response:", res.data);
-    console.log("API Response Data:", res.data.data);
-    console.log("API Response Keys:", Object.keys(res.data));
-    if (res.data.data) {
-      console.log("API Response Data Keys:", Object.keys(res.data.data));
+    // Log the full API response for debugging (guarded by DEBUG flag)
+    if (DEBUG) {
+      console.log("=== DEBUGGING MENU ITEMS PAGINATION ===");
+      console.log("Full API Response:", res.data);
+      console.log("API Response Data:", res.data.data);
+      console.log("API Response Keys:", Object.keys(res.data));
+      if (res.data.data) {
+        console.log("API Response Data Keys:", Object.keys(res.data.data));
+      }
     }
 
     if (!res.data || !res.data.data) {
@@ -336,14 +340,16 @@ export const getMenuItemsPaginate = async (
     const meta = apiData.meta || {};
 
     // Check all possible total field names
-    console.log("🔍 Checking total field values:");
-    console.log("apiData.total:", apiData.total);
-    console.log("apiData.totalCount:", apiData.totalCount);
-    console.log("apiData.count:", apiData.count);
-    console.log("apiData.meta:", meta);
-    console.log("meta.total:", meta.total);
-    console.log("meta.totalCount:", meta.totalCount);
-    console.log("items.length:", items.length);
+    if (DEBUG) {
+      console.log("🔍 Checking total field values:");
+      console.log("apiData.total:", apiData.total);
+      console.log("apiData.totalCount:", apiData.totalCount);
+      console.log("apiData.count:", apiData.count);
+      console.log("apiData.meta:", meta);
+      console.log("meta.total:", meta.total);
+      console.log("meta.totalCount:", meta.totalCount);
+      console.log("items.length:", items.length);
+    }
 
     // Try to get total from meta object first, then fallback to other fields
     const total =
@@ -357,14 +363,16 @@ export const getMenuItemsPaginate = async (
       0;
 
     // More detailed logging
-    console.log("📊 Final parsed menu items data:", {
-      items: items.length,
-      total: total,
-      page: page,
-      limit: limit,
-      totalPages: Math.ceil(total / limit),
-    });
-    console.log("=== END DEBUGGING ===");
+    if (DEBUG) {
+      console.log("📊 Final parsed menu items data:", {
+        items: items.length,
+        total: total,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(total / limit),
+      });
+      console.log("=== END DEBUGGING ===");
+    }
 
     return {
       items: items,
@@ -791,18 +799,8 @@ export const getOrdersPaginate = async (
     // Use existing orders endpoint and simulate pagination
     const ordersResponse = await getOrders({});
 
-    // Ensure we have an array to work with
-    let orders = [];
-    if (Array.isArray(ordersResponse)) {
-      orders = ordersResponse;
-    } else if (ordersResponse && typeof ordersResponse === "object") {
-      // Handle different response structures
-      orders =
-        ordersResponse.data ||
-        ordersResponse.results ||
-        ordersResponse.orders ||
-        [];
-    }
+    // Ensure we have an array to work with (getOrders returns Order[])
+    let orders: any[] = Array.isArray(ordersResponse) ? ordersResponse : [];
 
     console.log("Orders response type:", typeof ordersResponse);
     console.log(
@@ -900,7 +898,7 @@ export const updateOrderStatus = async (
     return response.data;
   } catch (error) {
     console.error("❌ Error updating order status:", error);
-    console.error("📋 Error response:", error.response?.data);
+    console.error("📋 Error response:", (error as any)?.response?.data);
     console.error("🔍 Sent status value:", status);
     throw error;
   }
@@ -1198,14 +1196,33 @@ export const getUsersPaginate = async (
   }
 };
 
-export const toggleUserStatus = async (id: string, isActive: boolean) => {
+export const toggleUserStatus = async (id: string, makeActive: boolean) => {
   try {
-    // Use existing updateUser function to toggle status
-    const response = await updateUser(id, { isDeleted: !isActive });
-    return response;
-  } catch (error) {
-    console.error("Error toggling user status:", error);
-    throw error;
+    // Prefer string status field if backend supports it
+    return await updateUser(id, { status: makeActive ? 'active' : 'inactive' } as any);
+  } catch (err1) {
+    console.warn(
+      'Primary status toggle with "status" failed. Trying "isActive" boolean.',
+      (err1 as any)?.response?.data || (err1 as any)?.message
+    );
+    try {
+      return await updateUser(id, { isActive: makeActive } as any);
+    } catch (err2) {
+      console.warn(
+        'Fallback toggle with "isActive" failed. Trying "disabled" boolean.',
+        (err2 as any)?.response?.data || (err2 as any)?.message
+      );
+      try {
+        return await updateUser(id, { disabled: !makeActive } as any);
+      } catch (err3) {
+        console.error(
+          'All user status toggle strategies failed.',
+          (err3 as any)?.response?.data || (err3 as any)?.message
+        );
+        // Re-throw the first error to preserve original backend message
+        throw err1;
+      }
+    }
   }
 };
 
@@ -1317,18 +1334,18 @@ const createTimeoutPromise = (timeout: number = 5000) => {
 };
 
 // Wrapper for analytics API calls with timeout and better error handling
-const callAnalyticsAPI = async (url: string, params?: URLSearchParams, timeout: number = 5000) => {
+const callAnalyticsAPI = async (url: string, params?: URLSearchParams, timeout: number = 5000): Promise<any> => {
   try {
     const fullUrl = params ? `${url}?${params.toString()}` : url;
-    const apiCall = api.get(fullUrl);
-    const response = await Promise.race([apiCall, createTimeoutPromise(timeout)]);
+    const apiCall = api.get<any>(fullUrl);
+    const response = (await Promise.race([apiCall, createTimeoutPromise(timeout)])) as any;
     return response;
   } catch (error) {
     if (isAnalyticsEndpointMissing(error)) {
       // Silently handle 404s for analytics endpoints
       console.debug(`Analytics endpoint not available: ${url}`);
     } else {
-      console.warn(`Analytics API error for ${url}:`, error.message);
+      console.warn(`Analytics API error for ${url}:`, (error as any)?.message);
     }
     throw error;
   }
@@ -1372,7 +1389,7 @@ export const getRevenueStats = async (
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Revenue stats API failed, using fallback:', error.message);
+      console.warn('Revenue stats API failed, using fallback:', (error as any)?.message);
     }
     
     // Fallback: Calculate from existing endpoints
@@ -1398,7 +1415,7 @@ export const getRevenueStats = async (
         },
       };
     } catch (fallbackError) {
-      console.error('Revenue stats fallback failed:', fallbackError.message);
+      console.error('Revenue stats fallback failed:', (fallbackError as any)?.message);
       // Return safe default values instead of throwing
       return {
         totalRevenue: 0,
@@ -1442,7 +1459,7 @@ export const getRevenueChart = async (
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Revenue chart API failed, using mock data:', error.message);
+      console.warn('Revenue chart API failed, using mock data:', (error as any)?.message);
     }
     
     // Fallback: Generate mock chart data based on existing data
@@ -1472,7 +1489,7 @@ export const getRevenueChart = async (
 
       return chartData;
     } catch (fallbackError) {
-      console.error('Chart data generation failed:', fallbackError.message);
+      console.error('Chart data generation failed:', (fallbackError as any)?.message);
       return [];
     }
   }
@@ -1513,7 +1530,7 @@ export const getTopSellingItems = async (
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Top selling items API failed:', error.message);
+      console.warn('Top selling items API failed:', (error as any)?.message);
     }
     
     // Return empty array - no fallback for top selling items as requested
@@ -1547,7 +1564,7 @@ export const getOrderAnalytics = async (period: string = "30d") => {
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Order analytics API failed, using fallback:', error.message);
+      console.warn('Order analytics API failed, using fallback:', (error as any)?.message);
     }
     
     // Fallback: Calculate from existing order count
@@ -1579,7 +1596,7 @@ export const getOrderAnalytics = async (period: string = "30d") => {
         dailyOrders: [],
       };
     } catch (fallbackError) {
-      console.error('Order analytics fallback failed:', fallbackError.message);
+      console.error('Order analytics fallback failed:', (fallbackError as any)?.message);
       // Return safe defaults instead of throwing
       return {
         totalOrders: 0,
@@ -1621,7 +1638,7 @@ export const getCustomerAnalytics = async (period: string = "30d") => {
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Customer analytics API failed, using fallback:', error.message);
+      console.warn('Customer analytics API failed, using fallback:', (error as any)?.message);
     }
     
     // Fallback: Calculate from existing user count
@@ -1639,7 +1656,7 @@ export const getCustomerAnalytics = async (period: string = "30d") => {
         },
       };
     } catch (fallbackError) {
-      console.error('Customer analytics fallback failed:', fallbackError.message);
+      console.error('Customer analytics fallback failed:', (fallbackError as any)?.message);
       // Return safe defaults instead of throwing
       return {
         totalCustomers: 0,

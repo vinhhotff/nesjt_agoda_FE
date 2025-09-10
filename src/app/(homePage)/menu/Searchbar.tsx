@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Search, X } from "lucide-react";
 import styles from "./menu.module.css";
 
@@ -8,7 +8,7 @@ interface Props {
   className?: string;
 }
 
-export default function SearchBar({ search, setSearch, className = "" }: Props) {
+function SearchBar({ search, setSearch, className = "" }: Props) {
   const handleClear = () => {
     setSearch("");
   };
@@ -41,3 +41,5 @@ export default function SearchBar({ search, setSearch, className = "" }: Props) 
     </div>
   );
 }
+
+export default memo(SearchBar);

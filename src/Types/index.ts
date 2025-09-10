@@ -78,7 +78,7 @@ export interface User {
   _id: string;
   name?: string;
   email: string;
-  role: string | Role; // Can be ObjectId string or populated Role object
+  role: string; // Always normalized to role name string by API layer
   isMember: boolean;
   phone?: string;
   address?: string;
@@ -99,6 +99,9 @@ export interface User {
   refreshToken?: string;
   createdAt: string;
   updatedAt: string;
+  // Backend may represent activation state in different ways
+  status?: "active" | "inactive";
+  isActive?: boolean;
   isDeleted?: boolean;
   deletedAt?: string;
 }
@@ -238,6 +241,62 @@ export interface TopSellingItem {
   image?: string;
 }
 
+export interface ChartDataPoint {
+  date: string;
+  count: number;
+}
+
+// Filter Types
+export interface UserFilter {
+  search?: string;
+  role?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface OrderFilter {
+  search?: string;
+  status?: 'all' | 'pending' | 'preparing' | 'served' | 'cancelled';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface MenuItemFilter {
+  search?: string;
+  category?: string;
+  available?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+// API Response wrapper
+export interface ApiError {
+  statusCode: number;
+  message: string | string[];
+  error?: string;
+  timestamp?: string;
+  path?: string;
+}
+
+// User status update payload
+export interface UserStatusUpdate {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  role?: string;
+  avatar?: string;
+}
+
 export interface OrderAnalytics {
   totalOrders: number;
   pendingOrders: number;
@@ -248,10 +307,7 @@ export interface OrderAnalytics {
     count: number;
     percentage: number;
   }[];
-  dailyOrders: {
-    date: string;
-    count: number;
-  }[];
+  dailyOrders: ChartDataPoint[];
 }
 
 export interface CustomerAnalytics {

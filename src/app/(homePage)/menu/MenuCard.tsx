@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import Image from 'next/image';
 import { IMenuItem } from '../../../Types';
 import styles from './menu.module.css';
@@ -11,7 +11,7 @@ interface Props {
   item: IMenuItem;
 }
 
-export default function MenuCard({ item }: Props) {
+function MenuCard({ item }: Props) {
   const { addToCart } = useCart();
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,17 +19,16 @@ export default function MenuCard({ item }: Props) {
   const handleAddToCart = async () => {
     if (!item.available) {
       toast.error(`${item.name} is currently unavailable.`);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      addToCart(item);
-      toast.success(`${item.name} has been added to your cart!`);
-    } catch (error) {
-      toast.error('Failed to add item to cart. Please try again.');
-    } finally {
-      setIsLoading(false);
+    } else {
+      try {
+        setIsLoading(true);
+        addToCart(item);
+        toast.success(`${item.name} has been added to your cart!`);
+      } catch (error) {
+        toast.error('Failed to add item to cart. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -63,7 +62,6 @@ export default function MenuCard({ item }: Props) {
           </div>
         )}
         
-        {/* Premium badge for expensive items */}
         {item.price > 200000 && (
           <div className="absolute top-2 left-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 text-xs px-2 py-1 rounded-full flex items-center gap-1 font-medium">
             <Star size={12} className="fill-current" />
@@ -134,3 +132,17 @@ export default function MenuCard({ item }: Props) {
     </div>
   );
 }
+
+function propsAreEqual(prev: Props, next: Props) {
+  const p = prev.item;
+  const n = next.item;
+  return (
+    p._id === n._id &&
+    p.price === n.price &&
+    p.available === n.available &&
+    p.name === n.name &&
+    (p.images?.[0] || '') === (n.images?.[0] || '')
+  );
+}
+
+export default memo(MenuCard, propsAreEqual);

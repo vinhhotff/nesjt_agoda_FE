@@ -120,7 +120,7 @@ const ChartPlaceholder: React.FC<ChartPlaceholderProps> = ({ title, data, height
   );
 };
 
-const RevenuePage: React.FC = () => {
+export default function RevenuePage() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30d');
   const [customDateRange, setCustomDateRange] = useState({
@@ -142,12 +142,12 @@ const RevenuePage: React.FC = () => {
     const actualPeriod = period === 'custom' ? undefined : period;
     
     // Fetch each API independently to prevent one failure from breaking everything
-    const fetchWithFallback = async <T>(apiCall: () => Promise<T>, defaultValue: T, name: string): Promise<T> => {
+const fetchWithFallback = async <T,>(apiCall: () => Promise<T>, defaultValue: T, name: string): Promise<T> => {
       try {
         const result = await apiCall();
         return result;
-      } catch (error) {
-        console.warn(`🚨 ${name} API failed, using fallback:`, error?.message || error);
+      } catch (error: any) {
+        console.warn(`🚨 ${name} API failed, using fallback:`, (error as any)?.message || error);
         return defaultValue;
       }
     };
@@ -451,6 +451,4 @@ const RevenuePage: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default RevenuePage;
+}

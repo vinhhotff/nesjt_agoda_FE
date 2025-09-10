@@ -9,7 +9,7 @@ interface Props {
   className?: string;
 }
 
-export default function MenuGrid({ items, className = "" }: Props) {
+function MenuGrid({ items, className = "" }: Props) {
   if (!items.length) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -30,3 +30,5 @@ export default function MenuGrid({ items, className = "" }: Props) {
     </div>
   );
 }
+
+export default React.memo(MenuGrid);

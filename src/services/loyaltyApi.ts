@@ -1,4 +1,4 @@
-import { api } from '@/utils/axiosClient';
+import { api } from '@/src/lib/api';
 
 export interface LoyaltyAccount {
   _id: string;

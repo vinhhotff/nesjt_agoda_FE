@@ -1,11 +1,11 @@
 "use client";
 import React from 'react';
 import Image from 'next/image';
-import { MenuItem, menuAPI } from '@/services/menuApi';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { MenuItem, menuAPI } from '@/src/services/menuApi';
+import { Button } from '@/src/components/ui/button';
+import { Badge } from '@/src/components/ui/badge';
 import { Clock, Leaf, Carrot } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 interface MenuGridProps {
   items: MenuItem[];

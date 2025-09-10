@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card';
+import { Button } from '@/src/components/ui/button';
+import { Separator } from '@/src/components/ui/separator';
+import { Badge } from '@/src/components/ui/badge';
 import { 
   Star, 
   Gift, 
@@ -15,10 +15,10 @@ import {
   Target,
   ChevronRight
 } from 'lucide-react';
-import LoyaltyPointsDisplay from '@/components/loyalty/LoyaltyPointsDisplay';
-import RedeemPointsModal from '@/components/loyalty/RedeemPointsModal';
-import { loyaltyAPI, LoyaltyAccount, LoyaltyHistory } from '@/services/loyaltyApi';
-import { toast } from 'sonner';
+import LoyaltyPointsDisplay from '@/src/components/loyalty/LoyaltyPointsDisplay';
+import RedeemPointsModal from '@/src/components/loyalty/RedeemPointsModal';
+import { loyaltyAPI, LoyaltyAccount, LoyaltyHistory } from '@/src/services/loyaltyApi';
+import { toast } from 'react-toastify';
 
 export default function UserLoyaltyPage() {
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyAccount | null>(null);

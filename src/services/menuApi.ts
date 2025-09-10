@@ -1,4 +1,4 @@
-import { api } from '@/utils/axiosClient';
+import { api } from '../lib/api';
 
 export interface MenuItem {
   _id: string;

@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { User } from '../Types';
 import { login, refresh, logout } from '../lib/api';
 import { toast } from 'react-toastify';
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
 
-  async function loginUser(email: string, password: string): Promise<{ success: boolean; role?: string }> {
+  const loginUser = useCallback(async (email: string, password: string): Promise<{ success: boolean; role?: string }> => {
     try {
       console.log('Starting login process...');
       const res = await login(email, password);
@@ -94,8 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return { success: false };
     }
-  }
-  async function loginAdmin(data: { email: string; password: string }) {
+  }, []);
+  const loginAdmin = useCallback(async (data: { email: string; password: string }) => {
     try {
       const res = await login(data.email, data.password);
       console.log('Admin login response:', res.data);
@@ -144,18 +144,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     return false;
-  }
-  async function logoutUser(redirectTo: string = "/") {
+  }, []);
+  const logoutUser = useCallback(async (redirectTo: string = "/") => {
     setUser(null);
     await logout();
     toast.success("Logged out successfully");
     setTimeout(() => {
       window.location.href = redirectTo;
     }, 500);
-  }
+  }, []);
+
+  const value = useMemo(() => ({ user, loading, login: loginUser, loginAdmin, logoutUser }), [user, loading, loginUser, loginAdmin, logoutUser]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login: loginUser, loginAdmin: loginAdmin, logoutUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

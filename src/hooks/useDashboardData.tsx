@@ -5,10 +5,9 @@ import {
     getOrderCount,
     getRevenue,
     fetchUsersCount,
-    getTodayStats,
-    getWeeklyTrends,
     fetchOrders
 } from '@/src/lib/api';
+import { getTodayStats, getWeeklyTrends } from '@/src/lib/api/analyticsApi';
 import { useApiCache } from './useApiCache';
 
 export function useDashboardData(isAuthorized: boolean) {

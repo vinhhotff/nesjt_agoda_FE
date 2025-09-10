@@ -1,13 +1,13 @@
 "use client";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Button from "../Button/Button";
 import styles from "./header.module.css";
 import { useCart } from "../../Context/CartContext";
-import CartModal from "../Cart/CartModal";
-import CheckoutModal from "../CheckoutModal/CheckoutModal";
-import { createOnlineOrder } from "../../lib/api";
-import { CreateOnlineOrderDto, OrderType } from "../../Types";
+
+const DynamicCartModal = dynamic(() => import("../Cart/CartModal"), { ssr: false });
+const DynamicCheckoutModal = dynamic(() => import("../CheckoutModal/CheckoutModal"), { ssr: false });
 
 import { useAuth } from "../../Context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -29,7 +29,7 @@ const Header = () => {
   const [profileOpen, setProfileOpen] = useState(false);
 
   const { user, logoutUser, loading } = useAuth();
-  const { cartItems, clearCart } = useCart();
+  const { cartItems } = useCart();
   const router = useRouter();
 
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -46,32 +46,6 @@ const Header = () => {
     setIsCheckoutOpen(true);
   };
 
-  const handlePlaceOrder = async (
-    customerName: string,
-    customerPhone: string
-  ) => {
-    console.log('Placing order with cart items:', cartItems);
-    const orderData: CreateOnlineOrderDto = {
-      customerName,
-      customerPhone,
-      items: cartItems.map((ci) => ({
-        item: ci.item._id,
-        quantity: ci.quantity,
-      })),
-      orderType: OrderType.PICKUP,
-      user: user?._id,
-    };
-
-    try {
-      await createOnlineOrder(orderData);
-      toast.success("Order placed successfully!");
-      clearCart();
-      setIsCheckoutOpen(false);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to place order. Please try again.");
-    }
-  };
 
   const handleLogout = () => {
     logoutUser("/");
@@ -159,18 +133,22 @@ const Header = () => {
         </div>
       </div>
 
-      <CartModal
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        onCheckout={handleOpenCheckout}
-      />
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        onSubmit={(orderData: CreateOnlineOrderDto) =>
-          handlePlaceOrder(orderData.customerName, orderData.customerPhone)
-        }
-      />
+      {isCartOpen && (
+        <DynamicCartModal
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          onCheckout={handleOpenCheckout}
+        />
+      )}
+      {isCheckoutOpen && (
+        <DynamicCheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          onSubmit={() => {
+            setIsCheckoutOpen(false);
+          }}
+        />
+      )}
     </>
   );
 };

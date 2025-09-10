@@ -1,7 +1,7 @@
 
 'use client';
-import Aside from '@/src/components/admin/Aside';
-import Header from '@/src/components/admin/Header';
+import { AdminLayout } from '@/src/components/layout';
+import { LoadingSpinner } from '@/src/components/ui';
 import RecentOrders from '@/src/components/admin/RecentOrders';
 import StatCards from '@/src/components/admin/StatCards';
 import TodayStats from '@/src/components/admin/TodayStats';
@@ -18,7 +18,8 @@ export default function AdminDashboard() {
 
   const router = useRouter();
 
-  const isAuthorized: boolean = !loading && !!user && user.role.toUpperCase() === 'ADMIN';
+  const roleName = user ? (typeof user.role === 'string' ? user.role : user.role?.name || '') : '';
+  const isAuthorized: boolean = !loading && !!user && roleName.toUpperCase() === 'ADMIN';
 
   const {
     coreStats,
@@ -36,7 +37,7 @@ export default function AdminDashboard() {
     }
   }, [isAuthorized, loading, router]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <LoadingSpinner size="lg" text="Loading dashboard..." className="min-h-screen" />;
   if (!isAuthorized) return null;
 
   const statCards = [
@@ -47,16 +48,11 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-
-      <Aside />
-      <main className="flex-1 p-6 md:p-10">
-        <Header />
-        <StatCards stats={statCards} />
-        {!dataLoading.today && todayStats && <TodayStats todayStats={todayStats} />}
-        {!dataLoading.trends && weeklyTrends.length > 0 && <WeeklyTrends data={weeklyTrends} />}
-        {!dataLoading.orders && <RecentOrders orders={recentOrders} onView={(order) => setSelectedOrder(order)} />}
-      </main>
-    </div>
+    <AdminLayout>
+      <StatCards stats={statCards} />
+      {!dataLoading.today && todayStats && <TodayStats todayStats={todayStats} />}
+      {!dataLoading.trends && weeklyTrends.length > 0 && <WeeklyTrends data={weeklyTrends} />}
+      {!dataLoading.orders && <RecentOrders orders={recentOrders} onView={(order) => setSelectedOrder(order)} />}
+    </AdminLayout>
   );
 }

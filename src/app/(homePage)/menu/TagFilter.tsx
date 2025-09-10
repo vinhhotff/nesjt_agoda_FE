@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Leaf, Flame, Shield } from "lucide-react";
 import styles from "./menu.module.css";
 
@@ -29,7 +29,7 @@ const getTagColor = (tag: string) => {
   return colorMap[tag] || 'bg-gray-600 text-gray-100';
 };
 
-export default function TagFilter({ tags, selected, toggleTag, className = "" }: Props) {
+function TagFilter({ tags, selected, toggleTag, className = "" }: Props) {
   if (!tags.length) {
     return (
       <div className={`${styles.filterBox} ${className}`}>
@@ -93,3 +93,5 @@ export default function TagFilter({ tags, selected, toggleTag, className = "" }:
     </div>
   );
 }
+
+export default memo(TagFilter);

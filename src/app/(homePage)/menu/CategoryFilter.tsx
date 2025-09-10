@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { ChefHat, Coffee, Cookie, Salad } from "lucide-react";
 import styles from "./menu.module.css";
 
@@ -19,7 +19,7 @@ const getCategoryIcon = (category: string) => {
   return iconMap[category] || <ChefHat size={16} />;
 };
 
-export default function CategoryFilter({ categories, selected, toggleCategory, className = "" }: Props) {
+function CategoryFilter({ categories, selected, toggleCategory, className = "" }: Props) {
   if (!categories.length) {
     return (
       <div className={`${styles.filterBox} ${className}`}>
@@ -72,3 +72,5 @@ export default function CategoryFilter({ categories, selected, toggleCategory, c
     </div>
   );
 }
+
+export default memo(CategoryFilter);

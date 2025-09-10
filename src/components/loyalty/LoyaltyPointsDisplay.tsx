@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card';
+import { Badge } from '@/src/components/ui/badge';
+import { Button } from '@/src/components/ui/button';
 import { Star, Gift, TrendingUp, Clock } from 'lucide-react';
-import { loyaltyAPI, LoyaltyAccount } from '@/services/loyaltyApi';
-import { toast } from 'sonner';
+import { loyaltyAPI, LoyaltyAccount } from '@/src/services/loyaltyApi';
+import { toast } from 'react-toastify';
 
 interface LoyaltyPointsDisplayProps {
   userId?: string;
@@ -88,7 +88,6 @@ export default function LoyaltyPointsDisplay({
           </div>
           <Button 
             variant="outline" 
-            size="sm" 
             onClick={loadLoyaltyData}
           >
             Thử lại
@@ -124,7 +123,7 @@ export default function LoyaltyPointsDisplay({
         <CardTitle className="flex items-center gap-2 text-lg">
           <Star className="h-5 w-5 text-yellow-600" />
           Điểm thưởng
-          <Badge variant="secondary" className="ml-auto">
+          <Badge className="ml-auto">
             Loyalty
           </Badge>
         </CardTitle>

@@ -1,10 +1,10 @@
 "use client";
 import React from 'react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/src/components/ui/label';
+import { Badge } from '@/src/components/ui/badge';
+import { Button } from '@/src/components/ui/button';
+import Input from '@/src/components/ui/Input';
+import { Switch } from '@/src/components/ui/switch';
 import { Search, X, Filter, Leaf, Carrot } from 'lucide-react';
 
 interface MenuFiltersProps {
@@ -99,7 +99,6 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
             </div>
             <Button
               variant="outline"
-              size="sm"
               onClick={onClearFilters}
               className="text-blue-600 border-blue-300 hover:bg-blue-100"
             >
@@ -108,7 +107,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
           </div>
           <div className="flex flex-wrap gap-2">
             {search && (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              <Badge className="bg-blue-100 text-blue-800">
                 Search: "{search.length > 20 ? search.substring(0, 20) + '...' : search}"
                 <button onClick={() => onSearchChange('')} className="ml-1">
                   <X className="h-3 w-3" />
@@ -116,7 +115,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
               </Badge>
             )}
             {selectedCategory && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
+              <Badge className="bg-green-100 text-green-800">
                 Category: {selectedCategory}
                 <button onClick={() => onCategoryChange(undefined)} className="ml-1">
                   <X className="h-3 w-3" />
@@ -124,7 +123,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
               </Badge>
             )}
             {selectedTags.map(tag => (
-              <Badge key={tag} variant="secondary" className="bg-purple-100 text-purple-800">
+              <Badge key={tag} className="bg-purple-100 text-purple-800">
                 {tag}
                 <button onClick={() => onTagToggle(tag)} className="ml-1">
                   <X className="h-3 w-3" />
@@ -132,7 +131,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
               </Badge>
             ))}
             {isVegan && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
+              <Badge className="bg-green-100 text-green-800">
                 <Leaf className="h-3 w-3 mr-1" />
                 Vegan
                 <button onClick={() => onVeganChange(false)} className="ml-1">
@@ -141,7 +140,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
               </Badge>
             )}
             {isVegetarian && (
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+              <Badge className="bg-orange-100 text-orange-800">
                 <Carrot className="h-3 w-3 mr-1" />
                 Vegetarian
                 <button onClick={() => onVegetarianChange(false)} className="ml-1">
@@ -150,7 +149,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
               </Badge>
             )}
             {!availableOnly && (
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+              <Badge className="bg-gray-100 text-gray-800">
                 Show All Items
                 <button onClick={() => onAvailableOnlyChange(true)} className="ml-1">
                   <X className="h-3 w-3" />
@@ -205,7 +204,6 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
               <Button
                 key={tag}
                 variant={selectedTags.includes(tag) ? "default" : "outline"}
-                size="sm"
                 onClick={() => onTagToggle(tag)}
                 className="text-xs"
               >
@@ -230,7 +228,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
             <Switch
               id="vegan-switch"
               checked={isVegan}
-              onCheckedChange={onVeganChange}
+              onChange={(e) => onVeganChange((e.target as HTMLInputElement).checked)}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -243,7 +241,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
             <Switch
               id="vegetarian-switch"
               checked={isVegetarian}
-              onCheckedChange={onVegetarianChange}
+              onChange={(e) => onVegetarianChange((e.target as HTMLInputElement).checked)}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -253,7 +251,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
             <Switch
               id="available-switch"
               checked={availableOnly}
-              onCheckedChange={onAvailableOnlyChange}
+              onChange={(e) => onAvailableOnlyChange((e.target as HTMLInputElement).checked)}
             />
           </div>
         </div>
