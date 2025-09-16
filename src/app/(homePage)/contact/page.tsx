@@ -41,7 +41,6 @@ const ContactPage = () => {
       return;
     }
 
-    console.log("Submit form:", form);
     toast.success("Your message has been sent!");
     setForm({ name: "", email: "", subject: "", message: "" });
   };

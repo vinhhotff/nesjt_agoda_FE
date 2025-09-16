@@ -48,7 +48,6 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({
     setError('');
     
     try {
-      console.log('🔍 Fetching revenue data for period:', selectedPeriod);
       
       // Fetch all data in parallel
       const [stats, chart, items] = await Promise.all([
@@ -57,7 +56,6 @@ const RevenueDashboard: React.FC<RevenueDashboardProps> = ({
         getTopSellingItems(selectedPeriod, 5)
       ]);
       
-      console.log('✅ Revenue data fetched:', { stats, chart: chart.length, items: items.length });
       
       setRevenueStats(stats);
       setChartData(chart);

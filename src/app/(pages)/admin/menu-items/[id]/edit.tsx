@@ -1,4 +1,3 @@
-
 'use client';
 import { getMenuItem, updateMenuItem, uploadMenuItemImages, deleteMenuItemImage } from '@/src/lib/api';
 import { IMenuItem } from '@/src/Types';
@@ -24,23 +23,20 @@ export default function EditMenuItemPage() {
     const params = useParams();
     const id = params.id as string;
 
+    // Fetch menu item data
     useEffect(() => {
         const fetchMenuItem = async () => {
             try {
-                const item = await getMenuItem(id);
+                const response = await getMenuItem(id);
+                
+                // Extract actual menu item data from API response
+                const item = response.data;
+             
                 setMenuItem(item);
-                setFormData({
-                    name: item.name,
-                    description: item.description ?? '',
-                    price: String(item.price),
-                    category: item.category,
-                    available: item.available,
-                });
-                console.log(setFormData)
-                setImages(item.images || []); 
-                setInitialImages(item.images || []);
+                // Don't set formData here - let the sync useEffect handle it
             } catch (error) {
-                toast.error('Failed to fetch menu item');
+                console.error('❌ Error fetching menu item:', error);
+                toast.error(error instanceof Error ? error.message : 'Failed to fetch menu item');
                 router.push('/admin/menu-items');
             }
         };
@@ -48,6 +44,25 @@ export default function EditMenuItemPage() {
             fetchMenuItem();
         }
     }, [id, router]);
+
+    // Sync formData when menuItem changes (THIS IS THE FIX!)
+    useEffect(() => {
+        if (menuItem) {
+            
+            setFormData({
+                name: menuItem.name || '',
+                description: menuItem.description || '',
+                price: String(menuItem.price) || '0',
+                category: menuItem.category || 'appetizer',
+                available: menuItem.available ?? true,
+            });
+            
+            setImages(menuItem.images || []);
+            setInitialImages(menuItem.images || []);
+            
+         
+        }
+    }, [menuItem]); // Only run when menuItem changes
 
     const categories = [
         { value: 'appetizer', label: '🥗 Appetizer' },
@@ -99,7 +114,15 @@ export default function EditMenuItemPage() {
     };
 
     if (!menuItem) {
-        return <div>Loading...</div>;
+        return (
+            <div className="max-w-4xl mx-auto my-10 p-6 md:p-8">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p>Loading menu item...</p>
+                    <small className="text-gray-500">ID: {id}</small>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -114,22 +137,28 @@ export default function EditMenuItemPage() {
                     <div className="space-y-6">
                         {/* Name */}
                         <div>
-                            <label className="block text-sm font-medium dark:text-gray-200 mb-1">Item Name</label>
+                            <label className="block text-sm font-medium dark:text-gray-200 mb-1">
+                                Item Name {/* Debug: {formData.name} */}
+                            </label>
                             <input
                                 type="text"
                                 required
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                value={formData.name || ''}
+                                onChange={(e) => {
+                                    setFormData({ ...formData, name: e.target.value });
+                                }}
                                 placeholder="e.g., Margherita Pizza"
                                 className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm"
                             />
+                            {/* Debug info */}
+                            <small className="text-gray-500 text-xs">Debug: '{formData.name}'</small>
                         </div>
 
                         {/* Description */}
                         <div>
                             <label className="block text-sm font-medium dark:text-gray-200 mb-1">Description</label>
                             <textarea
-                                value={formData.description}
+                                value={formData.description || ''}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 placeholder="A brief description of the item..."
                                 className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none text-sm"
@@ -159,20 +188,23 @@ export default function EditMenuItemPage() {
                                 required
                                 min={0}
                                 step={0.01}
-                                value={formData.price}
-                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                value={formData.price || '0'}
+                                onChange={(e) => {
+                                    setFormData({ ...formData, price: e.target.value });
+                                }}
                                 placeholder="0.00"
                                 className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm"
                             />
+                            <small className="text-gray-500 text-xs">Debug: '{formData.price}'</small>
                         </div>
 
                         {/* Category */}
                         <div>
                             <label className="block text-sm font-medium dark:text-gray-200 mb-1">Category</label>
                             <select
-                                value={formData.category}
+                                value={formData.category || 'appetizer'}
                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition -sm"
+                                className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm"
                             >
                                 {categories.map((cat) => (
                                     <option key={cat.value} value={cat.value}>

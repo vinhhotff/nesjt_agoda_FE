@@ -51,9 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginUser = useCallback(async (email: string, password: string): Promise<{ success: boolean; role?: string }> => {
     try {
-      console.log('Starting login process...');
       const res = await login(email, password);
-      console.log('Login response:', res.data);
 
       if (!res || !res.data || !res.data.data || !res.data.data.user) {
         toast.error('Invalid server response. Please try again.');
@@ -98,7 +96,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginAdmin = useCallback(async (data: { email: string; password: string }) => {
     try {
       const res = await login(data.email, data.password);
-      console.log('Admin login response:', res.data);
 
       if (res.data && res.data.data && res.data.data.user) {
         const userData = res.data.data.user;

@@ -37,7 +37,6 @@ export default function ReservationPage() {
       return;
     }
 
-    console.log("Submit form:", form);
     toast.success("Your reservation has been submitted!");
     setForm({ name: "", email: "", date: "", time: "", guests: 1 });
   };

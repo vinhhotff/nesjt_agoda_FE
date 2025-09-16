@@ -1,6 +1,7 @@
 import { api } from './callApi';
 import { User, PaginatedUser, UserStatusUpdate, ApiError, UserFilter, Role } from '@/src/Types';
 import { getRoleName } from '../utils/roleUtils';
+import { fetchPaginated, PaginationQuery } from './paginationApi';
 
 // Helper to transform user data with proper role mapping
 const transformUser = (user: any): User => {
@@ -8,15 +9,6 @@ const transformUser = (user: any): User => {
     ...user,
     role: getRoleName(user.role)
   };
-  
-  // Log transformation for debugging (only first few users)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔄 User role transformation:', {
-      original: user.role,
-      transformed: transformedUser.role,
-      type: typeof user.role
-    });
-  }
   
   return transformedUser;
 };
@@ -40,51 +32,45 @@ export const getUsersPaginate = async (filter: UserFilter = {}): Promise<Paginat
       limit = 10
     } = filter;
 
-    // Build query string for backend
-    const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
+    // Build query using standardized format
+    const query: PaginationQuery = {
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    };
 
-    // Build query string for search and filters
-    const queryParts: string[] = [];
+    // Add search parameter
     if (search) {
-      queryParts.push(`name:${search}`, `email:${search}`);
-    }
-    if (role && role !== 'all') {
-      queryParts.push(`role:${role}`);
-    }
-    if (status && status !== 'all') {
-      queryParts.push(`status:${status}`);
+      query.search = search;
     }
     
-    if (queryParts.length > 0) {
-      params.append('qs', queryParts.join(','));
+    // Add role filter
+    if (role && role !== 'all') {
+      query.role = role;
+    }
+    
+    // Add status filter
+    if (status && status !== 'all') {
+      query.status = status;
     }
 
-    console.log('Fetching users with params:', params.toString());
-    const response = await api.get(`/user?${params.toString()}`);
-    console.log('User API Response:', response.data);
-
-    if (!response.data) throw new Error('Failed to fetch users');
-
-    // Handle BE response format: { results: User[], meta: { total, page, limit, totalPages } }
-    const { results = [], meta = {} } = response.data;
+    // Use standardized pagination API
+    const result = await fetchPaginated<User>('/user', query);
     
     // Transform users to ensure role is a string name, not ObjectId
-    const transformedUsers = results.map((user: any) => transformUser(user));
+    const transformedUsers = result.items.map((user: any) => transformUser(user));
     
-    console.log('✅ Transformed users with role names:', transformedUsers.slice(0, 2));
     
     return {
       items: transformedUsers,
-      total: meta.total || results.length,
-      page: meta.page || page,
-      limit: meta.limit || limit,
-      totalPages: meta.totalPages || Math.ceil((meta.total || results.length) / limit)
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages
     };
   } catch (error) {
     console.error('Error in getUsersPaginate:', error);
-    const apiError = error as any;
     
     // Return empty result with proper error handling
     return {
@@ -106,7 +92,6 @@ export const getUser = async (id: string): Promise<User> => {
 // Update user - Fixed to match BE schema
 export const updateUser = async (id: string, data: UserStatusUpdate): Promise<User> => {
   try {
-    console.log('🔍 Updating user:', { id, data });
     
     // Validate data matches BE UpdateUserDto (extends CreateUserDto)
     const validFields = ['name', 'email', 'phone', 'address', 'role', 'avatar'];
@@ -119,10 +104,8 @@ export const updateUser = async (id: string, data: UserStatusUpdate): Promise<Us
       }
     });
 
-    console.log('📤 Sanitized data being sent to BE:', sanitizedData);
     
     const response = await api.patch<User>(`/user/${id}`, sanitizedData);
-    console.log('✅ User update successful:', response.data);
     
     return response.data;
   } catch (error: any) {
@@ -150,11 +133,9 @@ export const updateUser = async (id: string, data: UserStatusUpdate): Promise<Us
 // - Consider adding proper status fields to BE schema for full functionality
 export const toggleUserStatus = async (id: string, makeActive: boolean): Promise<User> => {
   try {
-    console.log('🔍 Toggle user status using role-based approach:', { id, makeActive });
     
     // Get current user data first
     const currentUser = await getUser(id);
-    console.log('📋 Current user:', currentUser);
     
     // Strategy: Use role to indicate status
     // - Active users keep their current role (admin, staff, user)
@@ -162,7 +143,6 @@ export const toggleUserStatus = async (id: string, makeActive: boolean): Promise
     
     if (!makeActive) {
       // Deactivate user by using soft delete (which BE supports)
-      console.log('🚫 Deactivating user via soft delete');
       await deleteUser(id);
       
       // Return a modified user object to indicate deactivation
@@ -174,7 +154,6 @@ export const toggleUserStatus = async (id: string, makeActive: boolean): Promise
     } else {
       // For activation, we can't easily "undelete" a soft-deleted user
       // This would require a BE endpoint to restore deleted users
-      console.log('⚠️ Cannot activate deleted users without BE support');
       
       throw new Error(
         'User activation not supported. Once a user is deactivated (soft deleted), ' +
@@ -199,7 +178,6 @@ export const toggleUserStatus = async (id: string, makeActive: boolean): Promise
 export const deleteUser = async (id: string): Promise<void> => {
   try {
     await api.delete(`/user/${id}`);
-    console.log('✅ User deleted successfully');
   } catch (error: any) {
     console.error('❌ Error deleting user:', error);
     throw new Error(`Failed to delete user: ${error?.message || 'Unknown error'}`);
@@ -221,7 +199,6 @@ export const fetchUsersCount = async (): Promise<number> => {
 export const getUserRoles = async (): Promise<Role[]> => {
   try {
     const response = await api.get('/roles');
-    console.log('🔍 Roles API response:', response.data);
     
     // Handle different possible response structures
     let roles = [];
@@ -234,7 +211,6 @@ export const getUserRoles = async (): Promise<Role[]> => {
       roles = response.data.roles;
     }
     
-    console.log('✅ Extracted roles:', roles.length, roles);
     return roles;
   } catch (error) {
     console.warn('❌ Roles API not available, using default roles', error);

@@ -185,9 +185,7 @@ export const getUserPaginate = async (
     params.append("limit", limit.toString());
     if (qs) params.append("qs", qs);
 
-    console.log("Fetching users with params:", params.toString());
     const res = await api.get(`/user?${params.toString()}`);
-    console.log("User API Response:", res.data);
 
     if (!res.data) throw new Error("Failed to fetch users");
 
@@ -230,7 +228,6 @@ export const getUserPaginate = async (
       totalPages: responsePages,
     };
 
-    console.log("Processed user result:", result);
     return result;
   } catch (error) {
     console.error("Error in getUserPaginate:", error);
@@ -319,17 +316,6 @@ export const getMenuItemsPaginate = async (
 
     const res = await api.get(`/menu-items/paginate?${params.toString()}`);
 
-    // Log the full API response for debugging (guarded by DEBUG flag)
-    if (DEBUG) {
-      console.log("=== DEBUGGING MENU ITEMS PAGINATION ===");
-      console.log("Full API Response:", res.data);
-      console.log("API Response Data:", res.data.data);
-      console.log("API Response Keys:", Object.keys(res.data));
-      if (res.data.data) {
-        console.log("API Response Data Keys:", Object.keys(res.data.data));
-      }
-    }
-
     if (!res.data || !res.data.data) {
       console.error("❌ Missing data structure - res.data:", res.data);
       throw new Error("Failed to fetch menu items - missing data structure");
@@ -338,19 +324,6 @@ export const getMenuItemsPaginate = async (
     const apiData = res.data.data;
     const items = apiData.results || [];
     const meta = apiData.meta || {};
-
-    // Check all possible total field names
-    if (DEBUG) {
-      console.log("🔍 Checking total field values:");
-      console.log("apiData.total:", apiData.total);
-      console.log("apiData.totalCount:", apiData.totalCount);
-      console.log("apiData.count:", apiData.count);
-      console.log("apiData.meta:", meta);
-      console.log("meta.total:", meta.total);
-      console.log("meta.totalCount:", meta.totalCount);
-      console.log("items.length:", items.length);
-    }
-
     // Try to get total from meta object first, then fallback to other fields
     const total =
       meta.total ||
@@ -362,17 +335,6 @@ export const getMenuItemsPaginate = async (
       apiData.totalRecords ||
       0;
 
-    // More detailed logging
-    if (DEBUG) {
-      console.log("📊 Final parsed menu items data:", {
-        items: items.length,
-        total: total,
-        page: page,
-        limit: limit,
-        totalPages: Math.ceil(total / limit),
-      });
-      console.log("=== END DEBUGGING ===");
-    }
 
     return {
       items: items,
@@ -540,7 +502,6 @@ export const deletePayment = async (id: string): Promise<void> => {
 ---------------------- */
 export const getAbout = async () => {
   const response = await api.get("/about");
-  console.log("Fetched about data:", response.data);
   return response.data.data;
 };
 
@@ -802,12 +763,6 @@ export const getOrdersPaginate = async (
     // Ensure we have an array to work with (getOrders returns Order[])
     let orders: any[] = Array.isArray(ordersResponse) ? ordersResponse : [];
 
-    console.log("Orders response type:", typeof ordersResponse);
-    console.log(
-      "Orders array length:",
-      Array.isArray(orders) ? orders.length : "Not an array"
-    );
-
     // Ensure orders is an array before proceeding
     if (!Array.isArray(orders)) {
       console.warn("Orders is not an array, using empty array:", orders);
@@ -872,12 +827,6 @@ export const updateOrderStatus = async (
   note?: string
 ) => {
   try {
-    // Log để debug
-    console.log("🔍 Updating order status:", {
-      id,
-      status,
-      type: typeof status,
-    });
     const normalizedStatus = status.trim().toLowerCase();
 
     // Đảm bảo status được gửi đúng format
@@ -888,13 +837,11 @@ export const updateOrderStatus = async (
         | "served"
         | "cancelled",
     };
-    console.log("📤 Sending DTO:", updateOrderStatusDto);
 
     const response = await api.patch(
       `/orders/${id}/status`,
       updateOrderStatusDto
     );
-    console.log("✅ Status update successful:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error updating order status:", error);
@@ -918,7 +865,6 @@ export const getOrderDetails = async (id: string) => {
 // Mark order as paid/unpaid - using new payments endpoint
 export const markOrderAsPaid = async (orderId: string, isPaid: boolean) => {
   try {
-    console.log("🔄 Updating payment status:", { orderId, isPaid });
 
     // Use the new payments endpoint to mark order as paid/unpaid
     const response = await api.patch(`/payments/order/${orderId}/mark-paid`, {
@@ -926,7 +872,6 @@ export const markOrderAsPaid = async (orderId: string, isPaid: boolean) => {
       method: "CASH", // Default payment method
     });
 
-    console.log("✅ Payment status updated successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error(
@@ -936,14 +881,10 @@ export const markOrderAsPaid = async (orderId: string, isPaid: boolean) => {
 
     // Fallback: try the old orders endpoint for compatibility
     try {
-      console.log("🔄 Trying fallback orders endpoint...");
       const fallbackResponse = await api.patch(`/orders/${orderId}/paid`, {
         isPaid,
       });
-      console.log(
-        "✅ Fallback payment update successful:",
-        fallbackResponse.data
-      );
+    
       return fallbackResponse.data;
     } catch (fallbackError) {
       console.error("❌ Both payment endpoints failed:", fallbackError);
@@ -1052,7 +993,6 @@ export const getUsersPaginate = async (
         (searchQuery ? "&" : "") + `sortBy=${sortBy}&sortOrder=${sortOrder}`;
 
     const response = await getUserPaginate(page, limit, searchQuery);
-    console.log("getUsersPaginate response:", response);
     return response;
   } catch (error) {
     console.warn(
@@ -1064,7 +1004,6 @@ export const getUsersPaginate = async (
     try {
       // Try /users endpoint instead
       const usersResponse = await api.get("/users");
-      console.log("Alternative /users response:", usersResponse.data);
 
       let users = [];
       if (Array.isArray(usersResponse.data)) {
@@ -1123,7 +1062,6 @@ export const getUsersPaginate = async (
       console.warn("Fallback user API also failed:", fallbackError);
 
       // Final fallback: Return mock data for development
-      console.log("Using mock user data for development");
       const mockUsers = [
         {
           _id: "1",
@@ -1243,16 +1181,10 @@ export const resetUserPassword = async (id: string) => {
 export const getUserRoles = async () => {
   try {
     const response = await api.get("/roles");
-    console.log("🔍 Roles API response full:", response.data);
-    console.log("🔍 Response.data keys:", Object.keys(response.data));
-    console.log("🔍 Response.data.data type:", typeof response.data.data);
-    console.log("🔍 Response.data.data value:", response.data.data);
+
 
     if (response.data.data && typeof response.data.data === "object") {
-      console.log(
-        "🔍 Response.data.data keys:",
-        Object.keys(response.data.data)
-      );
+    
     }
 
     // Handle different possible response structures
@@ -1260,39 +1192,32 @@ export const getUserRoles = async () => {
 
     if (response.data?.data && Array.isArray(response.data.data)) {
       // Structure: { data: [...], total: 4, ... }
-      console.log("📍 Using response.data.data (array)");
       roles = response.data.data;
     } else if (
       response.data?.data?.results &&
       Array.isArray(response.data.data.results)
     ) {
       // Structure: { data: { results: [...] }, ... }
-      console.log("📍 Using response.data.data.results");
       roles = response.data.data.results;
     } else if (response.data?.data && typeof response.data.data === "object") {
       // Check if data is an object with roles inside
       const dataKeys = Object.keys(response.data.data);
-      console.log("📍 Data object keys:", dataKeys);
 
       // Try to find an array property in the data object
       for (const key of dataKeys) {
         if (Array.isArray(response.data.data[key])) {
-          console.log("📍 Found array in data." + key);
           roles = response.data.data[key];
           break;
         }
       }
     } else if (Array.isArray(response.data)) {
       // Structure: [...] (direct array)
-      console.log("📍 Using response.data (direct array)");
       roles = response.data;
     } else if (response.data?.roles && Array.isArray(response.data.roles)) {
       // Structure: { roles: [...] }
-      console.log("📍 Using response.data.roles");
       roles = response.data.roles;
     }
 
-    console.log("✅ Extracted roles:", roles.length, roles);
     return roles;
   } catch (error) {
     console.warn("❌ Roles API not available, using default roles", error);

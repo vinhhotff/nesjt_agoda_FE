@@ -16,7 +16,6 @@ export const getRevenueStats = async (
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
 
-      console.log('🔍 Fetching revenue stats with params:', params.toString());
       
       const response = await api.get(`/analytics/revenue/stats?${params.toString()}`);
       const data = normalizeApiResponse(response.data, 'data');
@@ -58,7 +57,6 @@ export const getRevenueChart = async (
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
-      console.log('🔍 Fetching revenue chart with params:', params.toString());
       
       const response = await api.get(`/analytics/revenue/chart?${params.toString()}`);
       const data = normalizeApiResponse(response.data, 'data');
@@ -95,7 +93,6 @@ export const getTopSellingItems = async (
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
-      console.log('🔍 Fetching top selling items with params:', params.toString());
       
       const response = await api.get(`/analytics/menu-items/top-selling?${params.toString()}`);
       const data = normalizeApiResponse(response.data, 'data');
@@ -133,7 +130,6 @@ export const getOrderAnalytics = async (
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
-      console.log('🔍 Fetching order analytics with params:', params.toString());
       
       const response = await api.get(`/analytics/orders/stats?${params.toString()}`);
       const data = normalizeApiResponse(response.data, 'data');
@@ -142,7 +138,6 @@ export const getOrderAnalytics = async (
       const rawDailyOrders = data?.dailyOrders || data?.daily_orders || [];
       const dailyOrders: ChartDataPoint[] = ensureChartDataPoints(rawDailyOrders);
       
-      console.log('🔄 Transformed dailyOrders to ChartDataPoint[]:', dailyOrders.slice(0, 2));
       
       return {
         totalOrders: data?.totalOrders ?? data?.total_orders ?? 0,
@@ -173,7 +168,6 @@ export const getCustomerAnalytics = async (
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
-      console.log('🔍 Fetching customer analytics with params:', params.toString());
       
       const response = await api.get(`/analytics/customers/stats?${params.toString()}`);
       const data = normalizeApiResponse(response.data, 'data');

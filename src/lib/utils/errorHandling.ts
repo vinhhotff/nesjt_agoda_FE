@@ -154,7 +154,6 @@ export const showErrorToast = (error: any, customMessage?: string) => {
 
 // Success toast helper
 export const showSuccessToast = (message: string, title?: string) => {
-  console.log(`✅ ${title || 'Success'}: ${message}`);
   
   if (typeof window !== 'undefined' && (window as any).toast) {
     (window as any).toast.success(`${title || 'Success'}: ${message}`);
@@ -221,7 +220,6 @@ export const retryApiCall = async <T>(
         throw error;
       }
       
-      console.log(`API call failed (attempt ${attempt}/${maxRetries}). Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
       delay *= 2; // Exponential backoff
     }

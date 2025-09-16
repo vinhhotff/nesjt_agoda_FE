@@ -1,5 +1,6 @@
 import { api } from './callApi';
 import { Order, CreateOnlineOrderDto, OrdersApiResponse } from '@/src/Types';
+import { fetchPaginated, PaginationQuery } from './paginationApi';
 
 export const createOnlineOrder = async (orderData: CreateOnlineOrderDto) => {
   try {
@@ -17,8 +18,9 @@ export const createOrder = async (data: Partial<Order>): Promise<Order> => {
 };
 
 export function extractOrders(res: OrdersApiResponse): Order[] {
-  if (Array.isArray(res)) return res;
+  // Backend returns { orders: Order[], total, totalPages }
   if ('orders' in res && Array.isArray(res.orders)) return res.orders;
+  if (Array.isArray(res)) return res;
   if ('results' in res && Array.isArray(res.results)) return res.results;
   if ('data' in res) {
     if (Array.isArray(res.data)) return res.data;
@@ -48,11 +50,16 @@ export const deleteOrder = async (id: string): Promise<void> => {
 };
 
 export const getOrders = async (params?: Record<string, unknown>) => {
-  const response = await api.get<Order[]>('/orders', { params });
-  return response.data;
+  const response = await api.get('/orders', { params });
+  // Backend returns { orders: Order[], total, totalPages } - extract orders array
+  const data = response.data;
+  if (data && typeof data === 'object' && 'orders' in data) {
+    return data.orders;
+  }
+  return Array.isArray(data) ? data : [];
 };
 
-// Enhanced Orders API
+// Enhanced Orders API using standardized pagination
 export const getOrdersPaginate = async (
   page: number = 1,
   limit: number = 10,
@@ -62,50 +69,34 @@ export const getOrdersPaginate = async (
   sortOrder: 'asc' | 'desc' = 'desc'
 ) => {
   try {
-    const ordersResponse = await getOrders({});
-    let orders: any[] = Array.isArray(ordersResponse) ? ordersResponse : [];
-
-    if (!Array.isArray(orders)) {
-      console.warn('Orders is not an array, using empty array:', orders);
-      orders = [];
-    }
-
-    let filteredOrders = orders;
-    if (search && orders.length > 0) {
-      filteredOrders = orders.filter(
-        (order: any) =>
-          order._id?.includes(search) ||
-          order.guest?.toString().toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    if (status && filteredOrders.length > 0) {
-      filteredOrders = filteredOrders.filter(
-        (order: any) => order.status === status
-      );
-    }
-
-    if (filteredOrders.length > 0) {
-      filteredOrders.sort((a: any, b: any) => {
-        const aValue = a[sortBy] || '';
-        const bValue = b[sortBy] || '';
-        if (sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
-    }
-
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-
-    return {
-      items: paginatedOrders,
-      total: filteredOrders.length,
+    // Build query using standardized format
+    const query: PaginationQuery = {
       page,
       limit,
-      totalPages: Math.ceil(filteredOrders.length / limit),
+      sortBy,
+      sortOrder,
+    };
+    
+    // Add search parameter (backend might use 'guest' or 'search')
+    if (search) {
+      query.guest = search; // Backend supports guest parameter for search
+      query.search = search; // Also try standard search parameter
+    }
+    
+    // Add status filter
+    if (status) {
+      query.status = status;
+    }
+    
+    // Use standardized pagination API
+    const result = await fetchPaginated<Order>('/orders', query);
+    
+    return {
+      items: result.items,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
     };
   } catch (error) {
     console.error('Error fetching paginated orders:', error);
@@ -125,11 +116,7 @@ export const updateOrderStatus = async (
   note?: string
 ) => {
   try {
-    console.log('🔍 Updating order status:', {
-      id,
-      status,
-      type: typeof status,
-    });
+ 
     const normalizedStatus = status.trim().toLowerCase();
 
     const updateOrderStatusDto = {

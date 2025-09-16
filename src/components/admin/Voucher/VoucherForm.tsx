@@ -37,15 +37,24 @@ const ModalVoucherForm: React.FC<Props> = ({ open, initial, onSubmit, onClose })
     setSubmitting(true);
     try {
       const payload: Partial<Voucher> = {
-        ...form,
         code: form.code?.trim().toUpperCase(),
+        type: form.discountType === "fixed" ? "fixed_amount" : form.discountType,
+        value: form.discountValue ?? 0,
+        usageLimit: form.usageLimit ?? 1,
+        startDate: form.startDate ? new Date(form.startDate).toISOString() : "",
+        endDate: form.endDate ? new Date(form.endDate).toISOString() : "",
+        minOrderValue: form.minOrderTotal ?? 0,
+        maxDiscount: form.maxDiscount,
+        isActive: form.isActive,
       } as any;
+  
       await onSubmit(payload);
       onClose();
     } finally {
       setSubmitting(false);
     }
   };
+  
 
   return (
     <AnimatePresence>

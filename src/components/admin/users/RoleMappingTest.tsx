@@ -24,10 +24,8 @@ const RoleMappingTest: React.FC = () => {
     setError('');
     
     try {
-      console.log('🔍 Testing user fetch with role mapping...');
       const result = await getUsersPaginate({ page: 1, limit: 5 });
       
-      console.log('📋 User fetch result:', result);
       setUsers(result.items);
       
       // Check if roles are properly mapped
@@ -41,7 +39,6 @@ const RoleMappingTest: React.FC = () => {
         setError(`Found ${roleIssues.length} users with unmapped roles`);
         console.warn('❌ Users with role mapping issues:', roleIssues);
       } else {
-        console.log('✅ All user roles properly mapped!');
       }
       
     } catch (err) {

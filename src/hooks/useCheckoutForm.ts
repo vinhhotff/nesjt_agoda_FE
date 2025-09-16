@@ -88,7 +88,6 @@ export function useCheckoutForm({
     };
 
     try {
-      console.log("Placing order with data:", orderData);
       await createOnlineOrder(orderData);
       toast.success("Order placed successfully!");
       

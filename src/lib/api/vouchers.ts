@@ -1,23 +1,46 @@
 import { api } from '../api';
 import { ApplyVoucherPayload, ApplyVoucherResponse, PaginatedVoucher, Voucher } from '@/src/Types';
+import { fetchPaginated, PaginationQuery, PaginatedResult } from './paginationApi';
 
-export async function listVouchers(page: number = 1, limit: number = 10, qs: string = ''): Promise<PaginatedVoucher> {
-  const params = new URLSearchParams();
-  params.append('page', String(page));
-  params.append('limit', String(limit));
-  if (qs) params.append('qs', qs);
+// Cập nhật để sử dụng chuẩn pagination mới
+export async function listVouchers(
+  page: number = 1, 
+  limit: number = 10, 
+  search: string = '',
+  sortBy: string = 'createdAt',
+  sortOrder: 'asc' | 'desc' = 'desc'
+): Promise<PaginatedResult<Voucher>> {
+  const query: PaginationQuery = {
+    page,
+    limit,
+    sortBy,
+    sortOrder,
+  };
 
-  const res = await api.get(`/vouchers?${params.toString()}`);
-  const data = res.data.data || res.data; // ResponseInterceptor may wrap data
-  const results = data.results || data.items || [];
-  const meta = data.meta || data.pagination || { total: results.length, page, limit, totalPages: 1 };
+  if (search) {
+    query.search = search;
+  }
 
+  return await fetchPaginated<Voucher>('/vouchers', query);
+}
+
+// Backward compatibility wrapper
+export async function listVouchersLegacy(page: number = 1, limit: number = 10, qs: string = ''): Promise<PaginatedVoucher> {
+  // Convert legacy qs to search parameter
+  let search = '';
+  if (qs) {
+    // Parse legacy qs format if needed
+    search = qs;
+  }
+  
+  const result = await listVouchers(page, limit, search);
+  
   return {
-    items: results,
-    total: meta.total,
-    page: meta.page,
-    limit: meta.limit,
-    totalPages: meta.totalPages,
+    items: result.items,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
   };
 }
 

@@ -44,30 +44,16 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
     const fetchMenuItem = async () => {
         try {
             setFetchLoading(true);
-            console.log('🔍 Fetching menu item with ID:', itemId);
             
-            const item = await getMenuItem(itemId);
-            console.log('✅ Fetched menu item data:', item);
+            const response = await getMenuItem(itemId);
+            
+            // Extract actual menu item data from API response
+            const item = response.data;
+         
             
             setMenuItem(item);
-            setFormData({
-                name: item.name,
-                description: item.description ?? '',
-                price: String(item.price),
-                category: item.category,
-                available: item.available,
-            });
-            setImages(item.images || []);
-            setInitialImages(item.images || []);
+            // Don't set formData here - let the sync useEffect handle it
             
-            console.log('✅ Form data set:', {
-                name: item.name,
-                description: item.description ?? '',
-                price: String(item.price),
-                category: item.category,
-                available: item.available,
-                images: item.images || []
-            });
         } catch (error: any) {
             console.error('❌ Failed to fetch menu item:', error);
             toast.error(`Failed to fetch menu item: ${error?.message || 'Unknown error'}`);
@@ -76,6 +62,25 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
             setFetchLoading(false);
         }
     };
+    
+    // 🔧 FIX: Sync formData when menuItem changes
+    useEffect(() => {
+        if (menuItem) {
+            
+            setFormData({
+                name: menuItem.name || '',
+                description: menuItem.description ?? '',
+                price: String(menuItem.price) || '0',
+                category: menuItem.category || 'appetizer',
+                available: menuItem.available ?? true,
+            });
+            
+            setImages(menuItem.images || []);
+            setInitialImages(menuItem.images || []);
+            
+          
+        }
+    }, [menuItem]); // Only run when menuItem changes
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -89,21 +94,17 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                 available: formData.available,
             };
             
-            console.log('🔍 Updating menu item:', itemId, 'with data:', updatedData);
             
             // Call PATCH endpoint to update menu item
             const updatedItem = await updateMenuItem(itemId, updatedData);
-            console.log('✅ Menu item updated successfully:', updatedItem);
 
             // Handle image deletion
             const deletedImages = initialImages.filter(img => !images.includes(img));
             if (deletedImages.length > 0) {
-                console.log('🗑️ Deleting images:', deletedImages);
                 for (const imgUrl of deletedImages) {
                     const filename = imgUrl.split('/').pop();
                     if (filename) {
                         await deleteMenuItemImage(itemId, filename);
-                        console.log('✅ Deleted image:', filename);
                     }
                 }
             }
@@ -111,14 +112,12 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
             // Handle image uploading
             const newImages = images.filter(img => img.startsWith('data:image'));
             if (newImages.length > 0) {
-                console.log('📤 Uploading new images:', newImages.length);
                 const imageFiles = await Promise.all(newImages.map(async (base64, index) => {
                     const res = await fetch(base64);
                     const blob = await res.blob();
                     return new File([blob], `image-${index}.png`, { type: 'image/png' });
                 }));
                 await uploadMenuItemImages(itemId, imageFiles);
-                console.log('✅ Images uploaded successfully');
             }
 
             toast.success('Menu item updated successfully!');
