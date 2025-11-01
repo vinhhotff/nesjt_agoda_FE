@@ -45,6 +45,7 @@ export async function fetchPaginated<T = any>(
   query: PaginationQuery = {}
 ): Promise<PaginatedResult<T>> {
   try {
+    console.log(`🔍 fetchPaginated called for ${endpoint}`);
     const {
       page = 1,
       limit = 10,
@@ -77,77 +78,18 @@ export async function fetchPaginated<T = any>(
 
     const response = await api.get(endpoint, { params });
     const responseData = response.data;
-    // Handle different response formats
+    
+    // Standard backend response format: { statusCode, message, data: { data: [...], meta: {...} }, timestamp }
     let data: T[] = [];
     let meta: any = {};
 
-    if (responseData.data && responseData.meta) {
-      // Standard format: { data: [...], meta: { total, page, limit, totalPages } }
-      data = responseData.data;
-      meta = responseData.meta;
-    } else if (responseData.data && responseData.data.data !== undefined) {
-      // Current nested format: { statusCode, message, data: { data: [...], total, page, ... } }
-      const nestedData = responseData.data;
-      data = nestedData.data || [];
-      
-      // Extract pagination metadata - try different possible fields
-      meta = {
-        total: nestedData.total || nestedData.totalCount || data.length,
-        page: nestedData.page || nestedData.currentPage || page,
-        limit: nestedData.limit || nestedData.pageSize || limit,
-        totalPages: nestedData.totalPages || Math.ceil((nestedData.total || data.length) / limit),
-      };
-      
-    } else if (responseData.data && !responseData.data.data && (responseData.data.total !== undefined || Array.isArray(responseData.data))) {
-      // Current User API format: { statusCode, message, data: [...] } - data directly contains users
-      if (Array.isArray(responseData.data)) {
-        data = responseData.data;
-        meta = {
-          total: responseData.total || data.length,
-          page: page,
-          limit: limit,
-          totalPages: Math.ceil((responseData.total || data.length) / limit),
-        };
-      } else {
-        // Handle case where data is object with users info but users are at root level
-        data = [];
-        meta = {
-          total: responseData.data.total || 0,
-          page: responseData.data.page || page,
-          limit: responseData.data.limit || limit,
-          totalPages: responseData.data.totalPages || 0,
-        };
-      }
-    } else if (responseData.data && responseData.data.roles) {
-      // Special case for roles API: { statusCode, message, data: { roles: [...] } }
-      data = responseData.data.roles || [];
-      meta = {
-        total: responseData.data.total || data.length,
-        page: page,
-        limit: limit,
-        totalPages: responseData.data.totalPages || Math.ceil(data.length / limit),
-      };
-    } else if (responseData.orders) {
-      // Legacy Order API format: { orders: [...], total, totalPages }
-      data = responseData.orders;
-      meta = {
-        total: responseData.total || 0,
-        page: page,
-        limit: limit,
-        totalPages: responseData.totalPages || 0,
-      };
-    } else if (Array.isArray(responseData)) {
-      // Direct array response
-      data = responseData;
-      meta = {
-        total: data.length,
-        page: page,
-        limit: limit,
-        totalPages: Math.ceil(data.length / limit),
-      };
+    if (responseData.data?.data && responseData.data?.meta) {
+      // Extract data and meta from nested structure
+      data = responseData.data.data;
+      meta = responseData.data.meta;
     } else {
-      // Fallback
-      console.warn(`⚠️ Unexpected response format for ${endpoint}:`, responseData);
+      console.warn(`⚠️ Unexpected response format for ${endpoint}. Expected { data: { data: [...], meta: {...} } }`);
+      console.warn('Received:', responseData);
     }
 
     const result: PaginatedResult<T> = {

@@ -13,7 +13,6 @@ import TagFilter from "./TagFilter";
 import Pagination from "./Pagination";
 import MenuPageSkeleton from "@/src/components/menu/MenuPageSkeleton";
 import ErrorState from "@/src/components/ui/ErrorState";
-import ActiveFilters from "@/src/components/menu/ActiveFilters";
 import ResultsSummary from "@/src/components/menu/ResultsSummary";
 
 function MenuPageInner() {
@@ -93,15 +92,6 @@ function MenuPageInner() {
         <div className={styles.menuColumn}>
           <SearchBar search={search} setSearch={setSearch} />
           
-          <ActiveFilters
-            search={debouncedSearch}
-            selectedCategories={selectedCategories}
-            selectedTags={selectedTags}
-            onClearSearch={clearSearch}
-            onRemoveCategory={removeCategory}
-            onRemoveTag={removeTag}
-            onClearAll={clearAllFilters}
-          />
           
           <ResultsSummary
             totalItems={data?.total || 0}

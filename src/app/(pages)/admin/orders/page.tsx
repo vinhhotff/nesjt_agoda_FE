@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { RefreshCw } from 'lucide-react';
 
 import { Order } from '@/src/Types';
-import { getOrdersPaginate, updateOrderStatus, deleteOrder, getOrderDetails, markOrderAsPaid, exportOrdersToCSV } from '@/src/lib/api';
+import { getOrdersPaginate, updateOrderStatus, deleteOrder, getOrderDetails, markOrderAsPaid, exportOrdersToCSV } from '@/src/lib/api/orderApi';
 import { useAdminPagination } from '@/src/hooks/useAdminPagination';
 import AdminPageHeader from '@/src/components/admin/common/AdminPageHeader';
 import AdminPagination from '@/src/components/admin/common/AdminPagination';
@@ -118,8 +118,8 @@ const OrdersPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex justify-center items-start">
+      <div className="w-full max-w-7xl px-8 py-8 mt-8 rounded-2xl shadow bg-white">
         <AdminPageHeader
           title="Orders Management"
           description="Manage and track all restaurant orders"

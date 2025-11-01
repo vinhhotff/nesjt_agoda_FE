@@ -42,14 +42,15 @@ export interface IMenuItem {
 
 export interface Order {
   _id: string;
-  guest?: string; // ObjectId as string
-  user?: string; // ObjectId as string
+  guest?: string | Guest; // Can be ObjectId string or populated Guest object
+  user?: string | { _id: string; name?: string; email: string }; // Can be ObjectId or populated User
   items: {
-    item: string; // ObjectId as string
+    item: string | IMenuItem; // Can be ObjectId or populated MenuItem
     quantity: number;
     note?: string;
     unitPrice: number;
     subtotal: number;
+    _id?: string;
   }[];
   status: "pending" | "preparing" | "served" | "cancelled";
   totalPrice: number;
@@ -59,6 +60,7 @@ export interface Order {
   table?: string; // ObjectId as string
   orderType: OrderType;
   deliveryAddress?: string;
+  customerName?: string; // For online orders without guest
   customerPhone?: string;
   createdBy?: {
     _id: string;
@@ -72,6 +74,7 @@ export interface Order {
   updatedAt: string;
   isDeleted?: boolean;
   deletedAt?: string;
+  __v?: number;
 }
 
 export interface User {

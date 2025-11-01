@@ -35,10 +35,10 @@ export const isAnalyticsEndpointMissing = (error: any): boolean => {
   );
 };
 
-const createTimeoutPromise = (timeout: number = 5000) =>
+const createTimeoutPromise = (timeout: number = 30000) =>
   new Promise((_, reject) => setTimeout(() => reject(new Error('Analytics API timeout')), timeout));
 
-export const callApi = async <T = any>(url: string, params?: URLSearchParams, timeout = 5000): Promise<T> => {
+export const callApi = async <T = any>(url: string, params?: URLSearchParams, timeout = 30000): Promise<T> => {
   const fullUrl = params ? `${url}?${params.toString()}` : url;
   const response = (await Promise.race([api.get<T>(fullUrl), createTimeoutPromise(timeout)])) as any;
   return response.data as T;

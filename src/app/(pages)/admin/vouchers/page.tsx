@@ -53,7 +53,7 @@ export default function AdminVouchersPage() {
       <Aside />
 
       {/* Main content */}
-      <main className="flex-1 p-6 overflow-y-auto bg-gray-100">
+      <main className="w-full max-w-6xl mx-auto p-8 mt-8 rounded-2xl shadow bg-white min-h-[500px]">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">Voucher Management</h1>
           <button

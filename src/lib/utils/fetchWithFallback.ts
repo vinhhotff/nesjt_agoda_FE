@@ -86,7 +86,16 @@ export const normalizeApiResponse = <T>(response: any, dataKey?: string): T | nu
   
   // Handle different response structures
   if (dataKey && response[dataKey]) {
+    // Check for double-nested data (e.g., response.data.data)
+    if (response[dataKey]?.data) {
+      return response[dataKey].data;
+    }
     return response[dataKey];
+  }
+  
+  // Handle double-nested data.data structure from backend
+  if (response.data?.data) {
+    return response.data.data;
   }
   
   if (response.data) {

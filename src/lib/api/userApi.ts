@@ -15,7 +15,7 @@ const transformUser = (user: any): User => {
 
 // Create User
 export const createUser = async (data: Partial<User>): Promise<User> => {
-  const response = await api.post<User>('/user', data);
+  const response = await api.post<User>('/users', data);
   return response.data;
 };
 
@@ -85,7 +85,7 @@ export const getUsersPaginate = async (filter: UserFilter = {}): Promise<Paginat
 
 // Get single user
 export const getUser = async (id: string): Promise<User> => {
-  const response = await api.get<User>(`/user/${id}`);
+  const response = await api.get<User>(`/users/${id}`);
   return transformUser(response.data);
 };
 
@@ -105,7 +105,7 @@ export const updateUser = async (id: string, data: UserStatusUpdate): Promise<Us
     });
 
     
-    const response = await api.patch<User>(`/user/${id}`, sanitizedData);
+    const response = await api.patch<User>(`/users/${id}`, sanitizedData);
     
     return response.data;
   } catch (error: any) {
@@ -177,7 +177,7 @@ export const toggleUserStatus = async (id: string, makeActive: boolean): Promise
 // Delete user (soft delete supported by BE)
 export const deleteUser = async (id: string): Promise<void> => {
   try {
-    await api.delete(`/user/${id}`);
+    await api.delete(`/users/${id}`);
   } catch (error: any) {
     console.error('❌ Error deleting user:', error);
     throw new Error(`Failed to delete user: ${error?.message || 'Unknown error'}`);
@@ -187,7 +187,7 @@ export const deleteUser = async (id: string): Promise<void> => {
 // Get user count
 export const fetchUsersCount = async (): Promise<number> => {
   try {
-    const response = await api.get('/user/count');
+    const response = await api.get('/users/count');
     return response.data.total || 0;
   } catch (error) {
     console.error('Error fetching user count:', error);

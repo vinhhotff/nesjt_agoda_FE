@@ -57,22 +57,22 @@ class LoyaltyAPI {
   }
 
   async getUserLoyalty(userId: string): Promise<LoyaltyAccount> {
-    const response = await api.get(`${this.baseUrl}/user/${userId}`);
+    const response = await api.get(`${this.baseUrl}/users/${userId}`);
     return response.data;
   }
 
   async addPointsToUser(userId: string, data: AddPointsDto): Promise<LoyaltyAccount> {
-    const response = await api.patch(`${this.baseUrl}/user/${userId}/add-points`, data);
+    const response = await api.patch(`${this.baseUrl}/users/${userId}/add-points`, data);
     return response.data;
   }
 
   async redeemUserPoints(userId: string, data: RedeemPointsDto): Promise<LoyaltyAccount> {
-    const response = await api.patch(`${this.baseUrl}/user/${userId}/redeem-points`, data);
+    const response = await api.patch(`${this.baseUrl}/users/${userId}/redeem-points`, data);
     return response.data;
   }
 
   async getUserPointsHistory(userId: string): Promise<LoyaltyHistory[]> {
-    const response = await api.get(`${this.baseUrl}/user/${userId}/history`);
+    const response = await api.get(`${this.baseUrl}/users/${userId}/history`);
     return response.data;
   }
 

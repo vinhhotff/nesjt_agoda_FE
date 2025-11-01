@@ -38,18 +38,27 @@ export default function OrderTable({
   );
 
   return (
-    <AdminTable headers={headers} emptyState={orders.length === 0 ? emptyState : undefined}>
+    <AdminTable headers={headers} emptyState={orders.length === 0 ? emptyState : undefined} className="rounded-2xl shadow-lg border border-gray-200">
       {orders.map((order) => (
         <tr key={order._id} className="hover:bg-gray-50">
           <td className="py-4 px-6">
             <span className="font-mono text-sm">#{order._id.slice(-8)}</span>
           </td>
           <td className="py-4 px-6">
-            <span className="font-medium">
-              {typeof order.guest === 'string' 
-                ? order.guest 
-                : (order.guest as unknown as Guest)?.guestName || 'N/A'}
-            </span>
+            <div className="flex flex-col">
+              <span className="font-medium">
+                {order.customerName || 
+                 (typeof order.guest === 'string' 
+                   ? order.guest 
+                   : (order.guest as unknown as Guest)?.guestName) || 
+                 (order.user && typeof order.user === 'object' && 'name' in order.user 
+                   ? order.user.name 
+                   : 'N/A')}
+              </span>
+              {order.customerPhone && (
+                <span className="text-xs text-gray-500">{order.customerPhone}</span>
+              )}
+            </div>
           </td>
           <td className="py-4 px-6">
             <span className="text-gray-600">
@@ -98,14 +107,14 @@ export default function OrderTable({
             <div className="flex items-center justify-center space-x-2">
               <button
                 onClick={() => onViewDetails(order)}
-                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="p-2 rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-200 shadow transition-colors"
                 title="View Details"
               >
                 <Eye className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(order._id)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-200 shadow transition-colors"
                 title="Delete Order"
               >
                 <Trash2 className="w-4 h-4" />

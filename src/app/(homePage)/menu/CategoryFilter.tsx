@@ -23,7 +23,7 @@ function CategoryFilter({ categories, selected, toggleCategory, className = "" }
   if (!categories.length) {
     return (
       <div className={`${styles.filterBox} ${className}`}>
-        <div className={styles.filterTitle}>📂 CATEGORIES</div>
+        <div className={styles.filterTitle}> CATEGORIES</div>
         <div className="text-gray-500 text-sm italic py-2">
           No categories available
         </div>
@@ -33,7 +33,7 @@ function CategoryFilter({ categories, selected, toggleCategory, className = "" }
 
   return (
     <div className={`${styles.filterBox} ${className}`}>
-      <div className={styles.filterTitle}>📂 CATEGORIES ({selected.length})</div>
+      <div className={styles.filterTitle}>CATEGORIES ({selected.length})</div>
       <div className="space-y-1">
         {categories.map((cat) => {
           const isActive = selected.includes(cat);

@@ -32,6 +32,8 @@ import {
   getCustomerAnalytics,
   exportRevenueReport 
 } from '@/src/lib/api';
+import RevenueTrendChart from '@/src/components/admin/revenue/RevenueTrendChart';
+import OrderStatusChart from '@/src/components/admin/revenue/OrderStatusChart';
 
 const PERIOD_OPTIONS = [
   { value: '7d', label: 'Last 7 Days' },
@@ -94,31 +96,6 @@ const StatsCard: React.FC<StatsCardProps> = ({
   );
 };
 
-interface ChartPlaceholderProps {
-  title: string;
-  data: any[];
-  height?: number;
-}
-
-const ChartPlaceholder: React.FC<ChartPlaceholderProps> = ({ title, data, height = 300 }) => {
-  return (
-    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
-      <div 
-        className="bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300"
-        style={{ height }}
-      >
-        <div className="text-center">
-          <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-gray-500">Chart visualization would go here</p>
-          <p className="text-gray-400 text-sm mt-1">
-            {data.length} data points available
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function RevenuePage() {
   const [loading, setLoading] = useState(true);
@@ -340,16 +317,8 @@ const fetchWithFallback = async <T,>(apiCall: () => Promise<T>, defaultValue: T,
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <ChartPlaceholder
-            title="Revenue Trend"
-            data={revenueChart}
-            height={350}
-          />
-          <ChartPlaceholder
-            title="Order Status Distribution"
-            data={orderAnalytics?.statusDistribution || []}
-            height={350}
-          />
+          <RevenueTrendChart data={revenueChart} />
+          <OrderStatusChart data={orderAnalytics?.statusDistribution || []} />
         </div>
 
         {/* Additional Analytics */}

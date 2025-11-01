@@ -170,7 +170,7 @@ export const logout = async (): Promise<boolean> => {
         User
 ---------------------- */
 export const createUser = async (data: Partial<User>) => {
-  const res = await api.post<User>("/user", data);
+  const res = await api.post<User>("/users", data);
   return res.data;
 };
 
@@ -185,7 +185,7 @@ export const getUserPaginate = async (
     params.append("limit", limit.toString());
     if (qs) params.append("qs", qs);
 
-    const res = await api.get(`/user?${params.toString()}`);
+    const res = await api.get(`/users?${params.toString()}`);
 
     if (!res.data) throw new Error("Failed to fetch users");
 
@@ -195,12 +195,16 @@ export const getUserPaginate = async (
     let responsePages = 1;
 
     // Check if response has a 'data' wrapper
-    if (res.data.data) {
-      // Structure: { data: { results: [...], meta: {...} } }
-      const { results, meta } = res.data.data;
-      users = results || [];
-      totalCount = meta?.total || users.length;
-      responsePages = meta?.totalPages || Math.ceil(totalCount / limit);
+    if (res.data.data && Array.isArray(res.data.data.data)) {
+      // Structure: { data: { data: [...], meta: {...} } }
+      users = res.data.data.data;
+      totalCount = res.data.data.meta?.total || users.length;
+      responsePages = res.data.data.meta?.totalPages || Math.ceil(totalCount / limit);
+    } else if (res.data.data && Array.isArray(res.data.data)) {
+      // Structure: { data: [...] }
+      users = res.data.data;
+      totalCount = res.data.meta?.total || users.length;
+      responsePages = res.data.meta?.totalPages || Math.ceil(totalCount / limit);
     } else if (res.data.results) {
       // Structure: { results: [...], meta: {...} }
       const { results, meta } = res.data;
@@ -244,17 +248,17 @@ export const getUserPaginate = async (
 };
 
 export const getUser = async (id: string) => {
-  const res = await api.get<User>(`/user/${id}`);
+  const res = await api.get<User>(`/users/${id}`);
   return res.data;
 };
 
 export const updateUser = async (id: string, data: Partial<User>) => {
-  const res = await api.patch<User>(`/user/${id}`, data);
+  const res = await api.patch<User>(`/users/${id}`, data);
   return res.data;
 };
 
 export const deleteUser = async (id: string) => {
-  const res = await api.delete<void>(`/user/${id}`);
+  const res = await api.delete<void>(`/users/${id}`);
   return res.data;
 };
 
@@ -590,7 +594,7 @@ export const fetchUsers = async () => {
 export const getMenuItemCount = async (): Promise<number> => {
   try {
     const res = await api.get("/menu-items/count");
-    return res.data.total || res.data.count || 0;
+    return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
     console.error("Error fetching menu item count:", error);
     // Fallback: lấy tất cả và đếm
@@ -608,7 +612,7 @@ export const getMenuItemCount = async (): Promise<number> => {
 export const getOrderCount = async (): Promise<number> => {
   try {
     const res = await api.get("/orders/count");
-    return res.data.total || res.data.count || 0;
+    return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
     console.error("Error fetching order count:", error);
     // Fallback: lấy tất cả và đếm
@@ -625,9 +629,9 @@ export const getOrderCount = async (): Promise<number> => {
 // Đếm số users - sử dụng API đã có
 export const fetchUsersCount = async (): Promise<number> => {
   try {
-    const res = await api.get(`/user?page=1&limit=1`);
+    const res = await api.get(`/users?page=1&limit=1`);
     if (!res.data) throw new Error("Failed to fetch users");
-    return res.data.meta?.total || 0;
+    return res.data.data?.meta?.total || res.data.meta?.total || 0;
   } catch (error) {
     console.error("Error fetching user count:", error);
     return 0;
@@ -638,7 +642,7 @@ export const fetchUsersCount = async (): Promise<number> => {
 export const getRevenue = async (): Promise<number> => {
   try {
     const res = await api.get("/payments/revenue");
-    return res.data.revenue || res.data.total || 0;
+    return res.data.data?.revenue || res.data.revenue || res.data.data?.total || res.data.total || 0;
   } catch (error) {
     console.error("Error fetching revenue:", error);
     // Fallback: tính từ tất cả payments
@@ -658,7 +662,7 @@ export const getRevenue = async (): Promise<number> => {
 export const getTableCount = async (): Promise<number> => {
   try {
     const res = await api.get("/tables/count");
-    return res.data.total || res.data.count || 0;
+    return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
     console.error("Error fetching table count:", error);
     // Fallback: lấy tất cả và đếm
@@ -676,7 +680,7 @@ export const getTableCount = async (): Promise<number> => {
 export const getGuestCount = async (): Promise<number> => {
   try {
     const res = await api.get("/guests/count");
-    return res.data.total || res.data.count || 0;
+    return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
     console.error("Error fetching guest count:", error);
     // Fallback: lấy tất cả và đếm
@@ -694,7 +698,7 @@ export const getGuestCount = async (): Promise<number> => {
 export const getPaymentCount = async (): Promise<number> => {
   try {
     const res = await api.get("/payments/count");
-    return res.data.total || res.data.count || 0;
+    return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
     console.error("Error fetching payment count:", error);
     // Fallback: lấy tất cả và đếm
@@ -745,81 +749,6 @@ export const getDashboardStats = async () => {
   };
 };
 
-/* --------------------               
-     Enhanced Orders API             
----------------------- */
-export const getOrdersPaginate = async (
-  page: number = 1,
-  limit: number = 10,
-  search?: string,
-  status?: string,
-  sortBy: string = "createdAt",
-  sortOrder: "asc" | "desc" = "desc"
-) => {
-  try {
-    // Use existing orders endpoint and simulate pagination
-    const ordersResponse = await getOrders({});
-
-    // Ensure we have an array to work with (getOrders returns Order[])
-    let orders: any[] = Array.isArray(ordersResponse) ? ordersResponse : [];
-
-    // Ensure orders is an array before proceeding
-    if (!Array.isArray(orders)) {
-      console.warn("Orders is not an array, using empty array:", orders);
-      orders = [];
-    }
-
-    // Filter orders if needed
-    let filteredOrders = orders;
-    if (search && orders.length > 0) {
-      filteredOrders = orders.filter(
-        (order: any) =>
-          order._id?.includes(search) ||
-          order.guest?.toString().toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    if (status && filteredOrders.length > 0) {
-      filteredOrders = filteredOrders.filter(
-        (order: any) => order.status === status
-      );
-    }
-
-    // Sort orders
-    if (filteredOrders.length > 0) {
-      filteredOrders.sort((a: any, b: any) => {
-        const aValue = a[sortBy] || "";
-        const bValue = b[sortBy] || "";
-        if (sortOrder === "asc") {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
-    }
-
-    // Paginate
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-
-    return {
-      items: paginatedOrders,
-      total: filteredOrders.length,
-      page,
-      limit,
-      totalPages: Math.ceil(filteredOrders.length / limit),
-    };
-  } catch (error) {
-    console.error("Error fetching paginated orders:", error);
-    return {
-      items: [],
-      total: 0,
-      page,
-      limit,
-      totalPages: 0,
-    };
-  }
-};
 
 export const updateOrderStatus = async (
   id: string,
@@ -867,7 +796,7 @@ export const markOrderAsPaid = async (orderId: string, isPaid: boolean) => {
   try {
 
     // Use the new payments endpoint to mark order as paid/unpaid
-    const response = await api.patch(`/payments/order/${orderId}/mark-paid`, {
+    const response = await api.patch(`/orders/${orderId}/mark-paid`, {
       isPaid,
       method: "CASH", // Default payment method
     });
@@ -1294,21 +1223,22 @@ export const getRevenueStats = async (
     const response = await callAnalyticsAPI('/analytics/revenue/stats', params, 3000);
     console.debug('Revenue stats response received');
     
-    // Handle different response structures
-    const data = response.data.data || response.data;
+    // Handle different response structures (supports {data:{data:{...}}})
+    const payload = response?.data ?? response;
+    const data = payload?.data?.data ?? payload?.data ?? payload;
     
     return {
-      totalRevenue: data.totalRevenue || data.total_revenue || 0,
-      totalOrders: data.totalOrders || data.total_orders || 0,
-      averageOrderValue: data.averageOrderValue || data.average_order_value || 0,
+      totalRevenue: data?.totalRevenue || data?.total_revenue || 0,
+      totalOrders: data?.totalOrders || data?.total_orders || 0,
+      averageOrderValue: data?.averageOrderValue || data?.average_order_value || 0,
       growth: {
-        revenue: data.growth?.revenue || data.revenue_growth || 0,
-        orders: data.growth?.orders || data.orders_growth || 0,
+        revenue: data?.growth?.revenue || data?.revenue_growth || 0,
+        orders: data?.growth?.orders || data?.orders_growth || 0,
       },
       periodComparison: {
-        current: data.periodComparison?.current || data.current_period || 0,
-        previous: data.periodComparison?.previous || data.previous_period || 0,
-        change: data.periodComparison?.change || data.period_change || 0,
+        current: data?.periodComparison?.current || data?.current_period || 0,
+        previous: data?.periodComparison?.previous || data?.previous_period || 0,
+        change: data?.periodComparison?.change || data?.period_change || 0,
       },
     };
   } catch (error) {
@@ -1370,7 +1300,8 @@ export const getRevenueChart = async (
     console.debug('Revenue chart response received');
     
     // Handle different response structures
-    const data = response.data.data || response.data;
+    const payload = response?.data ?? response;
+    const data = payload?.data?.data ?? payload?.data ?? payload;
     
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
@@ -1437,7 +1368,8 @@ export const getTopSellingItems = async (
     console.debug('Top selling items response received');
     
     // Handle different response structures from backend
-    const data = response.data.data || response.data;
+    const payload = response?.data ?? response;
+    const data = payload?.data?.data ?? payload?.data ?? payload;
     
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
@@ -1476,15 +1408,16 @@ export const getOrderAnalytics = async (period: string = "30d") => {
     console.debug('Order analytics response received');
     
     // Handle different response structures
-    const data = response.data.data || response.data;
+    const payload = response?.data ?? response;
+    const data = payload?.data?.data ?? payload?.data ?? payload;
     
     return {
-      totalOrders: data.totalOrders || data.total_orders || 0,
-      pendingOrders: data.pendingOrders || data.pending_orders || 0,
-      completedOrders: data.completedOrders || data.completed_orders || 0,
-      cancelledOrders: data.cancelledOrders || data.cancelled_orders || 0,
-      statusDistribution: data.statusDistribution || data.status_distribution || [],
-      dailyOrders: data.dailyOrders || data.daily_orders || [],
+      totalOrders: data?.totalOrders || data?.total_orders || 0,
+      pendingOrders: data?.pendingOrders || data?.pending_orders || 0,
+      completedOrders: data?.completedOrders || data?.completed_orders || 0,
+      cancelledOrders: data?.cancelledOrders || data?.cancelled_orders || 0,
+      statusDistribution: data?.statusDistribution || data?.status_distribution || [],
+      dailyOrders: data?.dailyOrders || data?.daily_orders || [],
     };
   } catch (error) {
     // Only log non-404 errors to reduce console spam
@@ -1548,16 +1481,17 @@ export const getCustomerAnalytics = async (period: string = "30d") => {
     console.debug('Customer analytics response received');
     
     // Handle different response structures
-    const data = response.data.data || response.data;
+    const payload = response?.data ?? response;
+    const data = payload?.data?.data ?? payload?.data ?? payload;
     
     return {
-      totalCustomers: data.totalCustomers || data.total_customers || 0,
-      newCustomers: data.newCustomers || data.new_customers || 0,
-      returningCustomers: data.returningCustomers || data.returning_customers || 0,
+      totalCustomers: data?.totalCustomers || data?.total_customers || 0,
+      newCustomers: data?.newCustomers || data?.new_customers || 0,
+      returningCustomers: data?.returningCustomers || data?.returning_customers || 0,
       customerGrowth: {
-        current: data.customerGrowth?.current || data.customer_growth?.current || 0,
-        previous: data.customerGrowth?.previous || data.customer_growth?.previous || 0,
-        change: data.customerGrowth?.change || data.customer_growth?.change || 0,
+        current: data?.customerGrowth?.current || data?.customer_growth?.current || 0,
+        previous: data?.customerGrowth?.previous || data?.customer_growth?.previous || 0,
+        change: data?.customerGrowth?.change || data?.customer_growth?.change || 0,
       },
     };
   } catch (error) {

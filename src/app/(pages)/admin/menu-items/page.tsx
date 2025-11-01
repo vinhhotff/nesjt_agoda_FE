@@ -94,44 +94,46 @@ export default function AdminMenuPage() {
 
   return (
     <AdminLayout>
-      {isLoading ? (
-        <LoadingSpinner size="lg" text="Loading menu items..." className="py-12" />
-      ) : (
-        <>
-          <MenuItemTable
-            items={data.items}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-          <Pagination
-            page={data.page}
-            total={data.total}
-            limit={data.limit}
-            onPageChange={(p) => loadMenuItems(p)}
-          />
-        </>
-      )}
+      <div className="w-full max-w-6xl mx-auto p-8 mt-8 rounded-2xl shadow bg-white">
+        {isLoading ? (
+          <LoadingSpinner size="lg" text="Loading menu items..." className="py-12" />
+        ) : (
+          <>
+            <MenuItemTable
+              items={data.items}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+            <Pagination
+              page={data.page}
+              total={data.total}
+              limit={data.limit}
+              onPageChange={(p) => loadMenuItems(p)}
+            />
+          </>
+        )}
 
-      {/* Create Modal */}
-      {modalOpen && (
-        <CreateMenuItemModal
-          onSubmit={handleSave}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
+        {/* Create Modal */}
+        {modalOpen && (
+          <CreateMenuItemModal
+            onSubmit={handleSave}
+            onClose={() => setModalOpen(false)}
+          />
+        )}
 
-      {/* Edit Modal */}
-      {editModalOpen && selectedItemId && (
-        <EditMenuItemModal
-          itemId={selectedItemId}
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setSelectedItemId(null);
-          }}
-          onSuccess={handleEditSuccess}
-        />
-      )}
+        {/* Edit Modal */}
+        {editModalOpen && selectedItemId && (
+          <EditMenuItemModal
+            itemId={selectedItemId}
+            isOpen={editModalOpen}
+            onClose={() => {
+              setEditModalOpen(false);
+              setSelectedItemId(null);
+            }}
+            onSuccess={handleEditSuccess}
+          />
+        )}
+      </div>
     </AdminLayout>
   );
 }

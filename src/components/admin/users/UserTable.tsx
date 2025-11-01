@@ -30,7 +30,7 @@ export default function UserTable({ users, roles, actionLoading, onEdit, onReset
   );
 
   return (
-    <AdminTable headers={headers} emptyState={users.length === 0 ? emptyState : undefined}>
+    <AdminTable headers={headers} emptyState={users.length === 0 ? emptyState : undefined} className="rounded-2xl shadow-lg border border-gray-200">
       {users.map((user) => {
         const roleName = getRoleNameWithFallback(user.role as any, roles);
         // Derive inactive state - primarily using soft delete since BE doesn't support status fields
@@ -109,16 +109,16 @@ export default function UserTable({ users, roles, actionLoading, onEdit, onReset
             </td>
             <td className="py-4 px-6">
               <div className="flex items-center justify-center space-x-2">
-                <button onClick={() => onEdit(user)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit User">
+                <button onClick={() => onEdit(user)} className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-200 rounded-lg shadow transition-colors" title="Edit User">
                   <Edit className="w-4 h-4" />
                 </button>
-                <button onClick={() => onResetPassword(user._id)} disabled={actionLoading === user._id} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50" title="Reset Password">
+                <button onClick={() => onResetPassword(user._id)} disabled={actionLoading === user._id} className="p-2 text-green-600 bg-green-50 hover:bg-green-200 rounded-lg shadow transition-colors disabled:opacity-50" title="Reset Password">
                   <Key className="w-4 h-4" />
                 </button>
-                <button onClick={() => onToggleStatus(user._id, isInactive)} disabled={actionLoading === user._id} className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${isInactive ? 'text-green-600 hover:bg-green-50' : 'text-orange-600 hover:bg-orange-50'}`} title={isInactive ? 'Activate User' : 'Deactivate User'}>
+                <button onClick={() => onToggleStatus(user._id, isInactive)} disabled={actionLoading === user._id} className={`p-2 rounded-lg shadow transition-colors disabled:opacity-50 ${isInactive ? 'text-green-600 bg-green-50 hover:bg-green-200' : 'text-orange-600 bg-orange-50 hover:bg-orange-200'}`} title={isInactive ? 'Activate User' : 'Deactivate User'}>
                   {isInactive ? <UserCheck className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
                 </button>
-                <button onClick={() => onDelete(user._id)} disabled={actionLoading === user._id} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50" title="Delete User">
+                <button onClick={() => onDelete(user._id)} disabled={actionLoading === user._id} className="p-2 text-red-600 bg-red-50 hover:bg-red-200 rounded-lg shadow transition-colors disabled:opacity-50" title="Delete User">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>

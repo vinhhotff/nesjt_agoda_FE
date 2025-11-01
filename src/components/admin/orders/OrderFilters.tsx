@@ -121,20 +121,7 @@ export default function OrderFilters({
             {/* Sort */}
             <div className="relative">
               <label className="sr-only">Sort orders</label>
-              <select
-                value={`${sortBy || 'createdAt'}-${sortOrder || 'desc'}`}
-                onChange={(e) => {
-                  const [sortByValue, sortOrderValue] = e.target.value.split('-');
-                  onSortChange(sortByValue, sortOrderValue);
-                }}
-                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[150px]"
-              >
-                <option value="createdAt-desc">Newest First</option>
-                <option value="createdAt-asc">Oldest First</option>
-                <option value="totalPrice-desc">Highest Amount</option>
-                <option value="totalPrice-asc">Lowest Amount</option>
-              </select>
-              <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+              
             </div>
 
             {/* Action Buttons */}

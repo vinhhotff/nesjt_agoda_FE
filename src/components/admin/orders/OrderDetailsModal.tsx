@@ -1,6 +1,6 @@
 import React from 'react';
-import { Order, Guest } from '@/src/Types';
-import { User, Calendar, DollarSign } from 'lucide-react';
+import { Order, Guest, IMenuItem } from '@/src/Types';
+import { User, Calendar, DollarSign, Phone, MapPin, Package } from 'lucide-react';
 import { Modal } from '@/src/components/ui';
 
 const statusColors = {
@@ -41,25 +41,36 @@ export default function OrderDetailsModal({
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Guest:</span>
+              <span className="text-sm text-gray-600">Customer:</span>
               <span className="font-medium">
-                {typeof order.guest === 'string' 
-                  ? order.guest 
-                  : (order.guest as unknown as Guest)?.guestName || 'N/A'}
+                {order.customerName || 
+                 (typeof order.guest === 'string' 
+                   ? order.guest 
+                   : (order.guest as unknown as Guest)?.guestName) || 
+                 (order.user && typeof order.user === 'object' && 'name' in order.user 
+                   ? order.user.name 
+                   : 'N/A')}
               </span>
             </div>
+            {order.customerPhone && (
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Phone:</span>
+                <span className="font-medium">{order.customerPhone}</span>
+              </div>
+            )}
+            {order.deliveryAddress && (
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Address:</span>
+                <span className="font-medium">{order.deliveryAddress}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-500" />
               <span className="text-sm text-gray-600">Created:</span>
               <span className="font-medium">
                 {order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Total:</span>
-              <span className="font-semibold text-green-600">
-                {order.totalPrice ? order.totalPrice.toLocaleString() : '0'} VND
               </span>
             </div>
           </div>
@@ -72,6 +83,7 @@ export default function OrderDetailsModal({
               </span>
             </div>
             <div className="flex items-center gap-2">
+              <Package className="w-4 h-4 text-gray-500" />
               <span className="text-sm text-gray-600">Order Type:</span>
               <span className="font-medium">{order.orderType}</span>
             </div>
@@ -83,6 +95,13 @@ export default function OrderDetailsModal({
                 {order.isPaid ? 'Paid' : 'Unpaid'}
               </span>
             </div>
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-600">Total:</span>
+              <span className="font-semibold text-green-600">
+                {order.totalPrice ? order.totalPrice.toLocaleString() : '0'} VND
+              </span>
+            </div>
           </div>
         </div>
 
@@ -92,24 +111,41 @@ export default function OrderDetailsModal({
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="space-y-3">
               {order.items && order.items.length > 0 ? (
-                order.items.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800">{item.item || 'Unknown item'}</p>
-                      {item.note && (
-                        <p className="text-sm text-gray-500 mt-1">Note: {item.note}</p>
-                      )}
+                order.items.map((item, index) => {
+                  const menuItem = typeof item.item === 'object' ? item.item as IMenuItem : null;
+                  const itemName = menuItem?.name || (typeof item.item === 'string' ? item.item : 'Unknown item');
+                  
+                  return (
+                    <div key={item._id || index} className="flex justify-between items-start gap-4 py-3 border-b border-gray-200 last:border-b-0">
+                      <div className="flex gap-3 flex-1">
+                        {menuItem?.images?.[0] && (
+                          <img 
+                            src={menuItem.images[0]} 
+                            alt={menuItem.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-800">{itemName}</p>
+                          {menuItem?.category && (
+                            <p className="text-xs text-gray-400 mt-1">{menuItem.category}</p>
+                          )}
+                          {item.note && (
+                            <p className="text-sm text-gray-500 mt-1 italic">📝 {item.note}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right min-w-[120px]">
+                        <p className="font-medium text-gray-800">
+                          {item.quantity || 0} × {item.unitPrice ? item.unitPrice.toLocaleString() : '0'} VND
+                        </p>
+                        <p className="text-sm font-semibold text-green-600 mt-1">
+                          {item.subtotal ? item.subtotal.toLocaleString() : '0'} VND
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">
-                        {item.quantity || 0} × {item.unitPrice ? item.unitPrice.toLocaleString() : '0'} VND
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {item.subtotal ? item.subtotal.toLocaleString() : '0'} VND
-                      </p>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-gray-500 text-center py-4">No items found</p>
               )}

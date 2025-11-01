@@ -45,20 +45,21 @@ export const getRevenueStats = async (
     if (endDate) params.append('endDate', endDate);
 
     const res = await callApi<any>('/analytics/revenue/stats', params, 3000);
-    const data = res.data || res;
+const payload = res?.data ?? res;
+    const data = payload?.data ?? payload;
 
     return {
-      totalRevenue: data.totalRevenue ?? data.total_revenue ?? 0,
-      totalOrders: data.totalOrders ?? data.total_orders ?? 0,
-      averageOrderValue: data.averageOrderValue ?? data.average_order_value ?? 0,
+totalRevenue: data?.totalRevenue ?? data?.total_revenue ?? 0,
+totalOrders: data?.totalOrders ?? data?.total_orders ?? 0,
+averageOrderValue: data?.averageOrderValue ?? data?.average_order_value ?? 0,
       growth: {
-        revenue: data.growth?.revenue ?? data.revenue_growth ?? 0,
-        orders: data.growth?.orders ?? data.orders_growth ?? 0,
+revenue: data?.growth?.revenue ?? data?.revenue_growth ?? 0,
+orders: data?.growth?.orders ?? data?.orders_growth ?? 0,
       },
       periodComparison: {
-        current: data.periodComparison?.current ?? data.current_period ?? 0,
-        previous: data.periodComparison?.previous ?? data.previous_period ?? 0,
-        change: data.periodComparison?.change ?? data.period_change ?? 0,
+current: data?.periodComparison?.current ?? data?.current_period ?? 0,
+previous: data?.periodComparison?.previous ?? data?.previous_period ?? 0,
+change: data?.periodComparison?.change ?? data?.period_change ?? 0,
       },
     } as RevenueStats;
   } catch (error) {
@@ -96,8 +97,9 @@ export const getRevenueChart = async (
     const params = new URLSearchParams();
     if (period && period !== 'custom') params.append('period', period);
     params.append('groupBy', groupBy);
-    const res = await callApi<any>('/analytics/revenue/chart', params, 3000);
-    const data = res.data || res;
+const res = await callApi<any>('/analytics/revenue/chart', params, 3000);
+    const payload = res?.data ?? res;
+    const data = payload?.data ?? payload;
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
         date: item.date || item._id || '',
@@ -122,8 +124,9 @@ export const getTopSellingItems = async (
     const params = new URLSearchParams();
     if (period && period !== 'custom') params.append('period', period);
     params.append('limit', String(limit));
-    const res = await callApi<any>('/analytics/menu-items/top-selling', params, 3000);
-    const data = res.data || res;
+const res = await callApi<any>('/analytics/menu-items/top-selling', params, 3000);
+    const payload = res?.data ?? res;
+    const data = payload?.data ?? payload;
     if (Array.isArray(data)) {
       return data.map((item: any) => ({
         _id: item._id || item.menuItem?._id || '',
@@ -172,17 +175,18 @@ export const getOrderAnalytics = async (period: string = '30d'): Promise<OrderAn
     async () => {
       const params = new URLSearchParams();
       if (period && period !== 'custom') params.append('period', period);
-      const res = await callApi<any>('/analytics/orders/stats', params, 3000);
-      const data = res.data || res;
-      const daily = (data.dailyOrders || data.daily_orders || []) as any[];
+const res = await callApi<any>('/analytics/orders/stats', params, 3000);
+      const payload = res?.data ?? res;
+      const data = payload?.data ?? payload;
+      const daily = (data?.dailyOrders || data?.daily_orders || []) as any[];
       const dailyOrders = ensureChartDataPoints(daily);
       
       const analytics: OrderAnalytics = {
-        totalOrders: data.totalOrders ?? data.total_orders ?? 0,
-        pendingOrders: data.pendingOrders ?? data.pending_orders ?? 0,
-        completedOrders: data.completedOrders ?? data.completed_orders ?? 0,
-        cancelledOrders: data.cancelledOrders ?? data.cancelled_orders ?? 0,
-        statusDistribution: data.statusDistribution ?? data.status_distribution ?? [],
+totalOrders: data?.totalOrders ?? data?.total_orders ?? 0,
+        pendingOrders: data?.pendingOrders ?? data?.pending_orders ?? 0,
+        completedOrders: data?.completedOrders ?? data?.completed_orders ?? 0,
+        cancelledOrders: data?.cancelledOrders ?? data?.cancelled_orders ?? 0,
+        statusDistribution: data?.statusDistribution ?? data?.status_distribution ?? [],
         dailyOrders,
       };
       

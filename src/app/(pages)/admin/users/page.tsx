@@ -170,53 +170,55 @@ const UsersPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Users Management"
-        description="Manage system users and their permissions"
-        action={(
-          <button
-            onClick={() => { setSelectedUser(null); setShowFormModal(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add User
-          </button>
-        )}
-      />
+      <div className="w-full max-w-6xl mx-auto mt-8 p-8 rounded-2xl shadow bg-white">
+        <AdminPageHeader
+          title="Users Management"
+          description="Manage system users and their permissions"
+          action={(
+            <button
+              onClick={() => { setSelectedUser(null); setShowFormModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add User
+            </button>
+          )}
+        />
 
-      <UserFilters
-        search={search}
-        roleFilter={roleFilter}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        loading={loading}
-        roles={roles}
-        onSearchChange={handleSearchChange}
-        onRoleFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-        onReset={resetFilters}
-        onRefresh={refetch}
-      />
+        <UserFilters
+          search={search}
+          roleFilter={roleFilter}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          loading={loading}
+          roles={roles}
+          onSearchChange={handleSearchChange}
+          onRoleFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+          onReset={resetFilters}
+          onRefresh={refetch}
+        />
 
-      <UserTable
-        users={users}
-        roles={roles}
-        actionLoading={actionLoading}
-        onEdit={(user) => { setSelectedUser(user); setShowFormModal(true); }}
-        onResetPassword={handleResetPassword}
-        onToggleStatus={handleToggleStatus}
-        onDelete={handleDelete}
-      />
+        <UserTable
+          users={users}
+          roles={roles}
+          actionLoading={actionLoading}
+          onEdit={(user) => { setSelectedUser(user); setShowFormModal(true); }}
+          onResetPassword={handleResetPassword}
+          onToggleStatus={handleDelete}
+          onDelete={handleDelete}
+        />
 
-      <AdminPagination {...paginationProps} />
+        <AdminPagination {...paginationProps} />
 
-      <UserFormModal
-        user={selectedUser}
-        isOpen={showFormModal}
-        onClose={() => { setShowFormModal(false); setSelectedUser(null); }}
-        onSave={selectedUser ? handleUpdate : handleCreate}
-        roles={roles}
-      />
+        <UserFormModal
+          user={selectedUser}
+          isOpen={showFormModal}
+          onClose={() => { setShowFormModal(false); setSelectedUser(null); }}
+          onSave={selectedUser ? handleUpdate : handleCreate}
+          roles={roles}
+        />
+      </div>
     </AdminLayout>
   );
 };

@@ -60,11 +60,11 @@ export default function CreateMenuItemModal({ onClose, onSubmit }: Props) {
 
     return (
         <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 overflow-y-auto"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 overflow-y-auto flex items-start justify-center"
             onClick={onClose}
         >
             <div
-                className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-4xl mx-auto my-10 p-6 md:p-8 transform transition-all duration-300"
+                className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-16 p-8 md:p-10 transform transition-all duration-300 border"
                 onClick={(e) => e.stopPropagation()}
             >
                 <h2 className="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">

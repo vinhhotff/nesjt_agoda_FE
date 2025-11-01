@@ -18,17 +18,32 @@ export const createOrder = async (data: Partial<Order>): Promise<Order> => {
 };
 
 export function extractOrders(res: OrdersApiResponse): Order[] {
-  // Backend returns { orders: Order[], total, totalPages }
-  if ('orders' in res && Array.isArray(res.orders)) return res.orders;
-  if (Array.isArray(res)) return res;
-  if ('results' in res && Array.isArray(res.results)) return res.results;
-  if ('data' in res) {
-    if (Array.isArray(res.data)) return res.data;
-    if ('orders' in res.data && Array.isArray(res.data.orders))
+  // Handle nested data.data structure from backend
+  if ('data' in res && res.data && typeof res.data === 'object') {
+    // Check for double-nested: { data: { data: [...] } }
+    if ('data' in res.data && Array.isArray(res.data.data)) {
+      return res.data.data;
+    }
+    // Single nested: { data: [...] }
+    if (Array.isArray(res.data)) {
+      return res.data;
+    }
+    // Legacy nested: { data: { orders: [...] } }
+    if ('orders' in res.data && Array.isArray(res.data.orders)) {
       return res.data.orders;
-    if ('results' in res.data && Array.isArray(res.data.results))
+    }
+    // Legacy nested: { data: { results: [...] } }
+    if ('results' in res.data && Array.isArray(res.data.results)) {
       return res.data.results;
+    }
   }
+  // Legacy format: { orders: Order[] }
+  if ('orders' in res && Array.isArray(res.orders)) return res.orders;
+  // Direct array
+  if (Array.isArray(res)) return res;
+  // Legacy format: { results: Order[] }
+  if ('results' in res && Array.isArray(res.results)) return res.results;
+  
   return [];
 }
 
@@ -51,12 +66,14 @@ export const deleteOrder = async (id: string): Promise<void> => {
 
 export const getOrders = async (params?: Record<string, unknown>) => {
   const response = await api.get('/orders', { params });
-  // Backend returns { orders: Order[], total, totalPages } - extract orders array
-  const data = response.data;
-  if (data && typeof data === 'object' && 'orders' in data) {
-    return data.orders;
-  }
-  return Array.isArray(data) ? data : [];
+  const payload = response.data;
+  // Preferred backend format: { statusCode, message, data: { data: Order[], meta }, timestamp }
+  const nestedItems = payload?.data?.data;
+  if (Array.isArray(nestedItems)) return nestedItems as Order[];
+  // Fallbacks for legacy shapes
+  if (payload && typeof payload === 'object' && 'orders' in payload) return payload.orders;
+  if (payload && typeof payload === 'object' && 'data' in payload && Array.isArray(payload.data)) return payload.data;
+  return Array.isArray(payload) ? payload : [];
 };
 
 // Enhanced Orders API using standardized pagination
@@ -77,10 +94,9 @@ export const getOrdersPaginate = async (
       sortOrder,
     };
     
-    // Add search parameter (backend might use 'guest' or 'search')
+    // Add search parameter
     if (search) {
-      query.guest = search; // Backend supports guest parameter for search
-      query.search = search; // Also try standard search parameter
+      query.search = search;
     }
     
     // Add status filter
@@ -150,21 +166,13 @@ export const getOrderDetails = async (id: string) => {
 
 export const markOrderAsPaid = async (orderId: string, isPaid: boolean) => {
   try {
-    const response = await api.patch(`/payments/order/${orderId}/mark-paid`, {
+    const response = await api.patch(`/orders/${orderId}/paid`, {
       isPaid,
-      method: 'CASH',
     });
     return response.data;
   } catch (error) {
-    console.error('❌ Error updating payment status:', error);
-    try {
-      const fallbackResponse = await api.patch(`/orders/${orderId}/paid`, {
-        isPaid,
-      });
-      return fallbackResponse.data;
-    } catch (fallbackError) {
-      throw fallbackError;
-    }
+    console.error('Error updating payment status:', error);
+    throw error;
   }
 };
 
@@ -204,27 +212,41 @@ export const exportOrdersToCSV = async (filters?: {
   endDate?: string;
 }) => {
   try {
-    const orders = await getOrders(filters);
+    // Fetch a large page to export (adjust limit as needed)
+    const params: Record<string, unknown> = { ...filters, page: 1, limit: 100 };
+    const orders = await getOrders(params);
 
-    const csvHeaders =
-      'Order ID,Guest,Items Count,Total Price,Status,Order Type,Created Date\n';
-    const csvContent = orders
-      .map((order) => {
-        const guestName =
-          typeof order.guest === 'string'
-            ? order.guest
-            : (order.guest as any)?.guestName || 'N/A';
-        const createdDate = new Date(order.createdAt).toLocaleDateString();
+    const csvHeaders = 'Order ID,Customer,Phone,Items Count,Total Price,Status,Order Type,Created Date\n';
+    const rows = orders.map((order: any) => {
+      const customer = order.customerName ||
+        (typeof order.guest === 'object' ? order.guest?.guestName : (typeof order.guest === 'string' ? order.guest : undefined)) ||
+        (order.user && typeof order.user === 'object' ? order.user.name : undefined) ||
+        'N/A';
+      const phone = order.customerPhone || (typeof order.guest === 'object' ? order.guest?.guestPhone : '') || '';
+      const createdDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '';
+      const itemsCount = Array.isArray(order.items) ? order.items.length : 0;
+      const total = typeof order.totalPrice === 'number' ? order.totalPrice : 0;
+      const orderType = order.orderType || 'DINE_IN';
+      const status = order.status || '';
 
-        return `${order._id},"${guestName}",${order.items.length},${
-          order.totalPrice
-        },${order.status},${order.orderType || 'DINE_IN'},${createdDate}`;
-      })
-      .join('\n');
+      // Escape quotes in fields
+      const safe = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
 
-    const fullCSV = csvHeaders + csvContent;
-    const blob = new Blob([fullCSV], { type: 'text/csv;charset=utf-8;' });
+      return [
+        order._id,
+        safe(customer),
+        safe(phone),
+        itemsCount,
+        total,
+        status,
+        orderType,
+        createdDate,
+      ].join(',');
+    });
 
+    const csvContent = [csvHeaders, ...rows].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -234,7 +256,7 @@ export const exportOrdersToCSV = async (filters?: {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
-    return { success: true };
+    return { success: true, count: orders.length };
   } catch (error) {
     console.error('Error exporting orders to CSV:', error);
     throw error;
