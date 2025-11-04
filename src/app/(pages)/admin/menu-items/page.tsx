@@ -14,6 +14,8 @@ import CreateMenuItemModal from "./create";
 import EditMenuItemModal from "@/src/components/admin/Menu-item/EditMenuItemModal";
 import { AdminLayout } from "@/src/components/layout";
 import { LoadingSpinner } from "@/src/components/ui";
+import AdminPageHeader from "@/src/components/admin/common/AdminPageHeader";
+import { UtensilsCrossed, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function AdminMenuPage() {
@@ -94,22 +96,43 @@ export default function AdminMenuPage() {
 
   return (
     <AdminLayout>
-      <div className="w-full max-w-6xl mx-auto p-8 mt-8 rounded-2xl shadow bg-white">
+      <div className="w-full max-w-7xl mx-auto">
+        <AdminPageHeader
+          title="Menu Items Management"
+          description="Manage your restaurant menu items, prices, and availability"
+          icon={<UtensilsCrossed className="w-6 h-6 text-white" />}
+          action={
+            <button
+              onClick={handleCreate}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 transform hover:scale-105"
+            >
+              <Plus className="w-5 h-5" />
+              Add Menu Item
+            </button>
+          }
+        />
+
         {isLoading ? (
-          <LoadingSpinner size="lg" text="Loading menu items..." className="py-12" />
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12">
+            <LoadingSpinner size="lg" text="Loading menu items..." className="py-12" />
+          </div>
         ) : (
           <>
-            <MenuItemTable
-              items={data.items}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-            <Pagination
-              page={data.page}
-              total={data.total}
-              limit={data.limit}
-              onPageChange={(p) => loadMenuItems(p)}
-            />
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <MenuItemTable
+                items={data.items}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            </div>
+            <div className="mt-6">
+              <Pagination
+                page={data.page}
+                total={data.total}
+                limit={data.limit}
+                onPageChange={(p) => loadMenuItems(p)}
+              />
+            </div>
           </>
         )}
 

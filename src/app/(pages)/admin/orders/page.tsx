@@ -6,12 +6,14 @@ import { RefreshCw } from 'lucide-react';
 import { Order } from '@/src/Types';
 import { getOrdersPaginate, updateOrderStatus, deleteOrder, getOrderDetails, markOrderAsPaid, exportOrdersToCSV } from '@/src/lib/api/orderApi';
 import { useAdminPagination } from '@/src/hooks/useAdminPagination';
+import { AdminLayout } from '@/src/components/layout';
 import AdminPageHeader from '@/src/components/admin/common/AdminPageHeader';
 import AdminPagination from '@/src/components/admin/common/AdminPagination';
 import OrderFilters from '@/src/components/admin/orders/OrderFilters';
 import OrderTable from '@/src/components/admin/orders/OrderTable';
 import OrderDetailsModal from '@/src/components/admin/orders/OrderDetailsModal';
 import { LoadingSpinner } from '@/src/components/ui';
+import { ShoppingCart } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -118,36 +120,43 @@ const OrdersPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex justify-center items-start">
-      <div className="w-full max-w-7xl px-8 py-8 mt-8 rounded-2xl shadow bg-white">
+    <AdminLayout>
+      <div className="w-full max-w-7xl mx-auto">
         <AdminPageHeader
           title="Orders Management"
           description="Manage and track all restaurant orders"
+          icon={<ShoppingCart className="w-6 h-6 text-white" />}
         />
 
-        <OrderFilters
-          search={search}
-          statusFilter={statusFilter}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
-          loading={loading}
-          onSearchChange={handleSearchChange}
-          onStatusFilterChange={handleFilterChange}
-          onSortChange={handleSortChange}
-          onReset={resetFilters}
-          onRefresh={refetch}
-          onExport={handleExportOrders}
-        />
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+          <OrderFilters
+            search={search}
+            statusFilter={statusFilter}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            loading={loading}
+            onSearchChange={handleSearchChange}
+            onStatusFilterChange={handleFilterChange}
+            onSortChange={handleSortChange}
+            onReset={resetFilters}
+            onRefresh={refetch}
+            onExport={handleExportOrders}
+          />
+        </div>
 
-        <OrderTable
-          orders={orders}
-          onStatusUpdate={handleStatusUpdate}
-          onMarkAsPaid={handleMarkAsPaid}
-          onViewDetails={handleViewDetails}
-          onDelete={handleDelete}
-        />
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <OrderTable
+            orders={orders}
+            onStatusUpdate={handleStatusUpdate}
+            onMarkAsPaid={handleMarkAsPaid}
+            onViewDetails={handleViewDetails}
+            onDelete={handleDelete}
+          />
+        </div>
 
-        <AdminPagination {...paginationProps} />
+        <div className="mt-6">
+          <AdminPagination {...paginationProps} />
+        </div>
       </div>
 
       <OrderDetailsModal
@@ -160,7 +169,7 @@ const OrdersPage: React.FC = () => {
         onMarkAsPaid={handleMarkAsPaid}
         onUpdateStatus={handleStatusUpdate}
       />
-    </div>
+    </AdminLayout>
   );
 };
 

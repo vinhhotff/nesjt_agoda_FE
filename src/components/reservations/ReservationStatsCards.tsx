@@ -10,66 +10,62 @@ export default function ReservationStatsCards({ stats }: ReservationStatsCardsPr
   const statCards = [
     {
       title: 'Tổng đặt bàn',
-      value: stats.total,
+      value: stats?.total ?? 0,
       icon: '📊',
-      trend: { value: 8, direction: 'up' as const },
-      className: 'primary'
+      color: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      textColor: 'text-white',
     },
     {
       title: 'Chờ xác nhận',
-      value: stats.pending,
+      value: stats?.pending ?? 0,
       icon: '⏳',
-      trend: { value: 2, direction: 'neutral' as const },
-      className: 'pending'
+      color: 'bg-gradient-to-br from-yellow-400 to-yellow-500',
+      textColor: 'text-white',
     },
     {
       title: 'Đã xác nhận',
-      value: stats.confirmed,
+      value: stats?.confirmed ?? 0,
       icon: '✅',
-      trend: { value: 12, direction: 'up' as const },
-      className: 'confirmed'
+      color: 'bg-gradient-to-br from-green-500 to-green-600',
+      textColor: 'text-white',
     },
     {
       title: 'Hoàn thành',
-      value: stats.completed,
+      value: stats?.completed ?? 0,
       icon: '🍽️',
-      trend: { value: 5, direction: 'up' as const },
-      className: 'completed'
+      color: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
+      textColor: 'text-white',
+    },
+    {
+      title: 'Đã hủy',
+      value: stats?.cancelled ?? 0,
+      icon: '❌',
+      color: 'bg-gradient-to-br from-red-500 to-red-600',
+      textColor: 'text-white',
     },
     {
       title: 'Hôm nay',
-      value: stats.todayReservations,
+      value: stats?.todayReservations ?? 0,
       icon: '📅',
-      trend: { value: 15, direction: 'up' as const },
-      className: 'in-progress'
+      color: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      textColor: 'text-white',
     },
-    {
-      title: 'Sắp tới',
-      value: stats.upcomingReservations,
-      icon: '🔮',
-      trend: { value: 3, direction: 'down' as const },
-      className: 'warning'
-    }
   ];
 
   return (
-    <div className="stats-grid">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {statCards.map((card, index) => (
-        <div key={index} className={`stat-card ${card.className}`}>
-          <div className="stat-header">
-            <div className="stat-icon">
-              {card.icon}
-            </div>
-            <div className={`stat-trend ${card.trend.direction}`}>
-              {card.trend.direction === 'up' ? '↗️' : card.trend.direction === 'down' ? '↘️' : '➡️'}
-              {card.trend.value}%
+        <div
+          key={index}
+          className={`${card.color} ${card.textColor} rounded-xl shadow-lg p-6 transform transition-all duration-200 hover:scale-105 hover:shadow-xl`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-3xl">{card.icon}</div>
+            <div className="bg-white rounded-full px-3 py-1">
+              <span className="text-2xl font-bold text-gray-900">{(card.value ?? 0).toLocaleString('vi-VN')}</span>
             </div>
           </div>
-          
-          <div>
-            <p className="stat-value">{card.value.toLocaleString()}</p>
-            <p className="stat-label">{card.title}</p>
-          </div>
+          <p className="text-sm font-medium opacity-90">{card.title}</p>
         </div>
       ))}
     </div>

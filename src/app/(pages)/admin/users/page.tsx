@@ -1,8 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { UserPlus } from 'lucide-react';
-
 import { User, Role } from '@/src/Types';
 import { 
   getUsersPaginate, 
@@ -20,6 +18,7 @@ import AdminPagination from '@/src/components/admin/common/AdminPagination';
 import UserFilters from '@/src/components/admin/users/UserFilters';
 import UserTable from '@/src/components/admin/users/UserTable';
 import UserFormModal from '@/src/components/admin/users/UserFormModal';
+import { UserPlus, Users } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -170,46 +169,53 @@ const UsersPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="w-full max-w-6xl mx-auto mt-8 p-8 rounded-2xl shadow bg-white">
+      <div className="w-full max-w-7xl mx-auto">
         <AdminPageHeader
           title="Users Management"
           description="Manage system users and their permissions"
-          action={(
+          icon={<Users className="w-6 h-6 text-white" />}
+          action={
             <button
               onClick={() => { setSelectedUser(null); setShowFormModal(true); }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-5 h-5" />
               Add User
             </button>
-          )}
+          }
         />
 
-        <UserFilters
-          search={search}
-          roleFilter={roleFilter}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
-          loading={loading}
-          roles={roles}
-          onSearchChange={handleSearchChange}
-          onRoleFilterChange={handleFilterChange}
-          onSortChange={handleSortChange}
-          onReset={resetFilters}
-          onRefresh={refetch}
-        />
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+          <UserFilters
+            search={search}
+            roleFilter={roleFilter}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            loading={loading}
+            roles={roles}
+            onSearchChange={handleSearchChange}
+            onRoleFilterChange={handleFilterChange}
+            onSortChange={handleSortChange}
+            onReset={resetFilters}
+            onRefresh={refetch}
+          />
+        </div>
 
-        <UserTable
-          users={users}
-          roles={roles}
-          actionLoading={actionLoading}
-          onEdit={(user) => { setSelectedUser(user); setShowFormModal(true); }}
-          onResetPassword={handleResetPassword}
-          onToggleStatus={handleDelete}
-          onDelete={handleDelete}
-        />
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <UserTable
+            users={users}
+            roles={roles}
+            actionLoading={actionLoading}
+            onEdit={(user) => { setSelectedUser(user); setShowFormModal(true); }}
+            onResetPassword={handleResetPassword}
+            onToggleStatus={handleDelete}
+            onDelete={handleDelete}
+          />
+        </div>
 
-        <AdminPagination {...paginationProps} />
+        <div className="mt-6">
+          <AdminPagination {...paginationProps} />
+        </div>
 
         <UserFormModal
           user={selectedUser}

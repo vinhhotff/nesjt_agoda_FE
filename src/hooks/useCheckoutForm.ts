@@ -73,6 +73,12 @@ export function useCheckoutForm({
       return;
     }
 
+    // Validate customer info for guest orders
+    if (!user && (!name.trim() || !phone.trim())) {
+      toast.error('Please enter your name and phone number.');
+      return;
+    }
+
     setIsSubmitting(true);
     
     const orderData: CreateOnlineOrderDto = {
@@ -80,11 +86,12 @@ export function useCheckoutForm({
         item: ci.item._id,
         quantity: ci.quantity,
       })),
-      customerName: name,
-      customerPhone: phone,
+      // Use user data if logged in, otherwise use form input
+      customerName: user?.name || name,
+      customerPhone: user ? (user.phone || phone) : phone,
       orderType: orderType,
       deliveryAddress: orderType === OrderType.DELIVERY ? deliveryAddress : undefined,
-      user: user?._id,
+      user: user?._id,  // Backend will use user ID to link order
     };
 
     try {

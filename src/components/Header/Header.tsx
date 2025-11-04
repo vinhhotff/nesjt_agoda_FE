@@ -98,20 +98,28 @@ const Header = () => {
               {/* Dropdown */}
               {profileOpen && (
                 <div className={styles.profileDropdown}>
-                  <Link
-                    href="/profile"
+                  <button
+                    onClick={() => {
+                      const role = String(user.role || "").toLowerCase();
+                      const url = role === "admin" ? "/admin/profile" : "/user/profile";
+                      router.push(url);
+                      setProfileOpen(false);
+                    }}
                     className={styles.dropdownItem}
-                    onClick={() => setProfileOpen(false)}
                   >
                     Profile
-                  </Link>
-                  <Link
-                    href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const role = String(user.role || "").toLowerCase();
+                      const url = role === "admin" ? "/admin/dashboard" : "/user/home";
+                      router.push(url);
+                      setProfileOpen(false);
+                    }}
                     className={styles.dropdownItem}
-                    onClick={() => setProfileOpen(false)}
                   >
                     Dashboard
-                  </Link>
+                  </button>
                   <button
                     onClick={handleLogout}
                     className={styles.dropdownItem}

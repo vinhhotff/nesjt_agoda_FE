@@ -3,42 +3,72 @@
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { reservationsAPI } from "@/src/lib/api/reservationsApi";
 
 export default function ReservationPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     date: "",
     time: "",
     guests: 1,
+    specialRequests: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const now = new Date();
     const reservationDateTime = new Date(`${form.date}T${form.time}`);
 
     // kiểm tra nếu người dùng chưa nhập đầy đủ
-    if (!form.name || !form.email || !form.date || !form.time) {
-      toast.error("Please fill in all required fields!");
+    if (!form.name || !form.phone || !form.date || !form.time) {
+      toast.error("Vui lòng điền đầy đủ các trường bắt buộc!");
+      setIsSubmitting(false);
       return;
     }
 
     // kiểm tra ngày giờ phải ở tương lai
     if (reservationDateTime <= now) {
-      toast.error("Reservation date and time must be in the future!");
+      toast.error("Ngày và giờ đặt bàn phải ở tương lai!");
+      setIsSubmitting(false);
       return;
     }
 
-    toast.success("Your reservation has been submitted!");
-    setForm({ name: "", email: "", date: "", time: "", guests: 1 });
+    try {
+      // Combine date and time into ISO string format
+      const reservationDate = `${form.date}T${form.time}:00`;
+
+      // Prepare data according to backend DTO
+      const reservationData = {
+        customerName: form.name,
+        customerPhone: form.phone,
+        customerEmail: form.email || undefined,
+        reservationDate: reservationDate,
+        numberOfGuests: form.guests,
+        specialRequests: form.specialRequests || undefined,
+      };
+
+      await reservationsAPI.createReservationPublic(reservationData);
+
+      toast.success("Đặt bàn của bạn đã được gửi thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.");
+      setForm({ name: "", email: "", phone: "", date: "", time: "", guests: 1, specialRequests: "" });
+    } catch (error: any) {
+      console.error("Error creating reservation:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra khi gửi đặt bàn. Vui lòng thử lại.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -64,8 +94,17 @@ export default function ReservationPage() {
           <input
             type="email"
             name="email"
-            placeholder="Email *"
+            placeholder="Email"
             value={form.email}
+            onChange={handleChange}
+            className="w-full mb-4 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+          />
+
+          <input
+            type="tel"
+            name="phone"
+            placeholder="Số điện thoại *"
+            value={form.phone}
             onChange={handleChange}
             className="w-full mb-4 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
             required
@@ -76,6 +115,7 @@ export default function ReservationPage() {
             name="date"
             value={form.date}
             onChange={handleChange}
+            min={new Date().toISOString().split('T')[0]}
             className="w-full mb-4 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
             required
           />
@@ -93,16 +133,29 @@ export default function ReservationPage() {
             type="number"
             name="guests"
             min="1"
+            max="20"
+            placeholder="Số lượng khách *"
             value={form.guests}
             onChange={handleChange}
-            className="w-full mb-6 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            className="w-full mb-4 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            required
+          />
+
+          <textarea
+            name="specialRequests"
+            placeholder="Yêu cầu đặc biệt (tùy chọn)"
+            value={form.specialRequests}
+            onChange={handleChange}
+            rows={3}
+            className="w-full mb-6 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 resize-none"
           />
 
           <button
             type="submit"
-            className="w-full bg-yellow-500 text-black font-semibold py-3 rounded-lg hover:bg-yellow-600 transition"
+            disabled={isSubmitting}
+            className="w-full bg-yellow-500 text-black font-semibold py-3 rounded-lg hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Book Now
+            {isSubmitting ? "Đang gửi..." : "Đặt Bàn Ngay"}
           </button>
         </form>
 

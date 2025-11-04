@@ -8,8 +8,10 @@ import {
   useDeleteVoucher,
   useVouchersList,
 } from "@/src/hooks/useVouchers";
-import Aside from "@/src/components/admin/Aside";
+import { AdminLayout } from "@/src/components/layout";
+import AdminPageHeader from "@/src/components/admin/common/AdminPageHeader";
 import ModalVoucherForm from "@/src/components/admin/Voucher/VoucherForm";
+import { Ticket, Plus } from "lucide-react";
 
 export default function AdminVouchersPage() {
   const [page, setPage] = useState(1);
@@ -48,49 +50,69 @@ export default function AdminVouchersPage() {
   };
 
   return (
-    <div className="flex h-screen">
-      {/* Aside */}
-      <Aside />
-
-      {/* Main content */}
-      <main className="w-full max-w-6xl mx-auto p-8 mt-8 rounded-2xl shadow bg-white min-h-[500px]">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">Voucher Management</h1>
-          <button
-            onClick={() => setOpen(true)}
-            className="px-4 py-2 rounded bg-emerald-600 text-white"
-          >
-            Create Voucher
-          </button>
-        </div>
+    <AdminLayout>
+      <div className="w-full max-w-7xl mx-auto">
+        <AdminPageHeader
+          title="Voucher Management"
+          description="Create and manage discount vouchers for your customers"
+          icon={<Ticket className="w-6 h-6 text-white" />}
+          action={
+            <button
+              onClick={() => setOpen(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+            >
+              <Plus className="w-5 h-5" />
+              Create Voucher
+            </button>
+          }
+        />
 
         {isLoading ? (
-          <p>Loading vouchers...</p>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+              <p className="text-gray-600">Loading vouchers...</p>
+            </div>
+          </div>
         ) : error ? (
-          <p className="text-red-600">Failed to load vouchers</p>
+          <div className="bg-red-50 border border-red-200 rounded-2xl shadow-lg p-6">
+            <p className="text-red-600 font-medium">Failed to load vouchers</p>
+          </div>
         ) : (
           <>
-            <VoucherTable items={items} onDelete={onDelete} />
-            {/* Simple pagination */}
-            <div className="flex justify-end items-center gap-2 mt-4">
-              <button
-                className="px-3 py-1 border rounded"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Prev
-              </button>
-              <span>
-                Page {data?.page} / {data?.totalPages}
-              </span>
-              <button
-                className="px-3 py-1 border rounded"
-                disabled={!!data && page >= (data.totalPages || 1)}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </button>
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="p-4 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  All Vouchers ({items.length})
+                </h3>
+              </div>
+              <div className="p-6">
+                <VoucherTable items={items} onDelete={onDelete} />
+              </div>
             </div>
+            
+            {/* Pagination */}
+            {data && data.totalPages > 1 && (
+              <div className="mt-6 flex justify-center items-center gap-3">
+                <button
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </button>
+                <span className="px-4 py-2 bg-gray-100 rounded-lg font-medium text-gray-700">
+                  Page {data.page} / {data.totalPages}
+                </span>
+                <button
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  disabled={page >= (data.totalPages || 1)}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </>
         )}
 
@@ -100,7 +122,7 @@ export default function AdminVouchersPage() {
           onClose={() => setOpen(false)}
           onSubmit={onCreate}
         />
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

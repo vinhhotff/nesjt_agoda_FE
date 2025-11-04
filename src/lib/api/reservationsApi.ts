@@ -29,9 +29,8 @@ export interface CreateReservationDto {
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
-  partySize: number;
+  numberOfGuests: number;
   reservationDate: string;
-  reservationTime: string;
   specialRequests?: string;
 }
 
@@ -62,10 +61,61 @@ export interface ReservationStats {
 class ReservationsAPI {
   private baseUrl = '/reservations';
 
-  // Create new reservation
+  // Create new reservation (public - no auth required)
+  async createReservationPublic(data: CreateReservationDto): Promise<Reservation> {
+    const response = await api.post(`${this.baseUrl}/public`, data);
+    return response.data;
+  }
+
+  // Create new reservation (requires auth)
   async createReservation(data: CreateReservationDto): Promise<Reservation> {
     const response = await api.post(this.baseUrl, data);
     return response.data;
+  }
+
+  // Helper to transform reservation from backend to frontend format
+  private transformReservation(reservation: any): Reservation {
+    // Extract time from reservationDate (ISO string like "2025-11-03T07:30:00.000Z")
+    let reservationTime = '';
+    let reservationDateFormatted = '';
+    
+    if (reservation.reservationDate) {
+      try {
+        const date = new Date(reservation.reservationDate);
+        // Get local time (convert from UTC to local)
+        reservationTime = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        // Format date as YYYY-MM-DD
+        reservationDateFormatted = date.toISOString().split('T')[0];
+      } catch (e) {
+        console.error('Error parsing reservationDate:', e);
+        // Fallback: try to extract from string
+        if (typeof reservation.reservationDate === 'string') {
+          const parts = reservation.reservationDate.split('T');
+          if (parts[0]) reservationDateFormatted = parts[0];
+          if (parts[1]) {
+            const timePart = parts[1].split(':');
+            if (timePart.length >= 2) {
+              reservationTime = `${timePart[0]}:${timePart[1]}`;
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      _id: reservation._id,
+      customerName: reservation.customerName || '',
+      customerPhone: reservation.customerPhone || '',
+      customerEmail: reservation.customerEmail,
+      partySize: reservation.numberOfGuests || reservation.partySize || 0,
+      reservationDate: reservationDateFormatted,
+      reservationTime: reservationTime,
+      status: (reservation.status as ReservationStatus) || ReservationStatus.PENDING,
+      table: reservation.tableNumber || reservation.table,
+      specialRequests: reservation.specialRequests,
+      createdAt: reservation.createdAt || new Date().toISOString(),
+      updatedAt: reservation.updatedAt || new Date().toISOString(),
+    };
   }
 
   // Get paginated reservations with filters
@@ -84,43 +134,78 @@ class ReservationsAPI {
     if (date) params.append('date', date);
 
     const response = await api.get(`${this.baseUrl}?${params.toString()}`);
-    return response.data;
+    
+    // Backend response format: { statusCode, message, data: { reservations: [], total, totalPages } }
+    const responseData = response.data?.data || response.data;
+    const reservations = responseData?.reservations || responseData?.items || [];
+    
+    // Transform reservations to match frontend interface
+    const transformedReservations = Array.isArray(reservations) 
+      ? reservations.map(r => this.transformReservation(r))
+      : [];
+    
+    return {
+      items: transformedReservations,
+      total: responseData?.total || transformedReservations.length,
+      page: responseData?.page || page,
+      limit: responseData?.limit || limit,
+      totalPages: responseData?.totalPages || 1,
+    };
   }
 
   // Get single reservation
   async getReservation(id: string): Promise<Reservation> {
     const response = await api.get(`${this.baseUrl}/${id}`);
-    return response.data;
+    const data = response.data?.data || response.data;
+    return this.transformReservation(data);
   }
 
   // Get today's reservations
   async getTodayReservations(): Promise<Reservation[]> {
     const response = await api.get(`${this.baseUrl}/today`);
-    return response.data;
+    const data = response.data?.data || response.data;
+    const reservations = Array.isArray(data) ? data : (data?.reservations || []);
+    return reservations.map(r => this.transformReservation(r));
   }
 
   // Get upcoming reservations
   async getUpcomingReservations(days: number = 7): Promise<Reservation[]> {
     const response = await api.get(`${this.baseUrl}/upcoming?days=${days}`);
-    return response.data;
+    const data = response.data?.data || response.data;
+    const reservations = Array.isArray(data) ? data : (data?.reservations || []);
+    return reservations.map(r => this.transformReservation(r));
   }
 
   // Get reservation stats
   async getReservationStats(): Promise<ReservationStats> {
     const response = await api.get(`${this.baseUrl}/stats`);
-    return response.data;
+    const data = response.data?.data || response.data;
+    
+    return {
+      total: data?.total || 0,
+      pending: data?.pending || 0,
+      confirmed: data?.confirmed || 0,
+      completed: data?.completed || 0,
+      cancelled: data?.cancelled || 0,
+      todayReservations: data?.todayReservations || 0,
+      upcomingReservations: data?.upcomingReservations || 0,
+    };
   }
 
   // Get my reservations (for logged in user)
   async getMyReservations(): Promise<Reservation[]> {
     const response = await api.get(`${this.baseUrl}/my/reservations`);
-    return response.data;
+    const data = response.data?.data || response.data;
+    const reservations = Array.isArray(data) ? data : (data?.reservations || []);
+    return reservations.map(r => this.transformReservation(r));
   }
 
   // Get reservations by phone
   async getReservationsByPhone(phone: string): Promise<Reservation[]> {
     const response = await api.get(`${this.baseUrl}/phone/${phone}`);
-    return response.data;
+    const data = response.data?.data || response.data;
+    const reservations = Array.isArray(data) ? data : (data?.reservations || []);
+    return reservations.map(r => this.transformReservation(r));
   }
 
   // Update reservation status
@@ -129,13 +214,15 @@ class ReservationsAPI {
     statusData: UpdateReservationStatusDto
   ): Promise<Reservation> {
     const response = await api.patch(`${this.baseUrl}/${id}/status`, statusData);
-    return response.data;
+    const data = response.data?.data || response.data;
+    return this.transformReservation(data);
   }
 
   // Cancel reservation (user)
   async cancelReservation(id: string): Promise<Reservation> {
     const response = await api.patch(`${this.baseUrl}/${id}/cancel`);
-    return response.data;
+    const data = response.data?.data || response.data;
+    return this.transformReservation(data);
   }
 
   // Admin cancel reservation
@@ -145,15 +232,32 @@ class ReservationsAPI {
 
   // Utility functions
   formatReservationDateTime(reservation: Reservation): string {
-    const date = new Date(`${reservation.reservationDate}T${reservation.reservationTime}`);
-    return date.toLocaleString('vi-VN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    try {
+      // If reservationTime exists, combine with date
+      if (reservation.reservationTime) {
+        const date = new Date(`${reservation.reservationDate}T${reservation.reservationTime}`);
+        return date.toLocaleString('vi-VN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+      // Otherwise, parse from reservationDate if it's a full ISO string
+      const date = new Date(reservation.reservationDate);
+      return date.toLocaleString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (e) {
+      return reservation.reservationDate || 'N/A';
+    }
   }
 
   getStatusColor(status: ReservationStatus): string {

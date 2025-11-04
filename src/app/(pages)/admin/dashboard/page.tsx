@@ -2,6 +2,7 @@
 'use client';
 import { AdminLayout } from '@/src/components/layout';
 import { LoadingSpinner } from '@/src/components/ui';
+import AdminPageHeader from '@/src/components/admin/common/AdminPageHeader';
 import RecentOrders from '@/src/components/admin/RecentOrders';
 import StatCards from '@/src/components/admin/StatCards';
 import TodayStats from '@/src/components/admin/TodayStats';
@@ -11,6 +12,7 @@ import { useDashboardData } from '@/src/hooks/useDashboardData';
 import { Order } from '@/src/Types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { BarChart3 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
@@ -49,10 +51,18 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <StatCards stats={statCards} />
-      {!dataLoading.today && todayStats && <TodayStats todayStats={todayStats} />}
-      {!dataLoading.trends && weeklyTrends.length > 0 && <WeeklyTrends data={weeklyTrends} />}
-      {!dataLoading.orders && <RecentOrders orders={recentOrders} onView={(order) => setSelectedOrder(order)} />}
+      <div className="w-full max-w-7xl mx-auto">
+        <AdminPageHeader
+          title="Dashboard Overview"
+          description="Monitor your restaurant's performance and key metrics at a glance"
+          icon={<BarChart3 className="w-6 h-6 text-white" />}
+        />
+
+        <StatCards stats={statCards} />
+        {!dataLoading.today && todayStats && <TodayStats todayStats={todayStats} />}
+        {!dataLoading.trends && weeklyTrends.length > 0 && <WeeklyTrends data={weeklyTrends} />}
+        {!dataLoading.orders && <RecentOrders orders={recentOrders} onView={(order) => setSelectedOrder(order)} />}
+      </div>
     </AdminLayout>
   );
 }

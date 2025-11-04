@@ -7,6 +7,9 @@ export * from './analyticsApi';
 // Export Order APIs  
 export * from './orderApi';
 
+// Export Loyalty APIs
+export * from './loyaltyApi';
+
 // Re-export commonly used functions from the original api file for backward compatibility
 export {
   // Auth functions

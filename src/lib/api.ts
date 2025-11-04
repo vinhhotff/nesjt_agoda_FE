@@ -1353,13 +1353,17 @@ export const getRevenueChart = async (
 
 export const getTopSellingItems = async (
   period: string = "30d",
-  limit: number = 10
+  limit: number = 10,
+  startDate?: string,
+  endDate?: string
 ) => {
   try {
     // Build query parameters
     const params = new URLSearchParams();
     if (period && period !== 'custom') params.append('period', period);
     params.append('limit', limit.toString());
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
 
     console.debug('Fetching top selling items with params:', params.toString());
     
