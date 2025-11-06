@@ -20,7 +20,7 @@ export default function AdminDashboard() {
 
   const router = useRouter();
 
-  const roleName = user ? (typeof user.role === 'string' ? user.role : user.role?.name || '') : '';
+  const roleName = user ? (typeof user.role === 'string' ? user.role : (user.role as any)?.name || '') : '';
   const isAuthorized: boolean = !loading && !!user && roleName.toUpperCase() === 'ADMIN';
 
   const {

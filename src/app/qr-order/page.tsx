@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { tableAPI, type QRSessionData } from '@/src/lib/api/tableApi';
 import QRScanner from '@/src/components/qr-order/QRScanner';
@@ -10,7 +10,7 @@ import '@/src/styles/modules.css';
 
 type OrderStep = 'scan' | 'table-info' | 'guest-registration' | 'menu-selection';
 
-export default function QROrderPage() {
+function QROrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -156,7 +156,7 @@ export default function QROrderPage() {
           marginBottom: 'var(--spacing-xl)',
           gap: 'var(--spacing-md)'
         }}>
-          <div className={`status-badge ${currentStep === 'scan' ? 'in-progress' : currentStep !== 'scan' ? 'confirmed' : 'pending'}`}>
+          <div className={`status-badge ${currentStep === 'scan' ? 'in-progress' : 'confirmed'}`}>
             📱 1. Quét QR
           </div>
           <div className={`status-badge ${currentStep === 'table-info' ? 'in-progress' : ['guest-registration', 'menu-selection'].includes(currentStep) ? 'confirmed' : 'pending'}`}>
@@ -230,5 +230,13 @@ export default function QROrderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function QROrderPage() {
+  return (
+    <Suspense fallback={<div className="module-container"><div className="module-header"><h1 className="module-title">Loading...</h1></div></div>}>
+      <QROrderContent />
+    </Suspense>
   );
 }

@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api } from '../lib/api';
 
 // Types for Voucher entities based on backend DTOs
 

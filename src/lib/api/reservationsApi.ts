@@ -141,7 +141,7 @@ class ReservationsAPI {
     
     // Transform reservations to match frontend interface
     const transformedReservations = Array.isArray(reservations) 
-      ? reservations.map(r => this.transformReservation(r))
+      ? reservations.map((r: any) => this.transformReservation(r))
       : [];
     
     return {
@@ -165,7 +165,7 @@ class ReservationsAPI {
     const response = await api.get(`${this.baseUrl}/today`);
     const data = response.data?.data || response.data;
     const reservations = Array.isArray(data) ? data : (data?.reservations || []);
-    return reservations.map(r => this.transformReservation(r));
+    return reservations.map((r: any) => this.transformReservation(r));
   }
 
   // Get upcoming reservations
@@ -173,7 +173,7 @@ class ReservationsAPI {
     const response = await api.get(`${this.baseUrl}/upcoming?days=${days}`);
     const data = response.data?.data || response.data;
     const reservations = Array.isArray(data) ? data : (data?.reservations || []);
-    return reservations.map(r => this.transformReservation(r));
+    return reservations.map((r: any) => this.transformReservation(r));
   }
 
   // Get reservation stats
@@ -197,7 +197,7 @@ class ReservationsAPI {
     const response = await api.get(`${this.baseUrl}/my/reservations`);
     const data = response.data?.data || response.data;
     const reservations = Array.isArray(data) ? data : (data?.reservations || []);
-    return reservations.map(r => this.transformReservation(r));
+    return reservations.map((r: any) => this.transformReservation(r));
   }
 
   // Get reservations by phone
@@ -205,7 +205,7 @@ class ReservationsAPI {
     const response = await api.get(`${this.baseUrl}/phone/${phone}`);
     const data = response.data?.data || response.data;
     const reservations = Array.isArray(data) ? data : (data?.reservations || []);
-    return reservations.map(r => this.transformReservation(r));
+    return reservations.map((r: any) => this.transformReservation(r));
   }
 
   // Update reservation status

@@ -60,9 +60,10 @@ const OrderModal: FC<OrderModalProps> = ({ order, onClose }) => {
             <h3 className="font-semibold mb-2">Items:</h3>
             <ul className="list-disc list-inside space-y-1">
               {order.items.map((item, idx) => {
+                const itemName = typeof item.item === 'string' ? item.item : (item.item as IMenuItem)?.name || 'Unknown';
                 return (
                   <li key={idx}>
-                    {item.item} x {item.quantity} (${item.unitPrice.toLocaleString()}) = ${item.subtotal.toLocaleString()}
+                    {itemName} x {item.quantity} (${item.unitPrice.toLocaleString()}) = ${item.subtotal.toLocaleString()}
                     {item.note && <span className="text-gray-600 text-sm"> - {item.note}</span>}
                   </li>
                 );

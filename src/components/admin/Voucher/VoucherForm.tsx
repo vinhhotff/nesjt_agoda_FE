@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Voucher } from "@/src/Types";
 
@@ -11,18 +11,68 @@ interface Props {
 }
 
 const ModalVoucherForm: React.FC<Props> = ({ open, initial, onSubmit, onClose }) => {
-  const [form, setForm] = useState<Partial<Voucher>>({
-    code: initial?.code || "",
-    discountType: (initial?.discountType as any) || "percentage",
-    discountValue: initial?.discountValue ?? 0,
-    startDate: initial?.startDate || "",
-    endDate: initial?.endDate || "",
-    usageLimit: initial?.usageLimit,
-    isActive: initial?.isActive ?? true,
-    minOrderTotal: initial?.minOrderTotal ?? 0,
-    maxDiscount: initial?.maxDiscount,
-  });
+  // Helper to convert ISO date to datetime-local format
+  const isoToDatetimeLocal = (isoString: string): string => {
+    if (!isoString) return "";
+    try {
+      const date = new Date(isoString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+      return "";
+    }
+  };
+
+  // Map backend format to frontend form format
+  const mapInitialToForm = (data?: Partial<Voucher>) => {
+    if (!data) {
+      return {
+        code: "",
+        name: "",
+        discountType: "percentage" as any,
+        discountValue: 0,
+        startDate: "",
+        endDate: "",
+        usageLimit: 1,
+        isActive: true,
+        minOrderTotal: 0,
+        maxDiscount: undefined,
+      };
+    }
+
+    // Backend returns: name, type, value, minOrderValue
+    // Frontend form uses: discountType, discountValue, minOrderTotal
+    const backendType = (data as any).type || data.discountType;
+    const discountType = backendType === "fixed_amount" ? "fixed" : (backendType || "percentage");
+    
+    return {
+      code: data.code || "",
+      name: (data as any).name || "",
+      discountType: discountType as any,
+      discountValue: (data as any).value ?? data.discountValue ?? 0,
+      startDate: data.startDate ? (data.startDate.includes('T') ? isoToDatetimeLocal(data.startDate) : data.startDate) : "",
+      endDate: data.endDate ? (data.endDate.includes('T') ? isoToDatetimeLocal(data.endDate) : data.endDate) : "",
+      usageLimit: data.usageLimit ?? 1,
+      isActive: data.isActive ?? true,
+      minOrderTotal: (data as any).minOrderValue ?? data.minOrderTotal ?? 0,
+      maxDiscount: data.maxDiscount,
+    };
+  };
+
+  const [form, setForm] = useState<Partial<Voucher>>(mapInitialToForm(initial));
   const [submitting, setSubmitting] = useState(false);
+
+  // Update form when initial changes (for edit mode) or when modal opens
+  useEffect(() => {
+    if (open) {
+      setForm(mapInitialToForm(initial));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial, open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as any;
@@ -36,17 +86,48 @@ const ModalVoucherForm: React.FC<Props> = ({ open, initial, onSubmit, onClose })
     e.preventDefault();
     setSubmitting(true);
     try {
-      const payload: Partial<Voucher> = {
+      // Map frontend form to backend DTO format
+      const payload: any = {
         code: form.code?.trim().toUpperCase(),
-        type: form.discountType === "fixed" ? "fixed_amount" : form.discountType,
+        name: (form as any).name?.trim() || form.code?.trim().toUpperCase() || "Voucher", // Required by backend - use code as fallback if name not provided
+        type: form.discountType === "fixed" ? "fixed_amount" : (form.discountType || "percentage"),
         value: form.discountValue ?? 0,
         usageLimit: form.usageLimit ?? 1,
-        startDate: form.startDate ? new Date(form.startDate).toISOString() : "",
-        endDate: form.endDate ? new Date(form.endDate).toISOString() : "",
-        minOrderValue: form.minOrderTotal ?? 0,
+        minOrderValue: form.minOrderTotal ?? 0, // Map minOrderTotal → minOrderValue
         maxDiscount: form.maxDiscount,
         isActive: form.isActive,
-      } as any;
+      };
+
+      // Handle dates - convert datetime-local format to ISO string format required by backend
+      if (form.startDate) {
+        // datetime-local format: "YYYY-MM-DDTHH:mm"
+        // Convert to ISO string: "YYYY-MM-DDTHH:mm:ss.sssZ"
+        try {
+          const date = new Date(form.startDate);
+          if (!isNaN(date.getTime())) {
+            payload.startDate = date.toISOString();
+          } else {
+            throw new Error("Invalid start date");
+          }
+        } catch (error) {
+          console.error("Error converting startDate:", error);
+          throw new Error("Invalid start date format");
+        }
+      }
+      
+      if (form.endDate) {
+        try {
+          const date = new Date(form.endDate);
+          if (!isNaN(date.getTime())) {
+            payload.endDate = date.toISOString();
+          } else {
+            throw new Error("Invalid end date");
+          }
+        } catch (error) {
+          console.error("Error converting endDate:", error);
+          throw new Error("Invalid end date format");
+        }
+      }
   
       await onSubmit(payload);
       onClose();
@@ -87,13 +168,28 @@ const ModalVoucherForm: React.FC<Props> = ({ open, initial, onSubmit, onClose })
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Code */}
                 <div>
-                  <label className="block text-sm font-medium">Code</label>
+                  <label className="block text-sm font-medium">Code <span className="text-red-500">*</span></label>
                   <input
                     name="code"
                     value={form.code || ""}
                     onChange={handleChange}
                     required
                     className="w-full border rounded px-3 py-2"
+                    placeholder="e.g., SUMMER2024"
+                  />
+                </div>
+
+                {/* Name - Required by backend */}
+                <div>
+                  <label className="block text-sm font-medium">Name <span className="text-red-500">*</span></label>
+                  <input
+                    name="name"
+                    type="text"
+                    value={(form as any).name || ""}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="e.g., Summer Sale 2024"
                   />
                 </div>
 
@@ -143,39 +239,42 @@ const ModalVoucherForm: React.FC<Props> = ({ open, initial, onSubmit, onClose })
 
                 {/* Start Date */}
                 <div>
-                  <label className="block text-sm font-medium">Start Date</label>
+                  <label className="block text-sm font-medium">Start Date <span className="text-red-500">*</span></label>
                   <input
                     type="datetime-local"
                     name="startDate"
-                    value={form.startDate ? new Date(form.startDate).toISOString().slice(0, 16) : ""}
+                    value={form.startDate || ""}
                     onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
+                    required
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
 
                 {/* End Date */}
                 <div>
-                  <label className="block text-sm font-medium">End Date</label>
+                  <label className="block text-sm font-medium">End Date <span className="text-red-500">*</span></label>
                   <input
                     type="datetime-local"
                     name="endDate"
-                    value={form.endDate ? new Date(form.endDate).toISOString().slice(0, 16) : ""}
+                    value={form.endDate || ""}
                     onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
+                    required
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
 
                 {/* Usage Limit */}
                 <div>
-                  <label className="block text-sm font-medium">Usage Limit</label>
+                  <label className="block text-sm font-medium">Usage Limit <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     min={1}
                     name="usageLimit"
                     value={form.usageLimit ?? ""}
                     onChange={handleChange}
+                    required
                     className="w-full border rounded px-3 py-2"
-                    placeholder="Optional"
+                    placeholder="e.g., 100"
                   />
                 </div>
 

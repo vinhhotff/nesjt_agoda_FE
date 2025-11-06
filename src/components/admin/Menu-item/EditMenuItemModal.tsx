@@ -45,11 +45,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
         try {
             setFetchLoading(true);
             
-            const response = await getMenuItem(itemId);
-            
-            // Extract actual menu item data from API response
-            const item = response.data;
-         
+            const item = await getMenuItem(itemId);
             
             setMenuItem(item);
             // Don't set formData here - let the sync useEffect handle it

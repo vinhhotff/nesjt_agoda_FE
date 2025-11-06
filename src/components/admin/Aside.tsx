@@ -71,7 +71,7 @@ const Aside = () => {
               <div className="font-bold text-sm">{user.name}</div>
               <div className="text-xs">({user.email})</div>
               <div className="mt-1 text-orange-300 text-xs">
-                Role: {typeof user.role === 'string' ? user.role : user.role?.name}
+                Role: {typeof user.role === 'string' ? user.role : (user.role as any)?.name}
               </div>
               <button
                 onClick={() => logoutUser()}

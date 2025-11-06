@@ -27,11 +27,8 @@ export default function EditMenuItemPage() {
     useEffect(() => {
         const fetchMenuItem = async () => {
             try {
-                const response = await getMenuItem(id);
+                const item = await getMenuItem(id);
                 
-                // Extract actual menu item data from API response
-                const item = response.data;
-             
                 setMenuItem(item);
                 // Don't set formData here - let the sync useEffect handle it
             } catch (error) {

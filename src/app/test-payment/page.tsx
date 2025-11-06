@@ -86,7 +86,7 @@ export default function TestPaymentPage() {
                 }}
               >
                 <div className="stat-icon" style={{ 
-                  background: qrPaymentAPI.getMethodInfo ? '#1e40af' : 'var(--agoda-primary)',
+                  background: 'var(--agoda-primary)',
                   margin: '0 auto var(--spacing-md)'
                 }}>
                   {qrPaymentAPI.getMethodIcon(method)}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/src/Context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/src/lib/api";
@@ -19,7 +19,7 @@ function formatCurrency(n: number) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
 }
 
-export default function UserProfilePage() {
+function UserProfileContent() {
   const { user: authUser, loading, logoutUser } = useAuth() as any;
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -131,7 +131,7 @@ export default function UserProfilePage() {
             </div>
             <div className="flex-1 text-white text-center md:text-left">
               <h1 className="text-3xl md:text-4xl font-bold">{String(user.name || user.email)}</h1>
-              <p className="text-indigo-100 mt-2 text-lg">Vai trò: <span className="font-semibold">{String(typeof user.role === 'object' ? user.role?.name || 'User' : user.role)}</span></p>
+              <p className="text-indigo-100 mt-2 text-lg">Vai trò: <span className="font-semibold">{String(typeof user.role === 'object' ? (user.role as any)?.name || 'User' : user.role)}</span></p>
               <p className="text-indigo-100 text-sm mt-1">{String(user.email)}</p>
             </div>
             <button onClick={() => router.push("/user/home")} className="px-6 py-3 rounded-xl bg-white text-indigo-600 font-semibold hover:bg-indigo-50 transition shadow-lg">← Về Dashboard</button>
@@ -286,6 +286,20 @@ export default function UserProfilePage() {
     </div>
 
   );
+}
 
+export default function UserProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <UserProfileContent />
+    </Suspense>
+  );
 }
 

@@ -25,6 +25,7 @@ export default function ReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   
   // Filter states
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,7 +40,7 @@ export default function ReservationsPage() {
 
   // Auth check
   useEffect(() => {
-    if (!authLoading && (!user || (typeof user.role === 'string' ? user.role : user.role?.name)?.toLowerCase() !== 'admin')) {
+    if (!authLoading && (!user || (typeof user.role === 'string' ? user.role : (user.role as any)?.name)?.toLowerCase() !== 'admin')) {
       router.push('/login');
     }
   }, [user, authLoading, router]);
@@ -60,6 +61,7 @@ export default function ReservationsPage() {
       // API now returns { items: [], totalPages, total, ... }
       setReservations(Array.isArray(response.items) ? response.items : []);
       setTotalPages(response.totalPages || 1);
+      setTotalItems(response.total || 0);
     } catch (err) {
       setError('Không thể tải danh sách đặt bàn');
       console.error('Error fetching reservations:', err);
@@ -155,7 +157,7 @@ export default function ReservationsPage() {
     );
   }
 
-  if (!user || (typeof user.role === 'string' ? user.role : user.role?.name)?.toLowerCase() !== 'admin') {
+  if (!user || (typeof user.role === 'string' ? user.role : (user.role as any)?.name)?.toLowerCase() !== 'admin') {
     return null;
   }
 
@@ -236,6 +238,8 @@ export default function ReservationsPage() {
             <AdminPagination
               currentPage={currentPage}
               totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={pageSize}
               onPageChange={setCurrentPage}
             />
           </div>
@@ -285,7 +289,7 @@ export default function ReservationsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Số người</label>
-                  <p className="text-gray-900">{(selectedReservation.partySize || selectedReservation.numberOfGuests || 0)} người</p>
+                  <p className="text-gray-900">{selectedReservation.partySize || 0} người</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Thời gian</label>

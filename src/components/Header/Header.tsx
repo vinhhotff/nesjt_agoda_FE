@@ -31,8 +31,14 @@ const Header = () => {
   const { user, logoutUser, loading } = useAuth();
   const { cartItems } = useCart();
   const router = useRouter();
+  
+  // Prevent hydration mismatch by only calculating cartItemCount after mount
+  const [isMounted, setIsMounted] = useState(false);
+  const cartItemCount = isMounted ? cartItems.reduce((sum, item) => sum + item.quantity, 0) : 0;
 
-  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {

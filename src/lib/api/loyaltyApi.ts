@@ -77,8 +77,8 @@ export const redeemMyPoints = async (points: number) => {
   }
 };
 
-// Auto-award points: Mark order as paid
-export const markOrderAsPaid = async (orderId: string, isPaid: boolean) => {
+// Auto-award points: Mark order as paid (internal use for loyalty system)
+const markOrderAsPaidInternal = async (orderId: string, isPaid: boolean) => {
   try {
     const res = await api.patch(`/orders/${orderId}/paid`, { isPaid });
     return res.data?.data ?? res.data;
@@ -88,8 +88,8 @@ export const markOrderAsPaid = async (orderId: string, isPaid: boolean) => {
   }
 };
 
-// Auto-award points: Update order status to served
-export const updateOrderStatus = async (orderId: string, status: string) => {
+// Auto-award points: Update order status to served (internal use for loyalty system)
+const updateOrderStatusInternal = async (orderId: string, status: string) => {
   try {
     const res = await api.patch(`/orders/${orderId}/status`, { status });
     return res.data?.data ?? res.data;
@@ -120,10 +120,10 @@ export const createPayment = async (paymentData: {
 export const completeOrderWithPoints = async (orderId: string, userId: string, pointsToAward: number = 0) => {
   try {
     // 1. Mark order as served
-    await updateOrderStatus(orderId, 'served');
+    await updateOrderStatusInternal(orderId, 'served');
     
     // 2. Mark order as paid
-    await markOrderAsPaid(orderId, true);
+    await markOrderAsPaidInternal(orderId, true);
     
     // 3. Award points if specified
     if (pointsToAward > 0) {

@@ -18,7 +18,7 @@ export const getRevenueStats = async (
 
       
       const response = await api.get(`/analytics/revenue/stats?${params.toString()}`);
-      const data = normalizeApiResponse(response.data, 'data');
+      const data = normalizeApiResponse(response.data, 'data') as any;
       
       return {
         totalRevenue: data?.totalRevenue ?? data?.total_revenue ?? 0,
@@ -59,7 +59,7 @@ export const getRevenueChart = async (
       
       
       const response = await api.get(`/analytics/revenue/chart?${params.toString()}`);
-      const data = normalizeApiResponse(response.data, 'data');
+      const data = normalizeApiResponse(response.data, 'data') as any;
       
       if (Array.isArray(data)) {
         return data.map((item: any) => ({
@@ -95,7 +95,7 @@ export const getTopSellingItems = async (
       
       
       const response = await api.get(`/analytics/menu-items/top-selling?${params.toString()}`);
-      const data = normalizeApiResponse(response.data, 'data');
+      const data = normalizeApiResponse(response.data, 'data') as any;
       
       if (Array.isArray(data)) {
         return data.map((item: any) => ({
@@ -132,7 +132,7 @@ export const getOrderAnalytics = async (
       
       
       const response = await api.get(`/analytics/orders/stats?${params.toString()}`);
-      const data = normalizeApiResponse(response.data, 'data');
+      const data = normalizeApiResponse(response.data, 'data') as any;
       
       // ✅ FIXED: Ensure dailyOrders uses ChartDataPoint[] format
       const rawDailyOrders = data?.dailyOrders || data?.daily_orders || [];
@@ -170,7 +170,7 @@ export const getCustomerAnalytics = async (
       
       
       const response = await api.get(`/analytics/customers/stats?${params.toString()}`);
-      const data = normalizeApiResponse(response.data, 'data');
+      const data = normalizeApiResponse(response.data, 'data') as any;
       
       return {
         totalCustomers: data?.totalCustomers ?? data?.total_customers ?? 0,
