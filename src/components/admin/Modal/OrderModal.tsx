@@ -1,13 +1,11 @@
 'use client';
 import { FC } from 'react';
-import { Order, IMenuItem } from '@/src/Types';
-
-interface Guest {
-  guestName?: string;
-}
+import { Order, IMenuItem, Guest } from '@/src/Types';
 
 interface OrderModalProps {
-  order: Order;
+  order: Order & {
+    totalAmount?: number; // Add optional totalAmount for compatibility
+  };
   onClose: () => void;
 }
 
@@ -36,10 +34,10 @@ const OrderModal: FC<OrderModalProps> = ({ order, onClose }) => {
             <span className="font-semibold">Guest:</span>{' '}
             {typeof order.guest === 'string'
               ? order.guest
-              : order.guest?.guestName || 'N/A'}
+              : (order.guest as unknown as Guest)?.guestName || 'N/A'}
           </p>
           <p>
-            <span className="font-semibold">Total Amount:</span> ${order.totalAmount?.toLocaleString() || 0}
+            <span className="font-semibold">Total Amount:</span> ${order.totalPrice?.toLocaleString() || order.totalAmount?.toLocaleString() || 0}
           </p>
           <p>
             <span className="font-semibold">Status:</span>{' '}
@@ -62,17 +60,11 @@ const OrderModal: FC<OrderModalProps> = ({ order, onClose }) => {
             <h3 className="font-semibold mb-2">Items:</h3>
             <ul className="list-disc list-inside space-y-1">
               {order.items.map((item, idx) => {
-                const menuItemName =
-                  typeof item.menuItem === 'string'
-                    ? item.menuItem
-                    : (item.menuItem as IMenuItem).name;
-                const menuItemPrice =
-                  typeof item.menuItem === 'string'
-                    ? item.price || 0
-                    : (item.menuItem as IMenuItem).price;
+                const itemName = typeof item.item === 'string' ? item.item : (item.item as IMenuItem)?.name || 'Unknown';
                 return (
                   <li key={idx}>
-                    {menuItemName} x {item.quantity} (${menuItemPrice.toLocaleString()})
+                    {itemName} x {item.quantity} (${item.unitPrice.toLocaleString()}) = ${item.subtotal.toLocaleString()}
+                    {item.note && <span className="text-gray-600 text-sm"> - {item.note}</span>}
                   </li>
                 );
               })}

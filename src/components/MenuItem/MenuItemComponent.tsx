@@ -1,8 +1,9 @@
 "use client";
 import { useRevealOnScroll } from "@/src/hooks/useRevealOnScroll";
+import { LoadingSpinner, ErrorState } from "../ui";
 import styles from "./MenuItem.module.css";
 import useSWR from "swr";
-import { MenuItem } from "@/src/Types";
+import { IMenuItem } from "@/src/Types";
 import { getMenuItems } from "@/src/lib/api";
 import Image from "next/image";
 
@@ -12,20 +13,23 @@ export default function MenuItemComponent() {
     data: menuItems,
     error,
     isLoading,
-  } = useSWR<MenuItem[]>("menuitem", getMenuItems);
+  } = useSWR<IMenuItem[]>("menuitem", getMenuItems, { revalidateOnFocus: false, dedupingInterval: 3000 });
 
   if (isLoading) {
     return (
       <div className={styles.loading_screen}>
-        <div className={styles.loading_text}>Đang tải menu...</div>
+        <LoadingSpinner size="lg" text="Đang tải menu..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-screen text-red-500">
-        Failed to load menu items. Please try again later.
+      <div className="flex justify-center items-center h-screen">
+        <ErrorState
+          title="Failed to load menu"
+          message="We couldn't load the menu items. Please try again later."
+        />
       </div>
     );
   }

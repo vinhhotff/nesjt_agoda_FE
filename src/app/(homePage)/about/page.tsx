@@ -20,7 +20,7 @@ export default function AboutPage() {
     error,
     isLoading,
   } = useSWR<AboutData>("about", getAbout);
-
+  
   if (isLoading) return <div className="p-10 text-center">Loading...</div>;
   if (error) return <div className="p-10 text-red-500">Failed to load</div>;
   if (!AboutData || !AboutData.sections) return <p>No data found</p>;

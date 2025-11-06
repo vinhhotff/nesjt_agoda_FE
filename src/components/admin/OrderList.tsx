@@ -1,8 +1,8 @@
-import { Order } from '@/src/Types';
+import { Order, Guest } from '@/src/Types';
 import { FC } from 'react';
 
 interface OrderListProps {
-  orders: Order[];
+  orders: (Order & { totalAmount?: number })[];
   onEdit: (order: Order) => void;
   onDelete: (id: string) => void;
 }
@@ -30,8 +30,8 @@ const OrderList: FC<OrderListProps> = ({ orders, onEdit, onDelete }) => (
       <tbody>
         {orders.map((row) => (
           <tr key={row._id} className="border-t hover:bg-gray-50">
-            <td className="py-3 px-4">{typeof row.guest === 'string' ? row.guest : row.guest?.guestName}</td>
-            <td className="py-3 px-4 font-semibold">${row.totalAmount}</td>
+            <td className="py-3 px-4">{typeof row.guest === 'string' ? row.guest : (row.guest as unknown as Guest)?.guestName || 'N/A'}</td>
+            <td className="py-3 px-4 font-semibold">${row.totalPrice?.toLocaleString() || row.totalAmount?.toLocaleString() || 0}</td>
             <td className="py-3 px-4">
               <span className={`px-2 py-1 text-sm rounded ${statusColor[row.status||'pending']}`}>
                 {row.status}
@@ -62,13 +62,13 @@ const OrderList: FC<OrderListProps> = ({ orders, onEdit, onDelete }) => (
         <div key={row._id} className="p-4 bg-white rounded-lg shadow border">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold">
-              {typeof row.guest === 'string' ? row.guest : row.guest?.guestName}
+              {typeof row.guest === 'string' ? row.guest : (row.guest as unknown as Guest)?.guestName || 'N/A'}
             </h3>
             <span className={`px-2 py-1 text-xs rounded ${statusColor[row.status||'pending']}`}>
               {row.status}
             </span>
           </div>
-          <p className="text-gray-600 mb-3">Total: <span className="font-bold">${row.totalAmount}</span></p>
+          <p className="text-gray-600 mb-3">Total: <span className="font-bold">${row.totalPrice?.toLocaleString() || row.totalAmount?.toLocaleString() || 0}</span></p>
           <div className="flex gap-2">
             <button 
               className="flex-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded"

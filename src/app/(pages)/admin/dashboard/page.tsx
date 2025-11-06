@@ -1,7 +1,8 @@
 
 'use client';
-import Aside from '@/src/components/admin/Aside';
-import Header from '@/src/components/admin/Header';
+import { AdminLayout } from '@/src/components/layout';
+import { LoadingSpinner } from '@/src/components/ui';
+import AdminPageHeader from '@/src/components/admin/common/AdminPageHeader';
 import RecentOrders from '@/src/components/admin/RecentOrders';
 import StatCards from '@/src/components/admin/StatCards';
 import TodayStats from '@/src/components/admin/TodayStats';
@@ -11,6 +12,7 @@ import { useDashboardData } from '@/src/hooks/useDashboardData';
 import { Order } from '@/src/Types';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { BarChart3 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
@@ -18,7 +20,8 @@ export default function AdminDashboard() {
 
   const router = useRouter();
 
-  const isAuthorized = !loading && user && user.role.toUpperCase() === 'ADMIN';
+  const roleName = user ? (typeof user.role === 'string' ? user.role : (user.role as any)?.name || '') : '';
+  const isAuthorized: boolean = !loading && !!user && roleName.toUpperCase() === 'ADMIN';
 
   const {
     coreStats,
@@ -36,7 +39,7 @@ export default function AdminDashboard() {
     }
   }, [isAuthorized, loading, router]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <LoadingSpinner size="lg" text="Loading dashboard..." className="min-h-screen" />;
   if (!isAuthorized) return null;
 
   const statCards = [
@@ -47,16 +50,19 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <AdminLayout>
+      <div className="w-full max-w-7xl mx-auto">
+        <AdminPageHeader
+          title="Dashboard Overview"
+          description="Monitor your restaurant's performance and key metrics at a glance"
+          icon={<BarChart3 className="w-6 h-6 text-white" />}
+        />
 
-      <Aside />
-      <main className="flex-1 p-6 md:p-10">
-        <Header />
         <StatCards stats={statCards} />
         {!dataLoading.today && todayStats && <TodayStats todayStats={todayStats} />}
         {!dataLoading.trends && weeklyTrends.length > 0 && <WeeklyTrends data={weeklyTrends} />}
         {!dataLoading.orders && <RecentOrders orders={recentOrders} onView={(order) => setSelectedOrder(order)} />}
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

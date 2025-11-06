@@ -1,35 +1,24 @@
-// Backend Model Types
+// Backend Model Types (synced from NestJS schemas)
 export interface Guest {
   _id: string;
   tableName: string;
   guestName: string;
-  phoneNumber?: string;
-  orders: Order[];
-  payment: Payment[];
+  guestPhone?: string;
   isPaid: boolean;
+  orders: string[]; // ObjectId array as strings
+  payment: string | null; // ObjectId as string
+  joinedAt: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface Order {
-  _id: string;
-  guest: string | Guest;
-  items: {
-    menuItem: string | IMenuItem;
-    quantity: number;
-    price?: number;
-  }[];
-  totalAmount: number;
-  status?: "pending" | "cancelled" | "preparing" | "served";
-  createdAt: string;
-  updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface IMenuItem {
   _id: string;
   name: string;
   description?: string;
-  images?: string[];
+  images?: string[]; // URLs as strings
   price: number;
   available: boolean;
   category: string;
@@ -37,8 +26,87 @@ export interface IMenuItem {
   tag?: string[];
   isVegetarian?: boolean;
   isVegan?: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdBy?: {
+    _id: string;
+    email: string;
+  };
+  updatedBy?: {
+    _id: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+}
+
+export interface Order {
+  _id: string;
+  guest?: string | Guest; // Can be ObjectId string or populated Guest object
+  user?: string | { _id: string; name?: string; email: string }; // Can be ObjectId or populated User
+  items: {
+    item: string | IMenuItem; // Can be ObjectId or populated MenuItem
+    quantity: number;
+    note?: string;
+    unitPrice: number;
+    subtotal: number;
+    _id?: string;
+  }[];
+  status: "pending" | "preparing" | "served" | "cancelled";
+  totalPrice: number;
+  isPaid: boolean;
+  specialInstructions?: string;
+  estimatedReadyTime?: string;
+  table?: string; // ObjectId as string
+  orderType: OrderType;
+  deliveryAddress?: string;
+  customerName?: string; // For online orders without guest
+  customerPhone?: string;
+  createdBy?: {
+    _id: string;
+    email: string;
+  };
+  updatedBy?: {
+    _id: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+  __v?: number;
+}
+
+export interface User {
+  _id: string;
+  name?: string;
+  email: string;
+  role: string; // Always normalized to role name string by API layer
+  isMember: boolean;
+  phone?: string;
+  address?: string;
+  avatar?: string;
+  transactions: string[]; // ObjectId array as strings
+  createdBy?: {
+    _id: string;
+    email: string;
+  };
+  updatedBy?: {
+    _id: string;
+    email: string;
+  };
+  deletedBy?: {
+    _id: string;
+    email: string;
+  };
+  refreshToken?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Backend may represent activation state in different ways
+  status?: "active" | "inactive";
+  isActive?: boolean;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 // Matches the backend DTO
@@ -83,12 +151,13 @@ export interface Table {
   updatedAt: string;
 }
 
-export interface User {
+// Legacy User interface for auth context - keep for backward compatibility
+export interface AuthUser {
   id?: string;
   _id?: string;
   email: string;
   name: string;
-  avatarUrl: string;
+  avatarUrl?: string;
   role: "ADMIN" | "STAFF" | "USER" | "admin" | "staff" | "user";
   createdAt?: string;
   updatedAt?: string;
@@ -136,6 +205,135 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
+export interface PaginatedOrder {
+  items: Order[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Revenue Analytics Types
+export interface RevenueStats {
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  growth: {
+    revenue: number;
+    orders: number;
+  };
+  periodComparison: {
+    current: number;
+    previous: number;
+    change: number;
+  };
+}
+
+export interface RevenueChartData {
+  date: string;
+  revenue: number;
+  orders: number;
+}
+
+export interface TopSellingItem {
+  _id: string;
+  name: string;
+  category: string;
+  totalSold: number;
+  totalRevenue: number;
+  image?: string;
+}
+
+export interface ChartDataPoint {
+  date: string;
+  count: number;
+}
+
+// Filter Types
+export interface UserFilter {
+  search?: string;
+  role?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface OrderFilter {
+  search?: string;
+  status?: 'all' | 'pending' | 'preparing' | 'served' | 'cancelled';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface MenuItemFilter {
+  search?: string;
+  category?: string;
+  available?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+// API Response wrapper
+export interface ApiError {
+  statusCode: number;
+  message: string | string[];
+  error?: string;
+  timestamp?: string;
+  path?: string;
+}
+
+// User status update payload
+export interface UserStatusUpdate {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  role?: string;
+  avatar?: string;
+}
+
+export interface OrderAnalytics {
+  totalOrders: number;
+  pendingOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  statusDistribution: {
+    status: string;
+    count: number;
+    percentage: number;
+  }[];
+  dailyOrders: ChartDataPoint[];
+}
+
+export interface CustomerAnalytics {
+  totalCustomers: number;
+  newCustomers: number;
+  returningCustomers: number;
+  customerGrowth: {
+    current: number;
+    previous: number;
+    change: number;
+  };
+}
+
+// User Role interface
+export interface Role {
+  _id: string;
+  name: string;
+  permissions: string[];
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
@@ -176,7 +374,7 @@ export interface PaymentFormData {
   method: "cash" | "QR" | "card";
 }
 
-export type Role = "ADMIN" | "STAFF" | "GUEST";
+export type UserRole = "ADMIN" | "STAFF" | "GUEST";
 
 export type Section =
   | {
@@ -222,3 +420,52 @@ export interface PaginatedUser {
   limit: number;
   totalPages: number;
 }
+
+// ============================
+// Voucher Types
+// ============================
+export type VoucherDiscountType = 'percentage' | 'fixed';
+
+export interface Voucher {
+  _id: string;
+  code: string;
+  discountType: VoucherDiscountType;
+  discountValue: number;
+  startDate?: string;
+  endDate?: string;
+  usageLimit?: number;
+  usedCount: number;
+  isActive: boolean;
+  minOrderTotal?: number;
+  maxDiscount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedVoucher {
+  items: Voucher[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ApplyVoucherPayload {
+  code: string;
+  orderTotal: number;
+  items?: { itemId: string; quantity: number; price?: number }[];
+}
+
+export interface ApplyVoucherResponse {
+  code: string;
+  discountAmount: number;
+  finalTotal: number;
+  voucherId: string;
+}
+export type OrdersApiResponse =
+| Order[] // trực tiếp
+| { data: Order[] }
+| { data: { orders: Order[] } }
+| { data: { results: Order[] } }
+| { orders: Order[] }
+| { results: Order[] };

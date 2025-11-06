@@ -9,7 +9,9 @@ import { Menu, X } from "lucide-react";
 const navLinks = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/menu-items", label: "Menu Items" },
+  { href: "/admin/vouchers", label: "Voucher Management" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/reservations", label: "Reservations" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/revenue", label: "Revenue" },
 ];
@@ -69,7 +71,7 @@ const Aside = () => {
               <div className="font-bold text-sm">{user.name}</div>
               <div className="text-xs">({user.email})</div>
               <div className="mt-1 text-orange-300 text-xs">
-                Role: {user.role}
+                Role: {typeof user.role === 'string' ? user.role : (user.role as any)?.name}
               </div>
               <button
                 onClick={() => logoutUser()}
