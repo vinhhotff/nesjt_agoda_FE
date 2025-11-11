@@ -75,21 +75,66 @@ export async function fetchPaginated<T = any>(
       }
     });
 
+    console.log(`🔍 fetchPaginated - Making API call to ${endpoint} with params:`, params);
 
     const response = await api.get(endpoint, { params });
+    
+    console.log(`🔍 fetchPaginated - API response status:`, response.status);
     const responseData = response.data;
+    
+    console.log(`🔍 fetchPaginated response for ${endpoint}:`, {
+      hasData: !!responseData,
+      hasDataData: !!responseData?.data,
+      hasDataDataData: !!responseData?.data?.data,
+      hasDataDataMeta: !!responseData?.data?.meta,
+      statusCode: responseData?.statusCode,
+      responseKeys: responseData ? Object.keys(responseData) : [],
+      dataType: typeof responseData?.data,
+      dataDataType: typeof responseData?.data?.data,
+      isDataArray: Array.isArray(responseData?.data?.data),
+      dataLength: responseData?.data?.data?.length,
+    });
     
     // Standard backend response format: { statusCode, message, data: { data: [...], meta: {...} }, timestamp }
     let data: T[] = [];
     let meta: any = {};
 
-    if (responseData.data?.data && responseData.data?.meta) {
+    // Check response structure: { statusCode, message, data: { data: [...], meta: {...} }, timestamp }
+    // Backend returns: { statusCode: 200, data: { data: [...], meta: {...} } }
+    
+    // Priority 1: Standard format with both data.data and data.meta
+    if (responseData?.data?.data && Array.isArray(responseData.data.data) && responseData.data?.meta) {
       // Extract data and meta from nested structure
       data = responseData.data.data;
       meta = responseData.data.meta;
+      console.log(`✅ Extracted ${data.length} items from standard format, total: ${meta.total}, page: ${meta.page}`);
+    } 
+    // Priority 2: Has statusCode and data.data array (meta might be missing)
+    else if (responseData?.statusCode === 200 && responseData?.data?.data && Array.isArray(responseData.data.data)) {
+      // Handle case where response has statusCode wrapper but meta might be missing
+      data = responseData.data.data;
+      meta = responseData.data.meta || {
+        total: data.length,
+        page: params.page || 1,
+        limit: params.limit || 10,
+        totalPages: Math.ceil(data.length / (params.limit || 10)),
+      };
+      console.log(`✅ Extracted ${data.length} items from statusCode wrapper, total: ${meta.total}, page: ${meta.page}`);
+    }
+    // Priority 3: Direct data array (no nesting)
+    else if (responseData?.data && Array.isArray(responseData.data)) {
+      // Fallback: direct array in data
+      data = responseData.data;
+      meta = {
+        total: data.length,
+        page: params.page || 1,
+        limit: params.limit || 10,
+        totalPages: Math.ceil(data.length / (params.limit || 10)),
+      };
+      console.log(`⚠️ Using fallback format: ${data.length} items`);
     } else {
       console.warn(`⚠️ Unexpected response format for ${endpoint}. Expected { data: { data: [...], meta: {...} } }`);
-      console.warn('Received:', responseData);
+      console.warn('Received:', JSON.stringify(responseData, null, 2));
     }
 
     const result: PaginatedResult<T> = {
@@ -100,16 +145,31 @@ export async function fetchPaginated<T = any>(
       totalPages: meta.totalPages || 0,
     };
 
+    console.log(`✅ fetchPaginated - Successfully parsed result:`, {
+      itemsCount: result.items.length,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+    });
+
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`❌ Error fetching paginated data from ${endpoint}:`, error);
-    return {
-      items: [],
-      total: 0,
-      page: query.page || 1,
-      limit: query.limit || 10,
-      totalPages: 0,
-    };
+    console.error('❌ Error details:', {
+      message: error?.message,
+      response: error?.response,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+      config: {
+        url: error?.config?.url,
+        method: error?.config?.method,
+        params: error?.config?.params,
+      },
+    });
+    
+    // Throw error instead of returning empty result to allow proper error handling
+    throw error;
   }
 }
 

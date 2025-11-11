@@ -10,6 +10,19 @@ export * from './orderApi';
 // Export Loyalty APIs
 export * from './loyaltyApi';
 
+// Export userApi functions first (new implementation)
+export {
+  createUser,
+  getUsersPaginate,
+  getUser,
+  updateUser,
+  deleteUser,
+  toggleUserStatus,
+  resetUserPassword,
+  getUserRoles,
+  fetchUsersCount,
+} from './userApi';
+
 // Re-export commonly used functions from the original api file for backward compatibility
 export {
   // Auth functions
@@ -18,17 +31,8 @@ export {
   register,
   refresh,
   
-  // User functions
-  createUser,
-  getUserPaginate,
-  getUser,
-  updateUser,
-  deleteUser,
-  getUsersPaginate,
-  toggleUserStatus,
-  resetUserPassword,
-  getUserRoles,
-  fetchUsersCount,
+  // User functions (legacy - deprecated, use userApi instead)
+  // getUserPaginate, // Commented out to use userApi version
   
   // Guest functions
   createGuest,

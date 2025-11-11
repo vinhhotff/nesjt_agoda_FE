@@ -38,9 +38,24 @@ export const createPayOSPaymentLink = async (
     } else if (response.data?.success !== undefined) {
       // Direct response (no wrapper)
       paymentResponse = response.data;
+    } else if (response.data) {
+      // Try to use response.data directly
+      paymentResponse = response.data as CreatePaymentLinkResponse;
     } else {
-      console.error('Unexpected response structure:', response.data);
+      console.error('Unexpected response structure:', {
+        fullResponse: response,
+        responseData: response.data,
+        responseStatus: response.status,
+      });
       throw new Error('Invalid response structure from payment API');
+    }
+    
+    // Validate response has required fields
+    if (!paymentResponse.success && !paymentResponse.paymentLink) {
+      console.error('Payment response missing required fields:', paymentResponse);
+      throw new Error(
+        paymentResponse.message || 'Payment link was not returned from server'
+      );
     }
     
     console.log('Extracted payment response:', paymentResponse);
@@ -79,10 +94,9 @@ export const createPayOSPaymentLink = async (
         `Server error (${error.response.status})`;
     }
     
-    return {
-      success: false,
-      message: errorMessage,
-    };
+    // Throw error instead of returning error object
+    // This allows the calling code to handle it properly with try/catch
+    throw new Error(errorMessage);
   }
 };
 

@@ -246,8 +246,14 @@ export const getUserPaginate = async (
       responsePages = 0;
     }
 
+    // Normalize role field: convert role object to string if needed
+    const normalizedUsers = users.map((user: any) => ({
+      ...user,
+      role: typeof user.role === 'string' ? user.role : user.role?.name || 'user'
+    }));
+
     const result = {
-      items: users,
+      items: normalizedUsers,
       total: totalCount,
       page: page,
       limit: limit,

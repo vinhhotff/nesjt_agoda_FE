@@ -5,9 +5,23 @@ import { fetchPaginated, PaginationQuery } from './paginationApi';
 
 // Helper to transform user data with proper role mapping
 const transformUser = (user: any): User => {
+  // Handle role - can be object { _id, name } or string
+  // Backend now returns role as string after normalization
+  let roleName: string;
+  if (typeof user.role === 'string') {
+    // Role is already a string (backend normalized it)
+    roleName = user.role;
+  } else if (typeof user.role === 'object' && user.role !== null) {
+    // Role is populated object with name property (fallback)
+    roleName = user.role.name || 'user';
+  } else {
+    // Fallback
+    roleName = getRoleName(user.role) || 'user';
+  }
+  
   const transformedUser = {
     ...user,
-    role: getRoleName(user.role)
+    role: roleName
   };
   
   return transformedUser;
@@ -15,39 +29,71 @@ const transformUser = (user: any): User => {
 
 // Create User
 export const createUser = async (data: Partial<User>): Promise<User> => {
-  const response = await api.post<User>('/users', data);
+  const response = await api.post<User>('/user', data);
+  // Backend ResponseInterceptor wraps response
+  if (response.data?.data) {
+    return response.data.data;
+  }
   return response.data;
 };
 
 // Get paginated users with filter support
-export const getUsersPaginate = async (filter: UserFilter = {}): Promise<PaginatedUser> => {
+// Supports both object parameter and individual parameters for backward compatibility
+export const getUsersPaginate = async (
+  pageOrFilter?: number | UserFilter,
+  limit?: number,
+  search?: string,
+  role?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
+): Promise<PaginatedUser> => {
   try {
+    // Handle both function signatures:
+    // 1. getUsersPaginate({ page, limit, search, role, ... })
+    // 2. getUsersPaginate(page, limit, search, role, sortBy, sortOrder)
+    let filter: UserFilter;
+    
+    if (typeof pageOrFilter === 'object' && pageOrFilter !== null) {
+      // Object parameter format
+      filter = pageOrFilter;
+    } else {
+      // Individual parameters format
+      filter = {
+        page: pageOrFilter || 1,
+        limit: limit || 10,
+        search: search || '',
+        role: role || '',
+        sortBy: sortBy || 'createdAt',
+        sortOrder: sortOrder || 'desc',
+      };
+    }
+
     const {
-      search = '',
-      role = '',
+      search: searchParam = '',
+      role: roleParam = '',
       status = '',
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy: sortByParam = 'createdAt',
+      sortOrder: sortOrderParam = 'desc',
       page = 1,
-      limit = 10
+      limit: limitParam = 10
     } = filter;
 
     // Build query using standardized format
     const query: PaginationQuery = {
       page,
-      limit,
-      sortBy,
-      sortOrder,
+      limit: limitParam,
+      sortBy: sortByParam,
+      sortOrder: sortOrderParam,
     };
 
     // Add search parameter
-    if (search) {
-      query.search = search;
+    if (searchParam) {
+      query.search = searchParam;
     }
     
     // Add role filter
-    if (role && role !== 'all') {
-      query.role = role;
+    if (roleParam && roleParam !== 'all') {
+      query.role = roleParam;
     }
     
     // Add status filter
@@ -55,12 +101,29 @@ export const getUsersPaginate = async (filter: UserFilter = {}): Promise<Paginat
       query.status = status;
     }
 
+    console.log('🔍 getUsersPaginate - Calling fetchPaginated with:', {
+      endpoint: '/user',
+      query,
+    });
+
     // Use standardized pagination API
     const result = await fetchPaginated<User>('/user', query);
+    
+    console.log('🔍 getUsersPaginate - fetchPaginated result:', {
+      itemsCount: result.items?.length,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+    });
     
     // Transform users to ensure role is a string name, not ObjectId
     const transformedUsers = result.items.map((user: any) => transformUser(user));
     
+    console.log('🔍 getUsersPaginate - Transformed users:', {
+      count: transformedUsers.length,
+      firstUserRole: transformedUsers[0]?.role,
+    });
     
     return {
       items: transformedUsers,
@@ -69,24 +132,30 @@ export const getUsersPaginate = async (filter: UserFilter = {}): Promise<Paginat
       limit: result.limit,
       totalPages: result.totalPages
     };
-  } catch (error) {
-    console.error('Error in getUsersPaginate:', error);
+  } catch (error: any) {
+    console.error('❌ Error in getUsersPaginate:', error);
+    console.error('❌ Error details:', {
+      message: error?.message,
+      response: error?.response,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+    });
     
-    // Return empty result with proper error handling
-    return {
-      items: [],
-      total: 0,
-      page: filter.page || 1,
-      limit: filter.limit || 10,
-      totalPages: 0
-    };
+    // Re-throw error to allow useAdminPagination to handle it
+    throw error;
   }
 };
 
 // Get single user
 export const getUser = async (id: string): Promise<User> => {
-  const response = await api.get<User>(`/users/${id}`);
-  return transformUser(response.data);
+  const response = await api.get(`/user/${id}`);
+  // Backend ResponseInterceptor wraps response
+  let userData = response.data;
+  if (response.data?.data) {
+    userData = response.data.data;
+  }
+  return transformUser(userData);
 };
 
 // Update user - Fixed to match BE schema
@@ -105,9 +174,13 @@ export const updateUser = async (id: string, data: UserStatusUpdate): Promise<Us
     });
 
     
-    const response = await api.patch<User>(`/users/${id}`, sanitizedData);
-    
-    return response.data;
+    const response = await api.patch(`/user/${id}`, sanitizedData);
+    // Backend ResponseInterceptor wraps response
+    let userData = response.data;
+    if (response.data?.data) {
+      userData = response.data.data;
+    }
+    return userData;
   } catch (error: any) {
     console.error('❌ Error updating user:', error);
     console.error('📋 Error response:', error?.response?.data);
@@ -177,7 +250,7 @@ export const toggleUserStatus = async (id: string, makeActive: boolean): Promise
 // Delete user (soft delete supported by BE)
 export const deleteUser = async (id: string): Promise<void> => {
   try {
-    await api.delete(`/users/${id}`);
+    await api.delete(`/user/${id}`);
   } catch (error: any) {
     console.error('❌ Error deleting user:', error);
     throw new Error(`Failed to delete user: ${error?.message || 'Unknown error'}`);
@@ -187,8 +260,13 @@ export const deleteUser = async (id: string): Promise<void> => {
 // Get user count
 export const fetchUsersCount = async (): Promise<number> => {
   try {
-    const response = await api.get('/users/count');
-    return response.data.total || 0;
+    const response = await api.get('/user/count');
+    // Backend ResponseInterceptor wraps response
+    let countData = response.data;
+    if (response.data?.data) {
+      countData = response.data.data;
+    }
+    return countData.total || 0;
   } catch (error) {
     console.error('Error fetching user count:', error);
     return 0;

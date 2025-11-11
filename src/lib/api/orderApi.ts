@@ -58,7 +58,14 @@ export function extractOrders(res: OrdersApiResponse): Order[] {
 }
 
 export const getOrder = async (id: string): Promise<Order> => {
-  const response = await api.get<Order>(`/orders/${id}`);
+  const response = await api.get(`/orders/${id}`);
+  // Backend ResponseInterceptor wraps response as:
+  // { statusCode: 200, message: "Success", data: Order }
+  // So we need to extract response.data.data
+  if (response.data?.data) {
+    return response.data.data;
+  }
+  // Fallback to direct response.data if no wrapper
   return response.data;
 };
 
@@ -164,10 +171,11 @@ export const updateOrderStatus = async (
   }
 };
 
-export const getOrderDetails = async (id: string) => {
+export const getOrderDetails = async (id: string): Promise<Order> => {
   try {
-    const response = await getOrder(id);
-    return response;
+    const order = await getOrder(id);
+    console.log('Order details fetched:', order);
+    return order;
   } catch (error) {
     console.error('Error fetching order details:', error);
     throw error;

@@ -35,14 +35,41 @@ export function useAdminPagination({
         sortOrder
       );
       console.log('🔍 fetchFunction response:', response);
+      console.log('🔍 Response structure:', {
+        hasItems: !!response.items,
+        itemsType: Array.isArray(response.items) ? 'array' : typeof response.items,
+        itemsLength: response.items?.length,
+        hasTotal: 'total' in response,
+        hasTotalPages: 'totalPages' in response,
+        total: response.total,
+        totalPages: response.totalPages,
+      });
       
-      setData(response.items || []);
-      setTotalPages(response.totalPages || 1);
-      setTotalItems(response.total || 0);
-      console.log('🔍 Data set:', { items: response.items?.length, totalPages: response.totalPages, total: response.total });
-    } catch (error) {
-      console.error('❌ Error fetching data:', error);
+      if (response && typeof response === 'object') {
+        setData(response.items || []);
+        setTotalPages(response.totalPages || 1);
+        setTotalItems(response.total || 0);
+        console.log('✅ Data set successfully:', { 
+          items: response.items?.length, 
+          totalPages: response.totalPages, 
+          total: response.total 
+        });
+      } else {
+        console.warn('⚠️ Unexpected response format:', response);
+        setData([]);
+        setTotalPages(1);
+        setTotalItems(0);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching data in useAdminPagination:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        response: error?.response,
+      });
       setData([]);
+      setTotalPages(1);
+      setTotalItems(0);
     } finally {
       setLoading(false);
     }
