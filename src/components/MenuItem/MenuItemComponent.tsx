@@ -51,6 +51,7 @@ export default function MenuItemComponent() {
                 alt={item.name || `menu-${key}`}
                 width={270}
                 height={334}
+                unoptimized
                 className="w-full h-[400px] rounded-lg mb-4 object-cover transform transition-transform duration-300 hover:scale-105"
               />
               <h3 className={styles.cardTitle}>{item.name}</h3>

@@ -48,6 +48,7 @@ const ImageSlider = () => {
                 alt={site.name || `menu-${i}`}
                 width={270}
                 height={334}
+                unoptimized
                 className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
               />
             </div>

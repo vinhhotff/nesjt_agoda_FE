@@ -56,6 +56,7 @@ export default function AboutPage() {
                       alt={section.title}
                       width={800}
                       height={500}
+                      unoptimized
                       className="rounded-2xl shadow-lg object-cover"
                     />
                   </div>
@@ -78,6 +79,7 @@ export default function AboutPage() {
                             alt={member.name}
                             width={200}
                             height={200}
+                            unoptimized
                             className="rounded-full shadow-md object-cover"
                           />
                           <h3 className="mt-4 text-lg font-semibold">
