@@ -1,7 +1,29 @@
 import axios from 'axios';
 
+// Sử dụng relative path trong production để tránh CORS (qua Next.js rewrites)
+// Sử dụng absolute URL trong development
+const getBaseURL = () => {
+  if (typeof window === 'undefined') {
+    // Server-side: sử dụng environment variable
+    return process.env.NEXT_PUBLIC_API_URL || 'https://be-vang.onrender.com/api/v1';
+  }
+  
+  // Client-side: kiểm tra xem có đang chạy trên Vercel/production không
+  const isProduction = window.location.hostname.includes('vercel.app') || 
+                       window.location.hostname.includes('vercel.com') ||
+                       process.env.NEXT_PUBLIC_USE_PROXY === 'true';
+  
+  if (isProduction) {
+    // Production: sử dụng relative path để tránh CORS (qua Next.js rewrites)
+    return '/api';
+  }
+  
+  // Development: sử dụng environment variable hoặc localhost
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083/api/v1';
+};
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: getBaseURL(),
   withCredentials: true,
 });
 
