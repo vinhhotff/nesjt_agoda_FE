@@ -5,7 +5,12 @@ import axios from 'axios';
 const getBaseURL = () => {
   if (typeof window === 'undefined') {
     // Server-side: sử dụng environment variable
-    return process.env.NEXT_PUBLIC_API_URL || 'https://be-vang.onrender.com/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    // Ensure it ends with /api/v1, remove trailing slashes first
+    if (apiUrl) {
+      return apiUrl.replace(/\/+$/, '') + (apiUrl.includes('/api/v1') ? '' : '/api/v1');
+    }
+    return 'https://be-vang.onrender.com/api/v1';
   }
   
   // Client-side: kiểm tra xem có đang chạy trên Vercel/production không
@@ -15,11 +20,17 @@ const getBaseURL = () => {
   
   if (isProduction) {
     // Production: sử dụng relative path để tránh CORS (qua Next.js rewrites)
+    // Rewrite sẽ thêm /api/v1/ vào, nên chỉ cần /api
     return '/api';
   }
   
   // Development: sử dụng environment variable hoặc localhost
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083/api/v1';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (apiUrl) {
+    // Ensure it ends with /api/v1
+    return apiUrl.replace(/\/+$/, '') + (apiUrl.includes('/api/v1') ? '' : '/api/v1');
+  }
+  return 'http://localhost:8083/api/v1';
 };
 
 export const api = axios.create({
