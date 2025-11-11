@@ -29,7 +29,7 @@ const transformUser = (user: any): User => {
 
 // Create User
 export const createUser = async (data: Partial<User>): Promise<User> => {
-  const response = await api.post<User>('/user', data);
+  const response = await api.post<any>('/user', data);
   // Backend ResponseInterceptor wraps response
   if (response.data?.data) {
     return response.data.data;
