@@ -36,7 +36,8 @@ const nextConfig = {
         pathname: '/storage/v1/object/public/**', // Cho phép tất cả các bucket (Chef, Restaurant, Video, uploads, v.v.)
       }
     ],
-    unoptimized: process.env.NODE_ENV === 'development',
+    // Tắt tối ưu hóa ảnh để tránh lỗi với Supabase trên Vercel
+    unoptimized: true,
   },
 };
 
