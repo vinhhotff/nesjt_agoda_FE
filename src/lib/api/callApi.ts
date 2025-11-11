@@ -30,20 +30,23 @@ export const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    // Only attempt refresh if we have a 401 and it's not already a refresh request
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/refresh')) {
       try {
         const res = await api.get('/auth/refresh');
-        const newToken = res.data.accessToken;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('accessToken', newToken);
+        const newToken = res.data?.accessToken || res.data?.data?.accessToken;
+        if (newToken) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('accessToken', newToken);
+          }
+          error.config.headers.Authorization = `Bearer ${newToken}`;
+          return api.request(error.config);
         }
-        error.config.headers.Authorization = `Bearer ${newToken}`;
-        return api.request(error.config);
-      } catch (err) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          window.location.href = '/login';
-        }
+      } catch (err: any) {
+        // If refresh fails (400 or 401), user is not authenticated
+        // Silently fail and let the original error propagate
+        // Don't redirect to login here as it might be a public route
+        console.warn('Refresh token failed:', err?.response?.status || err?.message);
       }
     }
     return Promise.reject(error);
