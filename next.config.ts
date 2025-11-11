@@ -32,9 +32,8 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'your-supabase-project-id.supabase.co',
-        port: '', // không cần port
-        pathname: '/storage/v1/object/public/uploads/**',
+        hostname: 'xjbbkjfsuibvxpatijcj.supabase.co', // Domain Supabase của bạn
+        pathname: '/storage/v1/object/public/**', // Cho phép tất cả các bucket (Chef, Restaurant, Video, uploads, v.v.)
       }
     ],
     unoptimized: process.env.NODE_ENV === 'development',
