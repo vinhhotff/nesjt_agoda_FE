@@ -49,6 +49,7 @@ function MenuCard({ item }: Props) {
             alt={item.name}
             width={300}
             height={180}
+            unoptimized
             className={styles.menuImage}
             onError={handleImageError}
             loading="lazy"

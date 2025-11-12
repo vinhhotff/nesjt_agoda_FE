@@ -45,6 +45,7 @@ const nextConfig = {
       }
     ],
     // Tắt tối ưu hóa ảnh để tránh lỗi với Supabase trên Vercel
+    // unoptimized: true sẽ tắt hoàn toàn image optimization
     unoptimized: true,
   },
 };

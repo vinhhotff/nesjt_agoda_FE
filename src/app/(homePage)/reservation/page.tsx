@@ -165,6 +165,7 @@ export default function ReservationPage() {
             src="/restaurant.jpg"
             alt="Restaurant table"
             fill
+            unoptimized
             className="rounded-2xl shadow-lg object-cover"
           />
         </div>

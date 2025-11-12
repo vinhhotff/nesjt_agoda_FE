@@ -71,6 +71,7 @@ export default function Login() {
           src="/login.jpg"
           alt="Login"
           fill
+          unoptimized
           className={styles.leftImage}
         />
       </div>

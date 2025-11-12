@@ -53,6 +53,7 @@ const ContactPage = () => {
           src="./contactimg.jpg"
           alt="contact"
           fill
+          unoptimized
           className="object-cover"
         />
         <h1 className="absolute inset-0 flex items-center justify-center text-4xl md:text-5xl lg:text-6xl font-bold bg-black/50 text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">
@@ -145,6 +146,7 @@ const ContactPage = () => {
           src="./food.jpg"
           alt="reservation"
           fill
+          unoptimized
           className="object-cover"
         />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center bg-black/50">
