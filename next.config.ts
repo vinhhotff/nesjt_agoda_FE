@@ -26,12 +26,17 @@ const nextConfig = {
     ];
   },
   images: {
+    // Tắt hoàn toàn image optimization để tránh lỗi với Supabase trên Vercel
+    // Next.js sẽ không optimize bất kỳ ảnh nào, load trực tiếp từ source
+    unoptimized: true,
+    // Disable image optimization completely - không cần remotePatterns khi unoptimized: true
+    // Nhưng vẫn giữ để tương thích nếu có thay đổi sau này
     remotePatterns: [
       {
         protocol: 'http',
         hostname: 'localhost',
         port: '8083',
-        pathname: '/uploads/**', // ảnh từ backend hoặc Supabase
+        pathname: '/uploads/**',
       },
       {
         protocol: 'https',
@@ -40,13 +45,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'xjbbkjfsuibvxpatijcj.supabase.co', // Domain Supabase của bạn
-        pathname: '/storage/v1/object/public/**', // Cho phép tất cả các bucket (Chef, Restaurant, Video, uploads, v.v.)
+        hostname: 'xjbbkjfsuibvxpatijcj.supabase.co',
+        pathname: '/storage/v1/object/public/**',
       }
     ],
-    // Tắt tối ưu hóa ảnh để tránh lỗi với Supabase trên Vercel
-    // unoptimized: true sẽ tắt hoàn toàn image optimization
-    unoptimized: true,
   },
 };
 

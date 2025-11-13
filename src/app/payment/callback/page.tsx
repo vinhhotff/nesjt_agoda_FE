@@ -14,8 +14,9 @@ function PaymentCallbackContent() {
       const orderCode = searchParams.get('orderCode');
       const status = searchParams.get('status');
       const orderId = searchParams.get('orderId');
+      const amount = searchParams.get('amount');
 
-      if (!orderCode || !status) {
+      if (!orderCode || !status || !orderId) {
         setStatus('error');
         toast.error('Invalid payment callback parameters');
         setTimeout(() => router.push('/'), 3000);
@@ -23,13 +24,41 @@ function PaymentCallbackContent() {
       }
 
       if (status === 'PAID') {
-        setStatus('success');
-        toast.success('Payment successful! Your order has been confirmed.');
-        
-        // Redirect to home or order history after 3 seconds
-        setTimeout(() => {
-          router.push('/');
-        }, 3000);
+        try {
+          // Call backend to confirm payment and update order status
+          const response = await fetch('/api/payment/payos/confirm-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              orderId,
+              orderCode,
+              amount: amount ? parseFloat(amount) : undefined,
+            }),
+          });
+
+          if (response.ok) {
+            setStatus('success');
+            toast.success('Payment successful! Your order has been confirmed.');
+            
+            // Redirect to home or order history after 3 seconds
+            setTimeout(() => {
+              router.push('/user/home');
+            }, 3000);
+          } else {
+            const errorData = await response.json();
+            console.error('Payment confirmation error:', errorData);
+            setStatus('error');
+            toast.error(errorData.message || 'Payment confirmation failed. Please contact support.');
+            setTimeout(() => router.push('/'), 5000);
+          }
+        } catch (error: any) {
+          console.error('Error confirming payment:', error);
+          setStatus('error');
+          toast.error('Error confirming payment. Please contact support.');
+          setTimeout(() => router.push('/'), 5000);
+        }
       } else {
         setStatus('error');
         toast.error('Payment was not completed. Please try again.');

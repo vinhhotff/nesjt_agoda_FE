@@ -4,6 +4,8 @@ export interface CreatePaymentLinkRequest {
   orderId: string;
   amount: number;
   description?: string;
+  returnUrl?: string;
+  cancelUrl?: string;
 }
 
 export interface CreatePaymentLinkResponse {
@@ -19,10 +21,23 @@ export const createPayOSPaymentLink = async (
   data: CreatePaymentLinkRequest
 ): Promise<CreatePaymentLinkResponse> => {
   try {
-    console.log('Creating PayOS payment link with data:', data);
+    // Auto-generate returnUrl and cancelUrl if not provided
+    let requestData = { ...data };
+    
+    if (typeof window !== 'undefined') {
+      const baseUrl = window.location.origin;
+      if (!requestData.returnUrl) {
+        requestData.returnUrl = `${baseUrl}/payment/success`;
+      }
+      if (!requestData.cancelUrl) {
+        requestData.cancelUrl = `${baseUrl}/payment/cancel`;
+      }
+    }
+    
+    console.log('Creating PayOS payment link with data:', requestData);
     const response = await api.post(
       '/payment/payos/create-link',
-      data
+      requestData
     );
     console.log('PayOS API raw response:', response);
     console.log('PayOS API response.data:', response.data);
