@@ -417,7 +417,8 @@ export const createMenuItem = async (data: FormData) => {
 
 export const getMenuItem = async (id: string) => {
   const res = await api.get<IMenuItem>(`/menu-items/${id}`);
-  return res.data;
+  // Handle nested data structure: { statusCode, message, data: {...} }
+  return res.data?.data || res.data;
 };
 
 export const updateMenuItem = async (id: string, data: Partial<IMenuItem>) => {

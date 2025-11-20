@@ -141,14 +141,14 @@ const ModalVoucherForm: React.FC<Props> = ({ open, initial, onSubmit, onClose })
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           {/* Background overlay */}
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -158,114 +158,144 @@ const ModalVoucherForm: React.FC<Props> = ({ open, initial, onSubmit, onClose })
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 30 }}
             transition={{ duration: 0.2 }}
-            className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-lg p-6"
+            className="relative z-10 w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-yellow-100"
           >
-            <h2 className="text-xl font-semibold mb-4">
-              {initial ? "Edit Voucher" : "Create Voucher"}
-            </h2>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-yellow-50 to-amber-50 px-8 py-6 border-b border-yellow-100">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {initial ? "✏️ Edit Voucher" : "🎟️ Create Voucher"}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {initial ? "Update voucher details below" : "Fill in the details to create a new voucher"}
+              </p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Code */}
                 <div>
-                  <label className="block text-sm font-medium">Code <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Voucher Code <span className="text-red-500">*</span>
+                  </label>
                   <input
                     name="code"
                     value={form.code || ""}
                     onChange={handleChange}
                     required
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none font-mono uppercase"
                     placeholder="e.g., SUMMER2024"
                   />
                 </div>
 
                 {/* Name - Required by backend */}
                 <div>
-                  <label className="block text-sm font-medium">Name <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Display Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     name="name"
                     type="text"
                     value={(form as any).name || ""}
                     onChange={handleChange}
                     required
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none"
                     placeholder="e.g., Summer Sale 2024"
                   />
                 </div>
 
                 {/* Discount Type */}
                 <div>
-                  <label className="block text-sm font-medium">Discount Type</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Discount Type
+                  </label>
                   <select
                     name="discountType"
                     value={form.discountType as any}
                     onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none bg-white"
                   >
-                    <option value="percentage">Percentage</option>
-                    <option value="fixed">Fixed Amount</option>
+                    <option value="percentage">💯 Percentage</option>
+                    <option value="fixed">💵 Fixed Amount</option>
                   </select>
                 </div>
 
                 {/* Discount Value */}
                 <div>
-                  <label className="block text-sm font-medium">Discount Value</label>
-                  <input
-                    type="number"
-                    min={0}
-                    name="discountValue"
-                    value={form.discountValue ?? 0}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Discount Value
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      step={form.discountType === "percentage" ? 1 : 0.01}
+                      name="discountValue"
+                      value={form.discountValue ?? 0}
+                      onChange={handleChange}
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none"
+                    />
+                    {form.discountType === "percentage" && (
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">%</span>
+                    )}
+                  </div>
                   {form.discountType === "percentage" && (
-                    <p className="text-xs text-gray-500 mt-1">Value is in percentage (0 - 100)</p>
+                    <p className="text-xs text-gray-500 mt-1.5">💡 Value is in percentage (0 - 100)</p>
                   )}
                 </div>
 
                 {/* Max Discount */}
                 <div>
-                  <label className="block text-sm font-medium">Max Discount (only for %)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Max Discount <span className="text-gray-400 text-xs">(for % only)</span>
+                  </label>
                   <input
                     type="number"
                     min={0}
+                    step={0.01}
                     name="maxDiscount"
                     value={form.maxDiscount ?? ""}
                     onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none"
                     placeholder="Optional"
+                    disabled={form.discountType !== "percentage"}
                   />
                 </div>
 
                 {/* Start Date */}
                 <div>
-                  <label className="block text-sm font-medium">Start Date <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="datetime-local"
                     name="startDate"
                     value={form.startDate || ""}
                     onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
                     required
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none"
                   />
                 </div>
 
                 {/* End Date */}
                 <div>
-                  <label className="block text-sm font-medium">End Date <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    End Date <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="datetime-local"
                     name="endDate"
                     value={form.endDate || ""}
                     onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
                     required
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none"
                   />
                 </div>
 
                 {/* Usage Limit */}
                 <div>
-                  <label className="block text-sm font-medium">Usage Limit <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Usage Limit <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="number"
                     min={1}
@@ -273,52 +303,73 @@ const ModalVoucherForm: React.FC<Props> = ({ open, initial, onSubmit, onClose })
                     value={form.usageLimit ?? ""}
                     onChange={handleChange}
                     required
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none"
                     placeholder="e.g., 100"
                   />
                 </div>
 
                 {/* Min Order Total */}
                 <div>
-                  <label className="block text-sm font-medium">Min Order Total</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Min Order Total
+                  </label>
                   <input
                     type="number"
                     min={0}
+                    step={0.01}
                     name="minOrderTotal"
                     value={form.minOrderTotal ?? 0}
                     onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all outline-none"
                   />
                 </div>
 
                 {/* Active Checkbox */}
-                <div className="flex items-center gap-2">
-                  <input
-                    id="isActive"
-                    type="checkbox"
-                    name="isActive"
-                    checked={!!form.isActive}
-                    onChange={handleChange}
-                  />
-                  <label htmlFor="isActive" className="text-sm font-medium">Active</label>
+                <div className="md:col-span-2">
+                  <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-yellow-300 transition-all cursor-pointer bg-gray-50">
+                    <input
+                      id="isActive"
+                      type="checkbox"
+                      name="isActive"
+                      checked={!!form.isActive}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-yellow-500 rounded focus:ring-2 focus:ring-yellow-200"
+                    />
+                    <div>
+                      <span className="text-sm font-semibold text-gray-700">Active Status</span>
+                      <p className="text-xs text-gray-500">Enable this voucher for customer use</p>
+                    </div>
+                  </label>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 justify-end pt-4">
+              <div className="flex gap-4 justify-end pt-6 mt-6 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded border"
+                  className="px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   disabled={submitting}
                   type="submit"
-                  className="px-4 py-2 rounded bg-indigo-600 text-white"
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 text-white font-semibold shadow-lg hover:shadow-xl transition-all disabled:cursor-not-allowed"
                 >
-                  {submitting ? "Saving..." : "Save"}
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Saving...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      {initial ? "💾 Update Voucher" : "✨ Create Voucher"}
+                    </span>
+                  )}
                 </button>
               </div>
             </form>

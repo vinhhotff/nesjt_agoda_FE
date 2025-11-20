@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "@/src/lib/utils/toast";
 import { reservationsAPI, CreateReservationDto } from "@/src/lib/api/reservationsApi";
 import TableSelectionModal from "@/src/components/reservations/TableSelectionModal";
 import { createPayOSPaymentLink } from "@/src/lib/api/payosApi";

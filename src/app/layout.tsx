@@ -1,7 +1,7 @@
-import { Bounce, ToastContainer } from "react-toastify";
+import { Slide, ToastContainer } from "react-toastify";
 import "./globals.css";
 import { AuthProvider } from "../Context/AuthContext";
-import { CartProvider } from "../Context/CartContext"; // Import CartProvider
+import { CartProvider } from "../Context/CartContext";
 import SWRProvider from "@/src/components/providers/SWRProvider";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -18,20 +18,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="mdl-js">
       <body>
         <AuthProvider>
-          <CartProvider> {/* Wrap with CartProvider */}
+          <CartProvider>
             <SWRProvider>
               <ToastContainer
                 position="top-right"
                 autoClose={3000}
                 hideProgressBar={false}
-                newestOnTop={false}
+                newestOnTop={true}
                 closeOnClick={true}
                 rtl={false}
                 pauseOnFocusLoss={false}
                 draggable={false}
-                pauseOnHover
-                theme="colored"
-                transition={Bounce}
+                pauseOnHover={true}
+                theme="light"
+                transition={Slide}
+                limit={3}
+                style={{ zIndex: 9999 }}
               />
               {children}
             </SWRProvider>

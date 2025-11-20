@@ -1,11 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Check, Users, MapPin, RotateCw } from 'lucide-react';
+import { X, Check, Users, MapPin, RotateCw, Layout } from 'lucide-react';
 import { Table } from '@/src/Types';
 import { getTables } from '@/src/lib/api';
 import { reservationsAPI } from '@/src/lib/api/reservationsApi';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  getTableCellColor,
+  getEmptyCellColor,
+  getGridContainerStyle,
+  getDisplayDimensions,
+  getCellGridStyle,
+  CELL_BASE_CLASSES,
+  SCREEN_INDICATOR,
+} from '@/src/lib/utils/tableLayoutStyles';
+import { debugLayouts } from '@/src/lib/utils/debugLayout';
 
 interface TableSelectionModalProps {
   isOpen: boolean;
@@ -29,6 +39,7 @@ interface TableLayout {
   name: string;
   gridCols: number;
   gridRows: number;
+  isActive?: boolean; // Layout chính được hiển thị cho khách hàng
   zones?: {
     zoneId: string;
     zoneName: string;
@@ -66,41 +77,154 @@ export default function TableSelectionModal({
   const [gridRows, setGridRows] = useState(10); // Default grid rows
   const [selectedLayout, setSelectedLayout] = useState<TableLayout | null>(null);
 
-  // Load active layout from localStorage
-  const loadActiveLayout = (): TableLayout | null => {
+  // Load active layout from localStorage or create default
+  const loadActiveLayout = (availableTables: Table[]): TableLayout | null => {
     try {
       const saved = localStorage.getItem('table-layouts');
+      
+      // Nếu có layouts trong localStorage
       if (saved) {
-        const layouts: TableLayout[] = JSON.parse(saved);
-        console.log('Loaded layouts from localStorage:', {
+        let layouts: TableLayout[] = JSON.parse(saved);
+        console.log('✅ Loaded layouts from localStorage:', {
           layoutsCount: layouts.length,
-          firstLayout: layouts[0] ? {
-            name: layouts[0].name,
-            tablesCount: layouts[0].tables.length,
-            tableIds: layouts[0].tables.map(t => t.tableId),
-            tableNames: layouts[0].tables.map(t => t.tableName)
-          } : null
+          layouts: layouts.map(l => ({ name: l.name, isActive: l.isActive, tablesCount: l.tables.length }))
         });
-        // Return first layout (active layout)
-        return layouts.length > 0 ? layouts[0] : null;
+        
+        // 🔧 FIX: Nếu có "Default Layout" và có layouts khác, xóa "Default Layout"
+        const hasDefaultLayout = layouts.some(l => l.name === 'Default Layout');
+        const hasOtherLayouts = layouts.some(l => l.name !== 'Default Layout');
+        
+        if (hasDefaultLayout && hasOtherLayouts) {
+          console.log('🔧 Removing "Default Layout" because other layouts exist');
+          layouts = layouts.filter(l => l.name !== 'Default Layout');
+          // Ensure at least one layout is active
+          const hasActive = layouts.some(l => l.isActive === true);
+          if (!hasActive && layouts.length > 0) {
+            layouts[0].isActive = true;
+          }
+          // Save cleaned layouts
+          localStorage.setItem('table-layouts', JSON.stringify(layouts));
+          console.log('✅ Cleaned layouts:', layouts.map(l => ({ name: l.name, isActive: l.isActive })));
+        }
+        
+        // Tìm layout có isActive = true
+        const activeLayouts = layouts.filter(l => l.isActive === true);
+        
+        // 🔧 FIX: Nếu có nhiều hơn 1 layout active, chỉ giữ layout đầu tiên (không phải Default Layout)
+        if (activeLayouts.length > 1) {
+          console.log('⚠️ Multiple active layouts found, fixing...');
+          const preferredActive = activeLayouts.find(l => l.name !== 'Default Layout') || activeLayouts[0];
+          layouts.forEach(l => {
+            l.isActive = (l._id === preferredActive._id);
+          });
+          localStorage.setItem('table-layouts', JSON.stringify(layouts));
+          console.log('✅ Fixed multiple active layouts, selected:', preferredActive.name);
+          return preferredActive;
+        }
+        
+        if (activeLayouts.length === 1) {
+          console.log('✅ Found active layout:', activeLayouts[0].name);
+          return activeLayouts[0];
+        }
+        
+        // Fallback: nếu không có layout nào active, ưu tiên layout không phải "Default Layout"
+        if (layouts.length > 0) {
+          console.log('⚠️ No active layout found, selecting best layout...');
+          const nonDefaultLayout = layouts.find(l => l.name !== 'Default Layout');
+          const selectedLayout = nonDefaultLayout || layouts[0];
+          
+          // Set selected layout as active
+          layouts.forEach(l => {
+            l.isActive = (l._id === selectedLayout._id);
+          });
+          localStorage.setItem('table-layouts', JSON.stringify(layouts));
+          console.log('✅ Set active layout:', selectedLayout.name);
+          return selectedLayout;
+        }
       }
+      
+      // CHỈ tạo default layout nếu KHÔNG CÓ layout nào trong localStorage
+      console.log('⚠️ No layouts found in localStorage, creating default...');
+      if (availableTables.length > 0) {
+        console.log('📝 Creating default layout with', availableTables.length, 'tables');
+        const defaultLayout = createDefaultLayout(availableTables);
+        localStorage.setItem('table-layouts', JSON.stringify([defaultLayout]));
+        console.log('✅ Default layout created and saved');
+        return defaultLayout;
+      }
+      
+      console.log('❌ No tables available to create default layout');
     } catch (error) {
-      console.error('Error loading layout:', error);
+      console.error('❌ Error loading layout:', error);
     }
     return null;
   };
 
+  // Helper: Tạo layout mặc định
+  const createDefaultLayout = (tables: Table[]): TableLayout => {
+    const tablesPerRow = 4;
+    
+    const layoutTables = tables.map((table, index) => {
+      const row = Math.floor(index / tablesPerRow);
+      const col = index % tablesPerRow;
+      
+      return {
+        tableId: table._id,
+        tableName: table.tableName,
+        position: {
+          x: col * 3,
+          y: row * 3,
+          rotation: 0
+        },
+        width: 2,
+        height: 2,
+        type: 'rectangle',
+        capacity: 4
+      };
+    });
+
+    const gridCols = Math.min(tablesPerRow * 3, 12);
+    const gridRows = Math.ceil(tables.length / tablesPerRow) * 3;
+
+    return {
+      name: 'Default Layout',
+      gridCols,
+      gridRows,
+      tables: layoutTables,
+      description: 'Auto-generated layout',
+      isActive: true // Layout mặc định luôn là active
+    };
+  };
+
   useEffect(() => {
     if (isOpen) {
-      const layout = loadActiveLayout();
+      console.log('🔵 Modal opened, loading tables...');
+      console.log('🔍 Current layouts in localStorage:');
+      debugLayouts();
+      // Reset selected layout khi mở modal
+      setSelectedLayout(null);
+      loadTables();
+    }
+  }, [isOpen]);
+
+  // Load layout after tables are loaded
+  useEffect(() => {
+    if (tables.length > 0 && !selectedLayout) {
+      console.log('🔵 Tables loaded, loading active layout...', tables.length, 'tables');
+      const layout = loadActiveLayout(tables);
+      console.log('🔵 Active layout loaded:', layout ? {
+        name: layout.name,
+        isActive: layout.isActive,
+        tablesCount: layout.tables.length,
+        gridSize: `${layout.gridCols}x${layout.gridRows}`
+      } : 'null');
       setSelectedLayout(layout);
       if (layout) {
         setGridCols(layout.gridCols);
         setGridRows(layout.gridRows);
       }
-      loadTables();
     }
-  }, [isOpen]);
+  }, [tables, selectedLayout]);
 
   // Update filtered tables when tables or layout changes
   useEffect(() => {
@@ -324,12 +448,17 @@ export default function TableSelectionModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-amber-200">
-          <div>
+          <div className="flex-1">
             <h2 className="text-2xl font-bold text-gray-900">Chọn bàn</h2>
             <p className="text-sm text-gray-600 mt-1">
               {selectedLayout && (
                 <>
                   Layout: <span className="font-semibold">{selectedLayout.name}</span>
+                  {selectedLayout.isActive && (
+                    <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">
+                      ACTIVE
+                    </span>
+                  )}
                   {' • '}
                 </>
               )}
@@ -344,12 +473,29 @@ export default function TableSelectionModal({
               )}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6 text-gray-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                console.log('🔄 Reloading layout...');
+                const layout = loadActiveLayout(tables);
+                setSelectedLayout(layout);
+                if (layout) {
+                  setGridCols(layout.gridCols);
+                  setGridRows(layout.gridRows);
+                }
+              }}
+              className="p-2 hover:bg-amber-100 rounded-lg transition-colors"
+              title="Reload layout"
+            >
+              <RotateCw className="w-5 h-5 text-gray-600" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
         </div>
 
         {/* Legend */}
@@ -384,36 +530,55 @@ export default function TableSelectionModal({
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 border-t-transparent"></div>
             </div>
+          ) : tables.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+                <MapPin className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Chưa có bàn nào
+              </h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Hiện tại nhà hàng chưa có bàn nào. Vui lòng liên hệ với nhà hàng để đặt bàn.
+              </p>
+            </div>
           ) : !selectedLayout ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">
-                Chưa có layout nào. Vui lòng tạo layout ở trang quản lý không gian quán.
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-100 rounded-full mb-4">
+                <Layout className="w-10 h-10 text-yellow-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Đang tạo layout...
+              </h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Hệ thống đang tự động tạo layout cho bạn.
               </p>
             </div>
           ) : selectedLayout.tables.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">
-                Layout "{selectedLayout.name}" chưa có bàn nào. Vui lòng thêm bàn vào layout.
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-4">
+                <MapPin className="w-10 h-10 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Layout chưa có bàn
+              </h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Layout "{selectedLayout.name}" chưa có bàn nào. Vui lòng liên hệ với nhà hàng.
               </p>
             </div>
           ) : (
             <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 overflow-x-auto">
               {/* Screen indicator */}
               <div className="text-center mb-4">
-                <div className="inline-block bg-gradient-to-r from-gray-200 to-gray-300 px-8 py-2 rounded-lg">
-                  <span className="text-sm font-semibold text-gray-600">KHU VỰC PHỤC VỤ</span>
+                <div className={SCREEN_INDICATOR.className}>
+                  <span className={SCREEN_INDICATOR.textClassName}>{SCREEN_INDICATOR.text}</span>
                 </div>
               </div>
 
-              {/* Grid Layout - Similar to TableLayoutEditor */}
+              {/* Grid Layout - Đồng bộ với TableLayoutEditor */}
               <div 
-                className="grid gap-1"
-                style={{
-                  gridTemplateColumns: `repeat(${selectedLayout.gridCols}, 48px)`,
-                  gridTemplateRows: `repeat(${selectedLayout.gridRows}, 48px)`,
-                  width: 'fit-content',
-                  margin: '0 auto'
-                }}
+                className="grid"
+                style={getGridContainerStyle(selectedLayout.gridCols, selectedLayout.gridRows)}
               >
                 {Array.from({ length: selectedLayout.gridRows * selectedLayout.gridCols }).map((_, index) => {
                   const rowIndex = Math.floor(index / selectedLayout.gridCols);
@@ -460,31 +625,28 @@ export default function TableSelectionModal({
                     ? (availability.isAvailable && !availability.isReserved)
                     : (table.status === 'available' || table.status === 'reserved') && table.status !== 'maintenance');
 
-                  // Xác định màu sắc với design system thống nhất
-                  let cellColor = 'bg-white border-gray-300';
-                  let cursorStyle = 'cursor-default';
+                  // Sử dụng shared color function
+                  const cellColor = layoutTable && isMainCell && table
+                    ? getTableCellColor({
+                        isMainCell: true,
+                        isSelected: isSelected,
+                        isHovered: isHovered,
+                        isAvailable: isSelectable,
+                        isReserved: availability?.isReserved || table.status === 'reserved',
+                        isOccupied: table.status === 'occupied',
+                        isMaintenance: table.status === 'maintenance',
+                        isInEditor: false,
+                      })
+                    : getEmptyCellColor({
+                        isDragOver: false,
+                        isSelectable: false,
+                        isInZone: false,
+                        isInZoneSelection: false,
+                      });
                   
-                  if (layoutTable && isMainCell && table) {
-                    if (isSelected) {
-                      cellColor = 'bg-gradient-to-br from-amber-500 to-orange-500 border-amber-600 text-white shadow-lg ring-2 ring-amber-400';
-                      cursorStyle = 'cursor-pointer';
-                    } else if (isHovered && isSelectable) {
-                      cellColor = 'bg-amber-100 border-amber-400 text-amber-900 shadow-md';
-                      cursorStyle = 'cursor-pointer';
-                    } else if (!isSelectable || (availability?.isReserved) || table.status === 'occupied') {
-                      cellColor = 'bg-red-100 border-red-300 text-red-800 opacity-75';
-                      cursorStyle = 'cursor-not-allowed';
-                    } else if (table.status === 'maintenance') {
-                      cellColor = 'bg-gray-100 border-gray-300 text-gray-500 opacity-50';
-                      cursorStyle = 'cursor-not-allowed';
-                    } else if (table.status === 'available') {
-                      cellColor = 'bg-emerald-100 border-emerald-300 text-emerald-800 hover:bg-emerald-200 transition-colors';
-                      cursorStyle = 'cursor-pointer';
-                    } else if (table.status === 'reserved') {
-                      cellColor = 'bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200 transition-colors';
-                      cursorStyle = 'cursor-pointer';
-                    }
-                  }
+                  const cursorStyle = layoutTable && isMainCell && table && isSelectable
+                    ? 'cursor-pointer'
+                    : 'cursor-default';
 
                   return (
                     <div
@@ -502,15 +664,13 @@ export default function TableSelectionModal({
                       onMouseLeave={() => {
                         setHoveredTable(null);
                       }}
-                      className={`
-                        rounded-lg border-2 transition-all relative
-                        ${cellColor}
-                        ${cursorStyle}
-                      `}
-                      style={{
-                        gridColumn: layoutTable && isMainCell ? `${colIndex + 1} / span ${displayWidth}` : `${colIndex + 1}`,
-                        gridRow: layoutTable && isMainCell ? `${rowIndex + 1} / span ${displayHeight}` : `${rowIndex + 1}`,
-                      }}
+                      className={`${CELL_BASE_CLASSES} ${cellColor} ${cursorStyle}`}
+                      style={getCellGridStyle(
+                        colIndex,
+                        rowIndex,
+                        layoutTable && isMainCell ? displayWidth : 1,
+                        layoutTable && isMainCell ? displayHeight : 1
+                      )}
                       title={
                         layoutTable && isMainCell && table
                           ? `${table.tableName} - ${table.location || 'Chưa có vị trí'}${availability?.isReserved ? ` - Đã được đặt bởi ${availability.reservedBy}` : ''}`

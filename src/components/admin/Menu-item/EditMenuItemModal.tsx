@@ -37,18 +37,54 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
 
     useEffect(() => {
         if (isOpen && itemId) {
+            console.log('🔄 Modal opened, fetching item:', itemId);
             fetchMenuItem();
+        } else if (!isOpen) {
+            // Reset state when modal closes
+            console.log('🔄 Modal closed, resetting state');
+            setMenuItem(null);
+            setFormData({
+                name: '',
+                description: '',
+                price: '',
+                category: 'appetizer',
+                available: true,
+            });
+            setImages([]);
+            setInitialImages([]);
         }
     }, [isOpen, itemId]);
 
     const fetchMenuItem = async () => {
         try {
             setFetchLoading(true);
+            console.log('🔍 Fetching menu item with ID:', itemId);
             
             const item = await getMenuItem(itemId);
+            console.log('✅ Fetched menu item:', item);
             
+            // Set menuItem state
             setMenuItem(item);
-            // Don't set formData here - let the sync useEffect handle it
+            
+            // Immediately set formData with fetched data
+            setFormData({
+                name: item.name || '',
+                description: item.description ?? '',
+                price: String(item.price) || '0',
+                category: item.category || 'appetizer',
+                available: item.available ?? true,
+            });
+            
+            // Set images
+            setImages(item.images || []);
+            setInitialImages(item.images || []);
+            
+            console.log('✅ Form data initialized:', {
+                name: item.name,
+                price: item.price,
+                category: item.category,
+                available: item.available
+            });
             
         } catch (error: any) {
             console.error('❌ Failed to fetch menu item:', error);
@@ -58,25 +94,6 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
             setFetchLoading(false);
         }
     };
-    
-    // 🔧 FIX: Sync formData when menuItem changes
-    useEffect(() => {
-        if (menuItem) {
-            
-            setFormData({
-                name: menuItem.name || '',
-                description: menuItem.description ?? '',
-                price: String(menuItem.price) || '0',
-                category: menuItem.category || 'appetizer',
-                available: menuItem.available ?? true,
-            });
-            
-            setImages(menuItem.images || []);
-            setInitialImages(menuItem.images || []);
-            
-          
-        }
-    }, [menuItem]); // Only run when menuItem changes
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

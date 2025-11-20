@@ -7,8 +7,8 @@ import { getTables } from "@/src/lib/api";
 import { AdminLayout } from "@/src/components/layout";
 import { LoadingSpinner } from "@/src/components/ui";
 import AdminPageHeader from "@/src/components/admin/common/AdminPageHeader";
-import { Layout, Plus, Save, Trash2, Edit2 } from "lucide-react";
-import { toast } from "react-toastify";
+import { Layout, Plus, Save, Trash2, Edit2, Check, Star } from "lucide-react";
+import { toast } from "@/src/lib/utils/toast";
 import TableLayoutEditor from "@/src/components/admin/tables/TableLayoutEditor";
 
 interface TableLayout {
@@ -16,6 +16,7 @@ interface TableLayout {
   name: string;
   gridCols: number;
   gridRows: number;
+  isActive?: boolean; // Layout chính được hiển thị cho khách hàng
   zones?: {
     zoneId: string;
     zoneName: string;
@@ -45,7 +46,70 @@ export default function TableLayoutPage() {
 
   useEffect(() => {
     loadData();
+    // Migration: Fix layouts without isActive field
+    fixLayoutsActiveStatus();
   }, []);
+
+  // Migration function to fix existing layouts
+  function fixLayoutsActiveStatus() {
+    try {
+      const saved = localStorage.getItem('table-layouts');
+      if (!saved) return;
+
+      let layouts: TableLayout[] = JSON.parse(saved);
+      let needsUpdate = false;
+
+      // 🔧 FIX 1: Remove "Default Layout" if other layouts exist
+      const hasDefaultLayout = layouts.some(l => l.name === 'Default Layout');
+      const hasOtherLayouts = layouts.some(l => l.name !== 'Default Layout');
+      
+      if (hasDefaultLayout && hasOtherLayouts) {
+        console.log('🔧 Removing "Default Layout" because other layouts exist');
+        layouts = layouts.filter(l => l.name !== 'Default Layout');
+        needsUpdate = true;
+      }
+
+      // 🔧 FIX 2: Check if any layout has undefined isActive
+      const hasUndefined = layouts.some(l => l.isActive === undefined);
+      
+      if (hasUndefined) {
+        console.log('🔧 Fixing layouts with undefined isActive...');
+        // Prefer non-default layout as active
+        const nonDefaultLayout = layouts.find(l => l.name !== 'Default Layout');
+        layouts.forEach((l, index) => {
+          if (l.isActive === undefined) {
+            l.isActive = nonDefaultLayout ? (l._id === nonDefaultLayout._id) : (index === 0);
+            needsUpdate = true;
+          }
+        });
+      }
+
+      // 🔧 FIX 3: Ensure only one layout is active
+      const activeLayouts = layouts.filter(l => l.isActive === true);
+      if (activeLayouts.length > 1) {
+        console.log('🔧 Multiple active layouts found, keeping first non-default...');
+        const preferredActive = activeLayouts.find(l => l.name !== 'Default Layout') || activeLayouts[0];
+        layouts.forEach(l => {
+          l.isActive = (l._id === preferredActive._id);
+        });
+        needsUpdate = true;
+      } else if (activeLayouts.length === 0 && layouts.length > 0) {
+        console.log('🔧 No active layout, setting first as active...');
+        layouts[0].isActive = true;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        localStorage.setItem('table-layouts', JSON.stringify(layouts));
+        console.log('✅ Fixed layouts:', layouts.map(l => ({ name: l.name, isActive: l.isActive })));
+        toast.info('🔧 Đã tự động sửa và dọn dẹp layouts');
+        // Reload data
+        loadData();
+      }
+    } catch (error) {
+      console.error('Error fixing layouts:', error);
+    }
+  }
 
   async function loadData() {
     setIsLoading(true);
@@ -61,11 +125,11 @@ export default function TableLayoutPage() {
       
       if (tablesArray.length === 0) {
         console.log('No tables found. Please create tables first in /admin/tables');
-        toast.info('Chưa có bàn nào. Vui lòng tạo bàn trước ở trang Quản lý bàn.');
+        toast.info('ℹ️ Chưa có bàn nào. Vui lòng tạo bàn trước ở trang Quản lý bàn.');
       }
     } catch (error: any) {
       console.error("Error loading data:", error);
-      toast.error(error?.response?.data?.message || "Không thể tải dữ liệu");
+      toast.error(`❌ ${error?.response?.data?.message || "Không thể tải dữ liệu"}`);
       setTables([]);
       setLayouts([]);
     } finally {
@@ -84,12 +148,14 @@ export default function TableLayoutPage() {
   }
 
   // Save layouts to localStorage (tạm thời)
-  function saveLayouts(layouts: TableLayout[]) {
+  function saveLayouts(layouts: TableLayout[], showToast: boolean = true) {
     try {
       localStorage.setItem('table-layouts', JSON.stringify(layouts));
-      toast.success("Đã lưu layout thành công!");
+      if (showToast) {
+        toast.success("💾 Đã lưu layout thành công!");
+      }
     } catch (error) {
-      toast.error("Không thể lưu layout");
+      toast.error("❌ Không thể lưu layout");
     }
   }
 
@@ -114,8 +180,8 @@ export default function TableLayoutPage() {
     if (confirm('Bạn có chắc muốn xóa layout này?')) {
       const updated = layouts.filter(l => l._id !== layoutId);
       setLayouts(updated);
-      saveLayouts(updated);
-      toast.success("Đã xóa layout");
+      saveLayouts(updated, false); // Không hiển thị toast từ saveLayouts
+      toast.success("🗑️ Đã xóa layout thành công!");
     }
   }
 
@@ -126,14 +192,30 @@ export default function TableLayoutPage() {
       setLayouts(updated);
       saveLayouts(updated);
     } else {
-      // Create new
-      const newLayout = { ...layout, _id: Date.now().toString() };
+      // Create new - nếu là layout đầu tiên, set làm active
+      const isFirstLayout = layouts.length === 0;
+      const newLayout = { 
+        ...layout, 
+        _id: Date.now().toString(),
+        isActive: isFirstLayout 
+      };
       const updated = [...layouts, newLayout];
       setLayouts(updated);
       saveLayouts(updated);
     }
     setShowEditor(false);
     setSelectedLayout(null);
+  }
+
+  function handleSetActiveLayout(layoutId: string) {
+    // Set layout này làm active, các layout khác thành inactive
+    const updated = layouts.map(l => ({
+      ...l,
+      isActive: l._id === layoutId
+    }));
+    setLayouts(updated);
+    saveLayouts(updated, false); // Không hiển thị toast từ saveLayouts
+    toast.success("✅ Đã đặt layout chính thành công!");
   }
 
   if (loading || !user) {
@@ -179,7 +261,33 @@ export default function TableLayoutPage() {
             }}
           />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Info Card */}
+            {layouts.length > 0 && (
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 p-3 bg-blue-500 rounded-xl">
+                    <Star className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                      Layout Chính
+                    </h3>
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      Layout được đánh dấu <strong className="text-blue-700">"LAYOUT CHÍNH"</strong> sẽ được hiển thị cho khách hàng khi họ đặt bàn trên trang web. 
+                      Bạn có thể tạo nhiều layouts khác nhau cho các mục đích khác nhau (ví dụ: layout ngày thường, layout cuối tuần, layout sự kiện), 
+                      nhưng chỉ có một layout được active tại một thời điểm.
+                    </p>
+                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+                      <span className="px-2 py-1 bg-blue-100 rounded-full font-medium">💡 Mẹo</span>
+                      <span>Bấm "Đặt làm layout chính" để thay đổi layout hiển thị cho khách hàng</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-4">
             {layouts.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
                 <Layout className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -201,13 +309,25 @@ export default function TableLayoutPage() {
               layouts.map((layout) => (
                 <div
                   key={layout._id}
-                  className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6"
+                  className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all ${
+                    layout.isActive 
+                      ? 'border-yellow-400 ring-2 ring-yellow-200' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {layout.name}
-                      </h3>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {layout.name}
+                        </h3>
+                        {layout.isActive && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-xs font-bold rounded-full shadow-md">
+                            <Star className="w-3.5 h-3.5 fill-current" />
+                            LAYOUT CHÍNH
+                          </span>
+                        )}
+                      </div>
                       {layout.description && (
                         <p className="text-gray-600 mb-3">{layout.description}</p>
                       )}
@@ -249,6 +369,22 @@ export default function TableLayoutPage() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Set Active Button */}
+                      {!layout.isActive && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <button
+                            onClick={() => layout._id && handleSetActiveLayout(layout._id)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105"
+                          >
+                            <Check className="w-4 h-4" />
+                            Đặt làm layout chính
+                          </button>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Layout chính sẽ được hiển thị cho khách hàng khi đặt bàn
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2 ml-4">
                       <button
@@ -260,8 +396,9 @@ export default function TableLayoutPage() {
                       </button>
                       <button
                         onClick={() => layout._id && handleDeleteLayout(layout._id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Xóa layout"
+                        disabled={layout.isActive}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={layout.isActive ? "Không thể xóa layout chính" : "Xóa layout"}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -270,6 +407,7 @@ export default function TableLayoutPage() {
                 </div>
               ))
             )}
+            </div>
           </div>
         )}
       </div>
