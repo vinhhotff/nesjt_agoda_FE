@@ -32,6 +32,7 @@ export interface CreateReservationDto {
   numberOfGuests: number;
   reservationDate: string;
   specialRequests?: string;
+  tableNumber?: string;
 }
 
 export interface UpdateReservationStatusDto {

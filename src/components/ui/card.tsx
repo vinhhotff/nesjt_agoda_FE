@@ -1,18 +1,36 @@
-import React, { HTMLAttributes, ReactNode } from 'react';
+import { ReactNode } from 'react';
 
-export function Card({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={`rounded-lg border bg-white shadow-sm ${className}`} {...props} />;
+interface CardProps {
+  children: ReactNode;
+  className?: string;
+  hoverable?: boolean;
+  padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-export function CardHeader({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={`p-4 border-b ${className}`} {...props} />;
-}
+const paddingStyles = {
+  none: '',
+  sm: 'p-4',
+  md: 'p-6',
+  lg: 'p-8',
+};
 
-export function CardTitle({ className = '', ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={`text-lg font-semibold leading-none tracking-tight ${className}`} {...props} />;
+export default function Card({
+  children,
+  className = '',
+  hoverable = false,
+  padding = 'md',
+}: CardProps) {
+  return (
+    <div
+      className={`
+        bg-white rounded-2xl shadow-lg border border-gray-100
+        transition-all duration-300
+        ${hoverable ? 'hover:shadow-2xl hover:-translate-y-1' : ''}
+        ${paddingStyles[padding]}
+        ${className}
+      `}
+    >
+      {children}
+    </div>
+  );
 }
-
-export function CardContent({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={`p-4 ${className}`} {...props} />;
-}
-

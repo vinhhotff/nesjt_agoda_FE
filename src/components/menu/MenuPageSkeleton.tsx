@@ -1,36 +1,67 @@
-import styles from "../../app/(homePage)/menu/menu.module.css";
-
 export default function MenuPageSkeleton() {
   return (
-    <div className="pt-25 bg-[#101826]">
-      <div className={styles.menuContainer}>
-        <div className={styles.layout}>
-          <div className={styles.filterColumn}>
-            {/* Filter skeletons */}
-            <div className={styles.filterBox}>
-              <div className="h-6 bg-gray-700 rounded w-32 mb-4 animate-pulse" />
-              <div className="space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-8 bg-gray-700 rounded animate-pulse" />
-                ))}
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
+      {/* Hero Skeleton */}
+      <div className="relative bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-full">
+              <div className="h-4 w-32 bg-yellow-200 rounded animate-pulse" />
             </div>
-            <div className={styles.filterBox}>
-              <div className="h-6 bg-gray-700 rounded w-32 mb-4 animate-pulse" />
-              <div className="flex flex-wrap gap-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-8 bg-gray-700 rounded-full w-20 animate-pulse" />
-                ))}
+            <div className="h-14 bg-gray-200 rounded-lg w-96 mx-auto animate-pulse" />
+            <div className="h-6 bg-gray-200 rounded w-[500px] mx-auto animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search Bar Skeleton */}
+        <div className="mb-6">
+          <div className="h-14 bg-white border-2 border-gray-200 rounded-2xl w-full animate-pulse" />
+        </div>
+
+        {/* Filters Skeleton */}
+        <div className="mb-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+              {/* Categories Skeleton */}
+              <div className="space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-32 animate-pulse" />
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-10 bg-gray-200 rounded-full w-24 animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Tags Skeleton */}
+              <div className="pt-6 lg:pt-0 lg:pl-8 space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-24 animate-pulse" />
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-10 bg-gray-200 rounded-full w-28 animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-          <div className={styles.menuColumn}>
-            {/* Search skeleton */}
-            <div className={styles.searchBar}>
-              <div className="h-12 bg-gray-700 rounded-lg w-full max-w-2xl animate-pulse" />
-            </div>
-            {/* Menu grid skeleton */}
-            <MenuGridSkeleton />
+        </div>
+
+        {/* Results Count Skeleton */}
+        <div className="mb-6">
+          <div className="h-6 bg-gray-200 rounded w-48 animate-pulse" />
+        </div>
+
+        {/* Menu Grid Skeleton */}
+        <MenuGridSkeleton />
+
+        {/* Pagination Skeleton */}
+        <div className="mt-12 flex justify-center">
+          <div className="flex gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse" style={{ animationDelay: `${i * 50}ms` }} />
+            ))}
           </div>
         </div>
       </div>
@@ -40,17 +71,37 @@ export default function MenuPageSkeleton() {
 
 function MenuGridSkeleton() {
   return (
-    <div className={styles.menuGrid}>
-      {Array.from({ length: 8 }).map((_, index) => (
-        <div key={index} className={`${styles.menuCard} animate-pulse`}>
-          <div className="h-48 bg-gray-700" />
-          <div className="p-4 space-y-3">
-            <div className="h-6 bg-gray-700 rounded w-3/4" />
-            <div className="h-4 bg-gray-700 rounded w-full" />
-            <div className="h-4 bg-gray-700 rounded w-2/3" />
-            <div className="flex justify-between items-center pt-2">
-              <div className="h-6 bg-gray-700 rounded w-20" />
-              <div className="h-8 w-8 bg-gray-700 rounded" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {Array.from({ length: 12 }).map((_, index) => (
+        <div 
+          key={index} 
+          className="group bg-white rounded-2xl overflow-hidden shadow-md border border-gray-200 animate-pulse"
+          style={{ animationDelay: `${index * 50}ms` }}
+        >
+          {/* Image Skeleton */}
+          <div className="relative h-56 bg-gradient-to-br from-gray-200 to-gray-300" />
+          
+          {/* Content Skeleton */}
+          <div className="p-5 space-y-3">
+            {/* Title */}
+            <div className="h-6 bg-gray-200 rounded w-3/4" />
+            
+            {/* Description */}
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-full" />
+              <div className="h-4 bg-gray-200 rounded w-5/6" />
+            </div>
+            
+            {/* Tags */}
+            <div className="flex gap-2 pt-2">
+              <div className="h-6 bg-gray-200 rounded-full w-16" />
+              <div className="h-6 bg-gray-200 rounded-full w-20" />
+            </div>
+            
+            {/* Price and Button */}
+            <div className="flex items-center justify-between pt-3">
+              <div className="h-7 bg-gray-200 rounded w-24" />
+              <div className="h-10 w-10 bg-gray-200 rounded-xl" />
             </div>
           </div>
         </div>

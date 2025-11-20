@@ -36,7 +36,7 @@ export default function RadioGroup({
             checked={value === option.value}
             onChange={(e) => onChange(e.target.value)}
             disabled={option.disabled}
-            className="mr-2 text-yellow-500 focus:ring-yellow-500"
+            className="mr-2 text-yellow-500 focus:ring-amber-500"
           />
           <span className={`${option.disabled ? 'text-gray-400' : 'text-gray-700'}`}>
             {option.label}

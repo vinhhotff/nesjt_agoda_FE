@@ -64,12 +64,14 @@ export default function CreateMenuItemModal({ onClose, onSubmit }: Props) {
             onClick={onClose}
         >
             <div
-                className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-16 p-8 md:p-10 transform transition-all duration-300 border"
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl mx-auto my-16 p-8 md:p-10 transform transition-all duration-300 border border-amber-100"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">
-                    Add New Menu Item
-                </h2>
+                <div className="mb-8 border-b border-amber-100 pb-4 bg-gradient-to-r from-amber-50 to-yellow-50 -m-8 md:-m-10 p-8 md:p-10 rounded-t-3xl">
+                    <h2 className="text-2xl font-semibold text-gray-900">
+                        Add New Menu Item
+                    </h2>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -77,38 +79,38 @@ export default function CreateMenuItemModal({ onClose, onSubmit }: Props) {
                         <div className="space-y-6">
                             {/* Name */}
                             <div>
-                                <label className="block text-sm font-medium  dark:text-gray-200 mb-1">Item Name</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
                                 <input
                                     type="text"
                                     required
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="e.g., Margherita Pizza"
-                                    className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
                                 />
                             </div>
 
                             {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium  dark:text-gray-200 mb-1">Description</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                                 <textarea
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     placeholder="A brief description of the item..."
-                                    className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none text-sm"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition resize-none text-sm"
                                     rows={4}
                                 />
                             </div>
 
                             {/* Availability */}
-                            <label className="flex items-center space-x-2">
+                            <label className="flex items-center space-x-3">
                                 <input
                                     type="checkbox"
                                     checked={formData.available}
                                     onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
-                                    className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                    className="h-4 w-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500"
                                 />
-                                <span className="text-sm font-medium dark:text-white ">Item is Available</span>
+                                <span className="text-sm font-medium text-gray-700">Item is Available</span>
                             </label>
                         </div>
 
@@ -116,7 +118,7 @@ export default function CreateMenuItemModal({ onClose, onSubmit }: Props) {
                         <div className="space-y-6">
                             {/* Price */}
                             <div>
-                                <label className="block text-sm font-medium  dark:text-gray-200 mb-1">Price ($)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Price ($)</label>
                                 <input
                                     type="number"
                                     required
@@ -125,17 +127,17 @@ export default function CreateMenuItemModal({ onClose, onSubmit }: Props) {
                                     value={formData.price}
                                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                     placeholder="0.00"
-                                    className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
                                 />
                             </div>
 
                             {/* Category */}
                             <div>
-                                <label className="block text-sm font-medium  dark:text-gray-200 mb-1">Category</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                                 <select
                                     value={formData.category}
                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-md border dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition -sm"
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
                                 >
                                     {categories.map((cat) => (
                                         <option key={cat.value} value={cat.value}>
@@ -147,7 +149,7 @@ export default function CreateMenuItemModal({ onClose, onSubmit }: Props) {
 
                             {/* Images */}
                             <div>
-                                <label className="block text-sm font-medium dark:text-white mb-1">Upload Images</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Images</label>
                                 <DragDropImageUploader
                                     images={images}
                                     setImages={setImages}
@@ -157,18 +159,18 @@ export default function CreateMenuItemModal({ onClose, onSubmit }: Props) {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-amber-100">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-2.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600  dark:text-gray-200 text-sm font-medium transition"
+                            className="px-6 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-5 py-2.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 disabled:from-amber-300 disabled:to-yellow-300 text-white text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
                         >
                             {loading ? 'Creating...' : 'Create Item'}
                         </button>

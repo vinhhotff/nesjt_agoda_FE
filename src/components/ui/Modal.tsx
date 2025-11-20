@@ -1,57 +1,101 @@
-import { ReactNode } from "react";
+'use client';
+
+import { ReactNode, useEffect } from 'react';
+import { X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: ReactNode;
-  showHeader?: boolean;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  className?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  showCloseButton?: boolean;
 }
+
+const sizeStyles = {
+  sm: 'max-w-md',
+  md: 'max-w-2xl',
+  lg: 'max-w-4xl',
+  xl: 'max-w-6xl',
+  full: 'max-w-full mx-4',
+};
 
 export default function Modal({
   isOpen,
   onClose,
   title,
   children,
-  showHeader = true,
   size = 'md',
-  className = ""
+  showCloseButton = true,
 }: ModalProps) {
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
-  const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-2xl'
-  };
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onClick={onClose}
-    >
-      <div 
-        className={`bg-white rounded-lg shadow-lg w-full mx-4 ${sizeClasses[size]} ${className}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {showHeader && (
-          <div className="flex items-center justify-between p-4 border-b">
-            {title && <h2 className="text-lg font-semibold">{title}</h2>}
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className={`relative w-full ${sizeStyles[size]} bg-white rounded-3xl shadow-2xl`}
+              onClick={(e) => e.stopPropagation()}
             >
-              &times;
-            </button>
+              {/* Header */}
+              {(title || showCloseButton) && (
+                <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                  {title && (
+                    <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+                  )}
+                  {showCloseButton && (
+                    <button
+                      onClick={onClose}
+                      className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                    >
+                      <X className="w-6 h-6 text-gray-500" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Content */}
+              <div className="p-6">{children}</div>
+            </motion.div>
           </div>
-        )}
-        <div className="p-4">
-          {children}
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

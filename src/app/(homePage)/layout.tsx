@@ -1,18 +1,17 @@
+'use client';
+
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import { Bounce, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider } from "@/src/Context/AuthContext";
-
-export const metadata = {
-  title: "Restaurant",
-  description: "Vinh IT",
-};
+import { RestaurantProvider } from "@/src/Context/RestaurantContext";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <AuthProvider>
+        <RestaurantProvider>
         <ToastContainer
           position="bottom-right"
           autoClose={2000}
@@ -29,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main>{children}</main>
         <Footer />
+        </RestaurantProvider>
       </AuthProvider>
 
     </>

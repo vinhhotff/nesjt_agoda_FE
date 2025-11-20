@@ -10,7 +10,7 @@ interface TableListProps {
 const statusColors: Record<string, string> = {
   available: "bg-green-100 text-green-700",
   occupied: "bg-red-100 text-red-700",
-  reserved: "bg-yellow-100 text-yellow-700",
+  reserved: "bg-amber-100 text-amber-700",
   unavailable: "bg-gray-200 text-gray-600",
 };
 

@@ -19,7 +19,7 @@ export default function ReservationStatsCards({ stats }: ReservationStatsCardsPr
       title: 'Chờ xác nhận',
       value: stats?.pending ?? 0,
       icon: '⏳',
-      color: 'bg-gradient-to-br from-yellow-400 to-yellow-500',
+      color: 'bg-gradient-to-br from-amber-400 to-yellow-500',
       textColor: 'text-white',
     },
     {

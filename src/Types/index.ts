@@ -145,8 +145,20 @@ export interface Payment {
 export interface Table {
   _id: string;
   tableName: string;
-  status: "available" | "occupied";
+  location?: string;
+  status: "available" | "occupied" | "reserved" | "maintenance";
   qrCode?: string;
+  currentOrder?: string; // ObjectId as string
+  width?: number; // Số ô chiếm theo chiều ngang (mặc định: 1)
+  height?: number; // Số ô chiếm theo chiều dọc (mặc định: 1)
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Zone {
+  _id: string;
+  name: string;
+  description?: string;
   createdAt: string;
   updatedAt: string;
 }

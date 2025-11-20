@@ -3,7 +3,6 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
   height: 100vh;
   color: #fff;
 }
@@ -27,7 +26,6 @@
   overflow: hidden;
 }
 
-
 /* Nhấp nháy text */
 @keyframes flicker {
   0%, 100% { opacity: 1; }
@@ -39,17 +37,70 @@
   0% { left: -50%; }
   100% { left: 100%; }
 }
+
+/* Slider track với animation mượt mà hơn */
 .sliderTrack {
   display: flex;
-  width: 100%;
-  animation: scroll 35s linear infinite;
+  width: fit-content;
+  animation: scroll 50s linear infinite;
+  will-change: transform;
+  gap: 0;
+  padding: 10px 0;
 }
 
+/* Animation scroll mượt mà với easing */
 @keyframes scroll {
   0% {
     transform: translateX(0);
   }
   100% {
     transform: translateX(-50%);
+  }
+}
+
+/* Pause animation khi hover */
+.sliderTrack:hover {
+  animation-play-state: paused;
+}
+
+/* Gradient overlay để tạo hiệu ứng fade ở 2 bên */
+.gradientLeft {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 150px;
+  background: linear-gradient(to right, rgb(248, 250, 252), transparent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.gradientRight {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 150px;
+  background: linear-gradient(to left, rgb(248, 250, 252), transparent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Responsive cho gradient */
+@media (max-width: 768px) {
+  .gradientLeft,
+  .gradientRight {
+    width: 50px;
+  }
+  
+  .sliderTrack {
+    animation-duration: 30s;
+  }
+}
+
+/* Tối ưu hiệu năng cho animation */
+@media (prefers-reduced-motion: reduce) {
+  .sliderTrack {
+    animation: none;
   }
 }

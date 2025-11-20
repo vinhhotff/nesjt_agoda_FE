@@ -9,7 +9,7 @@ interface OrderListProps {
 const statusOptions = ['pending', 'preparing', 'served', 'cancelled'] as const;
 type Status = typeof statusOptions[number];
 const statusColor: Record<Status,string> = {
-  pending: "bg-yellow-100 text-yellow-700",
+  pending: "bg-amber-100 text-amber-700",
   preparing: "bg-blue-100 text-blue-700",
   served: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700"

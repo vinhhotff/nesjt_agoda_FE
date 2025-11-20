@@ -105,7 +105,7 @@ export default function LoyaltyPointsDisplay({
     return (
       <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-orange-50 p-3 rounded-lg border">
         <div className="flex items-center gap-1">
-          <Star className="h-4 w-4 text-yellow-600" />
+          <Star className="h-4 w-4 text-amber-600" />
           <span className="text-sm font-medium">
             {formatNumber(loyaltyData.points)} điểm
           </span>
@@ -118,10 +118,10 @@ export default function LoyaltyPointsDisplay({
   }
 
   return (
-    <Card className="w-full max-w-md bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 border-yellow-200">
+    <Card className="w-full max-w-md bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 border-amber-200">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Star className="h-5 w-5 text-yellow-600" />
+          <Star className="h-5 w-5 text-amber-600" />
           Điểm thưởng
           <Badge className="ml-auto">
             Loyalty
@@ -132,7 +132,7 @@ export default function LoyaltyPointsDisplay({
         <div className="space-y-4">
           {/* Current Points */}
           <div className="text-center">
-            <div className="text-3xl font-bold text-yellow-700 mb-1">
+            <div className="text-3xl font-bold text-amber-700 mb-1">
               {formatNumber(loyaltyData.points)}
             </div>
             <div className="text-sm text-gray-600">
@@ -177,7 +177,7 @@ export default function LoyaltyPointsDisplay({
           {showRedeemButton && loyaltyData.points > 0 && (
             <Button 
               onClick={handleRedeemClick}
-              className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
             >
               <Gift className="h-4 w-4 mr-2" />
               Quy đổi điểm

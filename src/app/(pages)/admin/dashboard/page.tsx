@@ -3,21 +3,16 @@
 import { AdminLayout } from '@/src/components/layout';
 import { LoadingSpinner } from '@/src/components/ui';
 import AdminPageHeader from '@/src/components/admin/common/AdminPageHeader';
-import RecentOrders from '@/src/components/admin/RecentOrders';
 import StatCards from '@/src/components/admin/StatCards';
 import TodayStats from '@/src/components/admin/TodayStats';
-import WeeklyTrends from '@/src/components/admin/WeeklyTrends';
 import { useAuth } from '@/src/Context/AuthContext';
 import { useDashboardData } from '@/src/hooks/useDashboardData';
-import { Order } from '@/src/Types';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
   const router = useRouter();
 
   const roleName = user ? (typeof user.role === 'string' ? user.role : (user.role as any)?.name || '') : '';
@@ -26,8 +21,6 @@ export default function AdminDashboard() {
   const {
     coreStats,
     todayStats,
-    weeklyTrends,
-    recentOrders,
     loading: dataLoading,
     formattedRevenue,
   } = useDashboardData(isAuthorized);
@@ -60,8 +53,6 @@ export default function AdminDashboard() {
 
         <StatCards stats={statCards} />
         {!dataLoading.today && todayStats && <TodayStats todayStats={todayStats} />}
-        {!dataLoading.trends && weeklyTrends.length > 0 && <WeeklyTrends data={weeklyTrends} />}
-        {!dataLoading.orders && <RecentOrders orders={recentOrders} onView={(order) => setSelectedOrder(order)} />}
       </div>
     </AdminLayout>
   );

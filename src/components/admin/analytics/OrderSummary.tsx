@@ -68,7 +68,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       title: 'Pending Orders',
       value: pendingOrders,
       icon: Clock,
-      color: 'text-yellow-600',
+      color: 'text-amber-600',
       bgColor: 'bg-white',
     },
     {

@@ -83,10 +83,10 @@ export default function RedeemPointsModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Quy đổi điểm thưởng" size="md">
       <div className="space-y-6">
         {/* Available Points */}
-        <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Điểm có sẵn</span>
-            <Badge className="border border-yellow-400 text-yellow-700">
+            <Badge className="border border-amber-400 text-amber-700">
               <Star className="h-3 w-3 mr-1" />
               {formatNumber(availablePoints)} điểm
             </Badge>
@@ -192,7 +192,7 @@ export default function RedeemPointsModal({
           <Button
             onClick={handleRedeemSubmit}
             disabled={!isValidAmount || loading}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
           >
             {loading ? (
               <div className="flex items-center gap-2">

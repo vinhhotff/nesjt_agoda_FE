@@ -131,6 +131,15 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      // Check if this is a public route that doesn't require auth
+      const publicRoutes = ['/reservations/public', '/payment/payos/', '/guests', '/tables'];
+      const isPublicRoute = publicRoutes.some(route => error.config?.url?.includes(route));
+      
+      // If it's a public route, don't try to refresh token or redirect
+      if (isPublicRoute) {
+        return Promise.reject(error);
+      }
+      
       try {
         const res = await api.get("/auth/refresh");
         const newToken = res.data.accessToken;
@@ -139,7 +148,16 @@ api.interceptors.response.use(
         return api.request(error.config); // retry request
       } catch (err) {
         localStorage.removeItem("accessToken");
-        window.location.href = "/login";
+        // Only redirect to login if not on a public page
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname;
+          const publicPages = ['/reservation', '/payment/', '/login', '/register'];
+          const isPublicPage = publicPages.some(page => currentPath.startsWith(page));
+          
+          if (!isPublicPage) {
+            window.location.href = "/login";
+          }
+        }
       }
     }
     return Promise.reject(error);
@@ -303,7 +321,20 @@ export const createGuest = async (data: {
 
 export const getGuests = async (params?: Record<string, unknown>) => {
   const res = await api.get<Guest[]>("/guests", { params });
-  return res.data;
+  // Xử lý response có thể là array trực tiếp hoặc nested trong data/results
+  const data = res.data;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  // Nếu là object có nested array
+  if (data?.data && Array.isArray(data.data)) {
+    return data.data;
+  }
+  if (data?.results && Array.isArray(data.results)) {
+    return data.results;
+  }
+  // Fallback: trả về array rỗng
+  return [];
 };
 
 export const getGuest = async (id: string) => {
@@ -469,26 +500,123 @@ export const getOrders = async (params?: Record<string, unknown>) => {
 export const getTables = async (
   params?: Record<string, unknown>
 ): Promise<Table[]> => {
-  const response = await api.get<Table[]>("/tables", { params });
-  return response.data;
+  try {
+    // Set default pagination params if not provided
+    // Use large limit to get all tables, or allow custom pagination
+    const queryParams = {
+      page: params?.page || '1',
+      limit: params?.limit || '1000', // Large limit to get all tables by default
+      qs: params?.qs || '',
+      ...params,
+    };
+    
+    const response = await api.get("/tables", { params: queryParams });
+    console.log('Get tables response:', { 
+      fullResponse: response.data, 
+      data: response.data?.data,
+      queryParams 
+    });
+    
+    // Backend returns: { statusCode, message, data: { results: [...], meta: {...} } }
+    const responseData = response.data?.data || response.data;
+    
+    // Check if it's paginated response
+    if (responseData?.results && Array.isArray(responseData.results)) {
+      console.log('Returning paginated results:', responseData.results.length, 'of', responseData.meta?.total);
+      return responseData.results;
+    }
+    
+    // Check if it's direct array
+    if (Array.isArray(responseData)) {
+      console.log('Returning direct array:', responseData.length);
+      return responseData;
+    }
+    
+    // Fallback: return empty array
+    console.warn('Unexpected response format from /tables:', responseData);
+    return [];
+  } catch (error) {
+    console.error('Error fetching tables:', error);
+    throw error; // Re-throw để component có thể handle
+  }
+};
+
+// Paginated version for useAdminPagination hook
+export const getTablesPaginated = async (
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  filter?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
+): Promise<{
+  items: Table[];
+  total: number;
+  page: number;
+  totalPages: number;
+}> => {
+  try {
+    const params: Record<string, unknown> = {
+      page: page.toString(),
+      limit: limit.toString(),
+    };
+
+    // Add search query if provided
+    if (search) {
+      params.qs = `tableName:${search}`;
+    }
+
+    const response = await api.get("/tables", { params });
+    console.log('Get tables paginated response:', response.data);
+    
+    // Backend returns: { statusCode, message, data: { results: [...], meta: {...} } }
+    const responseData = response.data?.data || response.data;
+    
+    if (responseData?.results && Array.isArray(responseData.results)) {
+      return {
+        items: responseData.results,
+        total: responseData.meta?.total || 0,
+        page: responseData.meta?.page || page,
+        totalPages: responseData.meta?.totalPages || 1,
+      };
+    }
+    
+    // Fallback
+    return {
+      items: Array.isArray(responseData) ? responseData : [],
+      total: 0,
+      page: 1,
+      totalPages: 1,
+    };
+  } catch (error) {
+    console.error('Error fetching tables paginated:', error);
+    throw error;
+  }
 };
 
 export const getTable = async (id: string): Promise<Table> => {
-  const response = await api.get<Table>(`/tables/${id}`);
-  return response.data;
+  const response = await api.get(`/tables/${id}`);
+  // Backend returns: { statusCode, message, data: {...} }
+  return response.data?.data || response.data;
 };
 
 export const createTable = async (data: Partial<Table>): Promise<Table> => {
-  const response = await api.post<Table>("/tables", data);
-  return response.data;
+  const response = await api.post("/tables", data);
+  // Backend returns: { statusCode, message, data: {...} }
+  const tableData = response.data?.data || response.data;
+  console.log('Create table response:', { response: response.data, tableData });
+  return tableData;
 };
 
 export const updateTable = async (
   id: string,
   data: Partial<Table>
 ): Promise<Table> => {
-  const response = await api.patch<Table>(`/tables/${id}`, data);
-  return response.data;
+  const response = await api.patch(`/tables/${id}`, data);
+  // Backend returns: { statusCode, message, data: {...} }
+  const tableData = response.data?.data || response.data;
+  console.log('Update table response:', { response: response.data, tableData });
+  return tableData;
 };
 
 export const deleteTable = async (id: string): Promise<void> => {

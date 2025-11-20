@@ -73,9 +73,12 @@ const WeeklyTrends: FC<WeeklyTrendsProps> = ({ data }) => {
 
   return (
     <div className="mt-8">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg">
-          <TrendingUp className="w-6 h-6 text-white" />
+      <div className="flex items-center gap-4 mb-6">
+        <div className="relative group">
+          <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300">
+            <TrendingUp className="w-6 h-6 text-white" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Weekly Trends</h2>
@@ -83,7 +86,7 @@ const WeeklyTrends: FC<WeeklyTrendsProps> = ({ data }) => {
         </div>
       </div>
       
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200/50 p-8">
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
             <defs>

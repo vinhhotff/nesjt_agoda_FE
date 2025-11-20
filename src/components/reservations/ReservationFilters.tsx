@@ -73,7 +73,7 @@ export default function ReservationFilters({
             placeholder="Tìm theo tên khách hàng, số điện thoại..."
             value={localSearch}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
         </div>
 
@@ -83,7 +83,7 @@ export default function ReservationFilters({
           <select
             value={selectedStatus || 'all'}
             onChange={(e) => handleStatusChange(e.target.value)}
-            className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent appearance-none bg-white"
+            className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none bg-white"
           >
             <option value="all">Tất cả trạng thái</option>
             {Object.values(ReservationStatus).map(status => (
@@ -101,7 +101,7 @@ export default function ReservationFilters({
             type="date"
             value={selectedDate}
             onChange={(e) => handleDateChange(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             max="2030-12-31"
           />
         </div>
@@ -125,7 +125,7 @@ export default function ReservationFilters({
           onClick={() => handleDateChange(today)}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
             selectedDate === today
-              ? 'bg-yellow-500 text-white'
+              ? 'bg-amber-500 text-white'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
           }`}
         >
@@ -135,7 +135,7 @@ export default function ReservationFilters({
           onClick={() => handleDateChange(tomorrow)}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
             selectedDate === tomorrow
-              ? 'bg-yellow-500 text-white'
+              ? 'bg-amber-500 text-white'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
           }`}
         >
@@ -145,7 +145,7 @@ export default function ReservationFilters({
           onClick={() => handleDateChange('')}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
             !selectedDate
-              ? 'bg-yellow-500 text-white'
+              ? 'bg-amber-500 text-white'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
           }`}
         >
@@ -158,7 +158,7 @@ export default function ReservationFilters({
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
           <span className="text-xs text-gray-500 font-medium">Đang lọc:</span>
           {selectedStatus && (
-            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium flex items-center gap-1">
+            <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium flex items-center gap-1">
               <CheckCircle className="w-3 h-3" />
               {reservationsAPI.getStatusText(selectedStatus)}
             </span>

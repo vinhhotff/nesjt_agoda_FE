@@ -12,7 +12,6 @@
 }
 
 .modal {
-  background-color: #1f2937;
   color: #f9fafb;
   border-radius: 12px;
   width: 90%;
@@ -30,7 +29,7 @@
 
 .header h2 {
   margin: 0;
-  color: #facc15;
+  color: #f59e0b;
   font-size: 1.25rem;
 }
 
@@ -122,11 +121,11 @@
 
 /* Checked style */
 .radioGroup input[type="radio"]:checked + label {
-  background-color: #facc15;
+  background-color: #f59e0b;
   color: #111827;
   font-weight: 600;
-  border-color: #fbbf24;
-  box-shadow: 0 0 8px rgba(250, 204, 21, 0.7);
+  border-color: #f97316;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.7);
   transform: scale(1.03);
 }
 
@@ -139,7 +138,7 @@
 .submitButton {
   width: 100%;
   padding: 0.8rem;
-  background-color: #facc15;
+  background-color: #f59e0b;
   color: #111827;
   border: none;
   border-radius: 8px;
@@ -150,5 +149,5 @@
 }
 
 .submitButton:hover {
-  background-color: #fde047;
+  background-color: #f97316;
 }

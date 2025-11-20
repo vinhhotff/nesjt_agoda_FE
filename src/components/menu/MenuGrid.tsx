@@ -113,7 +113,7 @@ const MenuGrid: React.FC<MenuGridProps> = ({
                 {item.name}
               </h3>
               <div className="ml-3 text-right">
-                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
                   {item.price.toLocaleString()} VND
                 </p>
               </div>
@@ -140,9 +140,9 @@ const MenuGrid: React.FC<MenuGridProps> = ({
                 onClick={() => handleAddToCart(item)}
                 disabled={!item.available}
                 className={`
-                  px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200
+                  px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300
                   ${item.available
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+                    ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 shadow-lg hover:shadow-xl hover:scale-105'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }
                 `}

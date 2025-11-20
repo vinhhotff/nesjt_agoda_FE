@@ -21,8 +21,8 @@ export default function Pagination({ page, total, limit, onPageChange }: Props) 
           className={`
             px-4 py-2 rounded-md font-medium transition
             ${p === page 
-              ? 'bg-yellow-500 text-white shadow-md' 
-              : 'bg-gray-100 text-gray-700 hover:bg-yellow-100 hover:text-yellow-600'}
+              ? 'bg-amber-500 text-white shadow-md' 
+              : 'bg-gray-100 text-gray-700 hover:bg-amber-100 hover:text-amber-600'}
           `}
         >
           {p}

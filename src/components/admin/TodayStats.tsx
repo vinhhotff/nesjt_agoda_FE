@@ -55,10 +55,10 @@ const statItems = [
     key: 'pendingOrders',
     label: 'Pending',
     icon: Clock,
-    color: 'from-yellow-500 to-orange-500',
-    bgColor: 'bg-yellow-50',
-    iconColor: 'text-yellow-600',
-    valueColor: 'text-yellow-700',
+    color: 'from-amber-500 to-orange-500',
+    bgColor: 'bg-amber-50',
+    iconColor: 'text-amber-600',
+    valueColor: 'text-amber-700',
   },
   {
     key: 'cancelledOrders',
@@ -83,9 +83,12 @@ export default function TodayStats({ todayStats }: TodayStatsProps) {
 
   return (
     <div className="mt-8 mb-8">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg">
-          <TrendingUp className="w-6 h-6 text-white" />
+      <div className="flex items-center gap-4 mb-6">
+        <div className="relative group">
+          <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300">
+            <TrendingUp className="w-6 h-6 text-white" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Today's Performance</h2>
@@ -93,8 +96,8 @@ export default function TodayStats({ todayStats }: TodayStatsProps) {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {statItems.map((item) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+        {statItems.map((item, index) => {
           const value = todayStats[item.key as keyof typeof todayStats];
           if (value === undefined && item.key !== 'totalOrders' && item.key !== 'totalRevenue') return null;
           
@@ -106,33 +109,44 @@ export default function TodayStats({ todayStats }: TodayStatsProps) {
           return (
             <div
               key={item.key}
-              className="group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200 transform hover:-translate-y-1"
+              className="group relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-200/50 hover:border-gray-300 transform hover:-translate-y-2"
+              style={{ animationDelay: `${index * 100}ms` }}
             >
-              {/* Gradient accent */}
-              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${item.color}`} />
+              {/* Animated gradient border */}
+              <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${item.color} group-hover:h-2 transition-all duration-300`}>
+                <div className="h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+              </div>
               
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`${item.bgColor} rounded-lg p-2.5 group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className={`w-5 h-5 ${item.iconColor}`} />
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="relative">
+                    <div className={`${item.bgColor} rounded-xl p-3 group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                      <Icon className={`w-6 h-6 ${item.iconColor}`} />
+                    </div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${item.color} rounded-xl blur-md opacity-0 group-hover:opacity-30 transition-opacity duration-300`} />
                   </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${item.color}`} />
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                    <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${item.color} animate-pulse`} />
+                    <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${item.color} animate-pulse`} style={{ animationDelay: '0.2s' }} />
+                    <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${item.color} animate-pulse`} style={{ animationDelay: '0.4s' }} />
                   </div>
                 </div>
                 
-                <div className="mb-1">
-                  <div className={`text-2xl font-bold ${item.valueColor} mb-1`}>
+                <div>
+                  <div className={`text-3xl font-bold ${item.valueColor} mb-2 group-hover:scale-105 transition-transform duration-300`}>
                     {displayValue}
                   </div>
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     {item.label}
                   </div>
                 </div>
               </div>
               
-              {/* Hover effect */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+              {/* Hover gradient overlay */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+              
+              {/* Shine effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
             </div>
           );
         })}

@@ -3,5 +3,8 @@
   font-weight: bold;
   white-space: nowrap;
   overflow: hidden;
-  color: #edb021;
+  background: linear-gradient(to right, #f59e0b, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

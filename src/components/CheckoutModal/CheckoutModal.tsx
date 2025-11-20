@@ -87,7 +87,7 @@ export default function CheckoutModal({ isOpen, onClose, onSubmit }: Props) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-yellow-500 text-gray-900 rounded-lg font-medium hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-amber-500 text-gray-900 rounded-lg font-medium hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? 'Placing Order...' : 'Place Order'}
           </button>

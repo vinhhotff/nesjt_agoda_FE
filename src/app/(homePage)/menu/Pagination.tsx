@@ -53,41 +53,34 @@ export default function Pagination({ page, total, limit, setPage, className = ""
   const visiblePages = getVisiblePages();
 
   return (
-    <div className={`${className} space-y-4`}>
-      {/* Results summary */}
-      <div className="text-center text-sm text-gray-400">
-        Showing <span className="font-medium text-yellow-400">{startItem}</span> to{' '}
-        <span className="font-medium text-yellow-400">{endItem}</span> of{' '}
-        <span className="font-medium text-yellow-400">{total}</span> results
-      </div>
-
+    <div className={`${className} space-y-6`}>
       {/* Pagination controls */}
-      <div className={`${styles.pagination} ${className}`}>
+      <div className="flex items-center justify-center gap-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
         {/* Previous button */}
         <button
           disabled={page === 1}
           onClick={() => setPage(page - 1)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-yellow-400"
+          className="flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-yellow-500 hover:to-yellow-600 hover:text-white hover:shadow-lg"
         >
-          <ChevronLeft size={16} />
-          Previous
+          <ChevronLeft size={18} />
+          <span className="hidden sm:inline">Previous</span>
         </button>
 
         {/* Page numbers */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {visiblePages.map((pageNum, index) => (
             <React.Fragment key={index}>
               {pageNum === '...' ? (
                 <div className="flex items-center justify-center w-10 h-10">
-                  <MoreHorizontal size={16} className="text-gray-500" />
+                  <MoreHorizontal size={18} className="text-gray-400" />
                 </div>
               ) : (
                 <button
                   onClick={() => setPage(pageNum as number)}
-                  className={`w-10 h-10 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  className={`min-w-[44px] h-11 px-3 text-sm font-bold rounded-xl transition-all duration-300 ${
                     pageNum === page
-                      ? 'bg-yellow-500 text-gray-900 ring-2 ring-yellow-400'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-yellow-400'
+                      ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg shadow-yellow-500/30 scale-110'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:scale-105'
                   }`}
                 >
                   {pageNum}
@@ -101,11 +94,18 @@ export default function Pagination({ page, total, limit, setPage, className = ""
         <button
           disabled={page >= totalPages}
           onClick={() => setPage(page + 1)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-yellow-400"
+          className="flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-yellow-500 hover:to-yellow-600 hover:text-white hover:shadow-lg"
         >
-          Next
-          <ChevronRight size={16} />
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight size={18} />
         </button>
+      </div>
+
+      {/* Results summary */}
+      <div className="text-center text-sm text-gray-600">
+        Showing <span className="font-bold text-gray-900">{startItem}</span> to{' '}
+        <span className="font-bold text-gray-900">{endItem}</span> of{' '}
+        <span className="font-bold text-gray-900">{total}</span> dishes
       </div>
     </div>
   );

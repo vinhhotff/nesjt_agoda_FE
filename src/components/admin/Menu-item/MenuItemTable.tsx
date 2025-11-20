@@ -28,9 +28,14 @@ function ActionButton({
         <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onClick}
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClick();
+            }}
             title={title}
-            className={`p-2 rounded-lg transition-colors duration-200 ${hoverColor} flex items-center justify-center`}
+            type="button"
+            className={`p-3 rounded-xl transition-all duration-300 ${hoverColor} flex items-center justify-center shadow-md hover:shadow-lg relative z-20 cursor-pointer`}
         >
             {children}
         </motion.button>
@@ -45,50 +50,69 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
     }, [items]);
 
     const handleDelete = (id: string) => {
-        toast(
-            (t) => (
-                <div className="flex flex-col gap-2">
-                    <span>Bạn có chắc muốn xóa món này?</span>
-                    <div className="flex justify-end gap-2">
+        const toastId = toast(
+            ({ closeToast }: any) => (
+                <div className="flex flex-col gap-3 p-2">
+                    <div className="flex items-center gap-2 text-gray-900">
+                        <Trash2 className="w-5 h-5 text-red-600" />
+                        <span className="font-semibold">Xác nhận xóa món</span>
+                    </div>
+                    <p className="text-sm text-gray-600">Bạn có chắc muốn xóa món này? Hành động này không thể hoàn tác.</p>
+                    <div className="flex justify-end gap-2 mt-2">
                         <button
-                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                            onClick={() => toast.dismiss(id)}
+                            type="button"
+                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                            onClick={() => {
+                                if (closeToast) closeToast();
+                                toast.dismiss(toastId);
+                            }}
                         >
                             Hủy
                         </button>
                         <button
-                            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                            type="button"
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors shadow-md"
                             onClick={async () => {
-                                toast.dismiss(id);
+                                if (closeToast) closeToast();
+                                toast.dismiss(toastId);
+                                const loadingToast = toast.loading('Đang xóa...');
                                 try {
                                     await onDelete(id);
                                     setLocalItems((prev) =>
                                         prev.filter((item) => item._id !== id)
                                     );
-                                    toast.success('Xóa thành công!');
+                                    toast.dismiss(loadingToast);
+                                    toast.success('Xóa món thành công!');
                                 } catch (err: any) {
-                                    toast.error(err?.message || 'Xóa thất bại!');
+                                    toast.dismiss(loadingToast);
+                                    toast.error(err?.message || 'Xóa món thất bại!');
                                 }
                             }}
                         >
-                            Xóa
+                            Xóa ngay
                         </button>
                     </div>
                 </div>
-            )
+            ),
+            {
+                autoClose: false,
+                closeOnClick: false,
+                position: 'top-center',
+                className: 'min-w-[400px]',
+            }
         );
     };
 
     return (
-        <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
-            <table className="w-full border-collapse bg-white text-sm md:text-base">
+        <div className="overflow-x-auto rounded-3xl shadow-xl border border-gray-200/50">
+            <table className="w-full border-collapse bg-white/80 backdrop-blur-sm text-sm md:text-base">
                 <thead>
-                    <tr className="bg-gradient-to-r from-gray-100 to-gray-200 text-left text-gray-700">
-                        <th className="p-4 font-semibold">Tên món</th>
-                        <th className="p-4 font-semibold">Giá</th>
-                        <th className="p-4 font-semibold">Trạng thái</th>
-                        <th className="p-4 font-semibold">Mô tả</th>
-                        <th className="p-4 text-center font-semibold">Hành động</th>
+                    <tr className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 text-left text-gray-700">
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Tên món</th>
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Giá</th>
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Trạng thái</th>
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Mô tả</th>
+                        <th className="p-5 text-center font-bold text-xs uppercase tracking-wider">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,9 +121,15 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
                             <tr>
                                 <td
                                     colSpan={5}
-                                    className="text-center p-6 text-gray-500 italic"
+                                    className="text-center p-12 text-gray-500"
                                 >
-                                    Không có món nào
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
+                                            <span className="text-3xl">🍽️</span>
+                                        </div>
+                                        <p className="font-semibold">Không có món nào</p>
+                                        <p className="text-sm">Thêm món mới để bắt đầu</p>
+                                    </div>
                                 </td>
                             </tr>
                         ) : (
@@ -111,42 +141,50 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
                                     exit={{ opacity: 0, y: -10 }}
                                     transition={{ delay: index * 0.05 }}
                                     layout
-                                    className="border-t hover:bg-gray-50 transition-colors"
+                                    className="group border-t border-gray-100 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent transition-all duration-300"
                                 >
-                                    <td className="p-4 font-medium text-gray-800">{item.name}</td>
-                                    <td className="p-4 text-gray-700">
-                                        {item.price.toLocaleString()}đ
+                                    <td className="p-5 font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                        {item.name}
                                     </td>
-                                    <td className="p-4">
+                                    <td className="p-5">
+                                        <span className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                                            {item.price.toLocaleString()}đ
+                                        </span>
+                                    </td>
+                                    <td className="p-5">
                                         {item.available ? (
-                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                                Có
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-200 shadow-sm">
+                                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                                                Có sẵn
                                             </span>
                                         ) : (
-                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                                                Hết
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-200 shadow-sm">
+                                                <span className="w-2 h-2 bg-red-500 rounded-full" />
+                                                Hết hàng
                                             </span>
                                         )}
                                     </td>
-                                    <td className="p-4 text-gray-600 line-clamp-2">
-                                        {item.description}
+                                    <td className="p-5 text-gray-600 max-w-xs">
+                                        <p className="line-clamp-2">{item.description}</p>
                                     </td>
-                                    <td className="p-4 gap-2 justify-center">
-                                        <ActionButton
-                                            onClick={() => onEdit(item)}
-                                            hoverColor="hover:bg-blue-50"
-                                            title="Sửa món"
-                                        >
-                                            <Pencil className="w-5 h-5 text-blue-600" />
-                                        </ActionButton>
+                                    <td className="p-5">
+                                        <div className="flex items-center justify-center gap-3">
+                                            <ActionButton
+                                                onClick={() => onEdit(item)}
+                                                hoverColor="hover:bg-blue-50 border-2 border-blue-200"
+                                                title="Sửa món"
+                                            >
+                                                <Pencil className="w-5 h-5 text-blue-600" />
+                                            </ActionButton>
 
-                                        <ActionButton
-                                            onClick={() => handleDelete(item._id)}
-                                            hoverColor="hover:bg-red-50"
-                                            title="Xóa món"
-                                        >
-                                            <Trash2 className="w-5 h-5 text-red-600" />
-                                        </ActionButton>
+                                            <ActionButton
+                                                onClick={() => handleDelete(item._id)}
+                                                hoverColor="hover:bg-red-50 border-2 border-red-200"
+                                                title="Xóa món"
+                                            >
+                                                <Trash2 className="w-5 h-5 text-red-600" />
+                                            </ActionButton>
+                                        </div>
                                     </td>
                                 </motion.tr>
                             ))

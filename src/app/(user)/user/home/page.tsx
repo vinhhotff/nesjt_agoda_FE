@@ -1,11 +1,11 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { api } from "@/src/lib/api";
 import { getTopSellingItems } from "@/src/lib/api/revenueApi";
 import { TopSellingItem, Order } from "@/src/Types";
 import { useAuth } from "@/src/Context/AuthContext";
+import { ArrowRight, Gift, Sparkles, Trophy, UtensilsCrossed } from "lucide-react";
 
 interface ApiResult<T> {
   loading: boolean;
@@ -14,44 +14,62 @@ interface ApiResult<T> {
 }
 
 interface Loyalty {
-  _id?: string;
-  user: string | { _id: string; name?: string };
   points: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n);
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 function getTier(points: number) {
-  if (points >= 5000) return { name: "Platinum", nextAt: 0 } as const;
-  if (points >= 1000) return { name: "Gold", nextAt: 5000 } as const;
-  return { name: "Silver", nextAt: 1000 } as const;
+  if (points >= 5000) return { name: "Platinum", nextAt: 0 };
+  if (points >= 1000) return { name: "Gold", nextAt: 5000 };
+  return { name: "Silver", nextAt: 1000 };
 }
+
+const statusPalette: Record<string, { bg: string; text: string; icon: string }> = {
+  pending: {
+    bg: "bg-amber-50 border-amber-200",
+    text: "text-amber-600",
+    icon: "⏳",
+  },
+  preparing: {
+    bg: "bg-sky-50 border-sky-200",
+    text: "text-sky-600",
+    icon: "🍳",
+  },
+  served: {
+    bg: "bg-emerald-50 border-emerald-200",
+    text: "text-emerald-600",
+    icon: "✅",
+  },
+  cancelled: {
+    bg: "bg-rose-50 border-rose-200",
+    text: "text-rose-600",
+    icon: "✖",
+  },
+};
 
 export default function UserDashboardPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
-
   const [topSellingRes, setTopSellingRes] = useState<ApiResult<TopSellingItem[]>>({ loading: true, data: null });
   const [loyaltyRes, setLoyaltyRes] = useState<ApiResult<Loyalty>>({ loading: true, data: null });
   const [ordersRes, setOrdersRes] = useState<ApiResult<Order[]>>({ loading: true, data: null });
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
-  const [orderError, setOrderError] = useState<string | undefined>(undefined);
+  const [orderError, setOrderError] = useState<string>();
 
-  // Redirect if not logged in
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [loading, user, router]);
+    if (!loading && !user) window.location.href = "/login";
+  }, [loading, user]);
 
-  // Fetch data
   useEffect(() => {
     if (!user) return;
-
     (async () => {
       try {
         const [top, loyalty, ordersPayload] = await Promise.all([
@@ -59,6 +77,7 @@ export default function UserDashboardPage() {
           api.get("/loyalty/my-points").then((r) => (r.data?.data ?? r.data) as Loyalty),
           api.get(`/orders/user`, { params: { userId: user._id } }).then((r) => r.data),
         ]);
+
         const orders = Array.isArray((ordersPayload?.data as any)?.data)
           ? (ordersPayload.data as any).data
           : Array.isArray(ordersPayload?.data)
@@ -66,13 +85,15 @@ export default function UserDashboardPage() {
           : Array.isArray(ordersPayload)
           ? ordersPayload
           : [];
+
         setTopSellingRes({ loading: false, data: top });
         setLoyaltyRes({ loading: false, data: loyalty });
         setOrdersRes({ loading: false, data: orders });
-      } catch (e: any) {
-        setTopSellingRes((s) => ({ ...s, loading: false, error: s.error || e?.message || "Failed" }));
-        setLoyaltyRes((s) => ({ ...s, loading: false, error: s.error || e?.message || "Failed" }));
-        setOrdersRes((s) => ({ ...s, loading: false, error: s.error || e?.message || "Failed" }));
+      } catch (error: any) {
+        const fallback = { loading: false, data: [], error: error?.message || "Đã có lỗi xảy ra" };
+        setTopSellingRes((prev) => ({ ...fallback, data: prev.data }));
+        setLoyaltyRes((prev) => ({ ...fallback, data: prev.data }));
+        setOrdersRes(fallback);
       }
     })();
   }, [user]);
@@ -83,279 +104,372 @@ export default function UserDashboardPage() {
     setOrderModalOpen(true);
     try {
       const res = await api.get(`/orders/${id}`);
-      const payload = res.data?.data ?? res.data;
-      setSelectedOrder(payload as Order);
+      setSelectedOrder((res.data?.data ?? res.data) as Order);
     } catch (err: any) {
       setOrderError(err?.message || "Không thể lấy chi tiết đơn hàng");
     } finally {
       setOrderLoading(false);
     }
   };
+
   const closeOrder = () => {
     setOrderModalOpen(false);
     setSelectedOrder(null);
   };
 
-  if (loading) {
+  // Compute derived values with useMemo before any conditional returns
+  const latestOrders = useMemo(() => (ordersRes.data ?? []).slice(0, 5), [ordersRes.data]);
+  
+  const points = loyaltyRes.data?.points ?? 0;
+  const tier = getTier(points);
+  const progress =
+    tier.name === "Platinum"
+      ? 100
+      : Math.min(
+          100,
+          Math.round(
+            ((points - (tier.name === "Gold" ? 1000 : 0)) / (tier.nextAt - (tier.name === "Gold" ? 1000 : 0))) * 100
+          )
+        );
+
+  const quickStats = [
+    { label: "Đơn gần đây", value: (ordersRes.data ?? []).length, accent: "from-amber-200 to-amber-100" },
+    { label: "Món bán chạy", value: (topSellingRes.data ?? []).length, accent: "from-sky-200 to-sky-100" },
+    { label: "Hạng hiện tại", value: tier.name, accent: "from-emerald-200 to-emerald-100" },
+  ];
+
+  if (loading || !user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-200 border-t-amber-500" />
       </div>
     );
   }
-  if (!user) return null;
-
-  const points = loyaltyRes.data?.points ?? 0;
-  const tier = getTier(points);
-  const progress = (() => {
-    if (tier.name === "Platinum") return 100;
-    const base = tier.name === "Gold" ? 1000 : 0;
-    const next = tier.nextAt; // 1000 for Silver->Gold, 5000 for Gold->Platinum
-    const currentInTier = Math.max(0, points - base);
-    const band = next - base;
-    return Math.max(0, Math.min(100, Math.round((currentInTier / band) * 100)));
-  })();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-8">
-        {/* Hero Header */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-2xl p-8 md:p-12">
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)'
-          }} />
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">Xin chào, {user.name}!</h1>
-              <p className="text-indigo-100 mt-2 text-lg">Quản lý đơn hàng và điểm tích lũy của bạn</p>
-            </div>
-            <div className="flex gap-3 mt-4 md:mt-0">
-              <Link href="/user/profile" className="px-6 py-3 rounded-lg bg-white text-indigo-600 font-semibold hover:bg-indigo-50 transition shadow-lg">Hồ sơ</Link>
-              <Link href="/menu" className="px-6 py-3 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-700 transition shadow-lg">Order</Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Loyalty + Quick stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-2xl shadow-xl p-8 text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-16 -mb-16" />
-            <div className="relative z-10">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold">Tù Loyalty</h2>
-                  <p className="text-cyan-100 text-sm mt-1">Hạng thành viên: <span className="font-bold text-lg text-amber-200">{tier.name}</span></p>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-5xl font-bold text-amber-200">{points}</span>
-                  <span className="text-white/70 text-sm">/ {tier.name === "Platinum" ? "Tối đa" : `${tier.nextAt}`}</span>
-                </div>
-                <p className="text-cyan-100 text-sm mt-2">Điểm của bạn</p>
-              </div>
-
-              <div className="mt-6">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-white/80">Tiến đến hạng tiếp theo</span>
-                  <span className="font-semibold text-amber-200">{progress}%</span>
-                </div>
-                <div className="h-3 w-full bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-amber-300 to-yellow-200 transition-all duration-500" style={{ width: `${progress}%` }} />
-                </div>
-              </div>
-
-              {loyaltyRes.loading && <div className="mt-4 text-cyan-100 text-sm">• Đang tải thông tin...</div>}
-              {loyaltyRes.error && <div className="mt-4 text-red-200 text-sm">Lỗi: {loyaltyRes.error}</div>}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-100">
-            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">📈 Thống kê</h3>
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <div>
-                  <p className="text-blue-600 text-sm font-medium">Đơn hàng gần đây</p>
-                  <p className="text-2xl font-bold text-blue-900 mt-1">{ordersRes.data?.length ?? 0}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                <div>
-                  <p className="text-purple-600 text-sm font-medium">Món bán chạy</p>
-                  <p className="text-2xl font-bold text-purple-900 mt-1">{topSellingRes.data?.length ?? 0}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Top Selling Items */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">\ud83d\udd25 Món Bán Chạy</h2>
-              <p className="text-gray-600 text-sm mt-1">Các món áo uế của khách hàng trong 30 ngày qua</p>
-            </div>
-            <Link href="/menu" className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 transition">Xem Menu</Link>
-          </div>
-          {topSellingRes.loading ? (
-            <div className="text-center py-12 text-gray-500">• Đang tải...</div>
-          ) : topSellingRes.error ? (
-            <div className="p-6 bg-red-50 border border-red-200 text-red-600 rounded-lg">{topSellingRes.error}</div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {(topSellingRes.data ?? []).map((item) => (
-                <div key={item._id} className="group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-300 overflow-hidden">
-                  <div className="relative h-32 bg-slate-100 overflow-hidden">
-                    {item.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-gray-400">IMG</div>
-                    )}
-                    <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Đã bán {item.totalSold}</div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-purple-600 transition">{item.name}</h3>
-                    <div className="mt-3 pt-3 border-t border-slate-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">Price</span>
-                        <span className="font-bold text-purple-600">{formatCurrency(item.totalRevenue)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Order History */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">\ud83d\udccb Lịch Sử Đơn Hàng</h2>
-              <p className="text-gray-600 text-sm mt-1">5 đơn hàng gần đây nhất của bạn</p>
-            </div>
-          </div>
-          {ordersRes.loading ? (
-            <div className="text-center py-12 text-gray-500">• Đang tải...</div>
-          ) : ordersRes.error ? (
-            <div className="p-6 bg-red-50 border border-red-200 text-red-600 rounded-lg">{ordersRes.error}</div>
-          ) : (
-            <div className="space-y-3">
-              {(ordersRes.data ?? []).map((o) => {
-                const created = o.createdAt ? new Date(o.createdAt) : null;
-                const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
-                const statusIcons: Record<string, string> = {
-                  pending: "\u26a0\ufe0f",
-                  preparing: "\ud83d\udd28",
-                  served: "\u2705",
-                  cancelled: "\u274c",
-                };
-                const statusColors: Record<string, string> = {
-                  pending: "from-yellow-50 to-yellow-100 border-yellow-200",
-                  preparing: "from-blue-50 to-blue-100 border-blue-200",
-                  served: "from-green-50 to-green-100 border-green-200",
-                  cancelled: "from-red-50 to-red-100 border-red-200",
-                };
-                const statusTextColor: Record<string, string> = {
-                  pending: "text-yellow-800",
-                  preparing: "text-blue-800",
-                  served: "text-green-800",
-                  cancelled: "text-red-800",
-                };
-                return (
-                  <div key={o._id} className={`bg-gradient-to-r ${statusColors[o.status] || "from-gray-50 to-gray-100"} border rounded-xl p-5 hover:shadow-lg transition-all duration-300`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{statusIcons[o.status] || "\ud83c\udf1f"}</span>
-                          <div>
-                            <div className="font-semibold text-gray-900">Đơn #{o._id.slice(-6).toUpperCase()}</div>
-                            <div className={`text-sm mt-0.5 ${statusTextColor[o.status] || "text-gray-600"}`}>
-                              {created ? created.toLocaleString("vi-VN") : ""} • {itemsCount} món
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-gray-900">{formatCurrency(o.totalPrice || 0)}</div>
-                          <div className={`text-xs font-semibold mt-1 ${statusTextColor[o.status] || "text-gray-600"}`}>{o.status}</div>
-                        </div>
-                        <button onClick={() => openOrder(o._id)} className="px-4 py-2 rounded-lg bg-white font-semibold hover:shadow transition hover:text-indigo-600">→</button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {(ordersRes.data ?? []).length === 0 && (
-                <div className="p-8 text-center bg-white rounded-xl border-2 border-dashed border-gray-300">
-                  <p className="text-gray-500 text-lg font-medium">Chưa có đơn hàng nào</p>
-                  <Link href="/menu" className="mt-3 inline-block px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Order Ngay</Link>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50/30 to-white text-gray-900">
+      {/* Animated background blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
+        <div className="absolute top-0 -right-4 w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000" />
       </div>
-      {/* Order Detail Modal */}
+
+      <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-10">
+        <section className="relative overflow-hidden rounded-4xl border border-amber-200/50 bg-white/80 backdrop-blur-xl shadow-2xl hover:shadow-amber-200/50 transition-all duration-500 group">
+          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.4),_transparent_70%)]" />
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_bottom_left,_rgba(245,158,11,0.2),_transparent_60%)]" />
+          <div className="relative flex flex-col gap-8 p-8 md:p-10">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-4">
+                <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-amber-600 animate-fade-in">
+                  <Sparkles className="w-4 h-4 animate-pulse" /> Xin chào trở lại
+                </p>
+                <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-gray-900 animate-slide-up">
+                  Chào {user.name || "bạn"}!
+                </h1>
+                <p className="text-lg text-gray-600 max-w-2xl animate-slide-up animation-delay-200">
+                  Tiếp tục hành trình ẩm thực của bạn với các ưu đãi và điểm thưởng mới nhất.
+                </p>
+                <div className="flex flex-wrap gap-3 animate-slide-up animation-delay-400">
+                  <Link
+                    href="/menu"
+                    className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 px-6 py-3 font-semibold text-white shadow-lg hover:shadow-amber-400/60 hover:scale-105 transition-all duration-300"
+                  >
+                    Khám phá menu <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <Link
+                    href="/user/orders"
+                    className="inline-flex items-center gap-2 rounded-2xl border-2 border-amber-200 bg-white/80 backdrop-blur px-6 py-3 font-semibold text-gray-900 shadow-sm hover:border-amber-400 hover:bg-amber-50 hover:scale-105 transition-all duration-300"
+                  >
+                    Đơn hàng của tôi
+                  </Link>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full lg:w-auto">
+                {quickStats.map((stat, idx) => (
+                  <div
+                    key={stat.label}
+                    className={`rounded-2xl border border-white/60 bg-gradient-to-br ${stat.accent} p-5 text-gray-900 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-scale-in`}
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                  >
+                    <p className="text-xs uppercase tracking-[0.4em] text-gray-600">{stat.label}</p>
+                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Loyalty Points Section */}
+        <section className="rounded-3xl border border-yellow-200/50 bg-white/80 backdrop-blur-xl p-8 shadow-xl hover:shadow-2xl hover:shadow-amber-200/30 transition-all duration-500 animate-fade-in-up">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-amber-600">Loyalty</p>
+              <h2 className="text-3xl font-semibold text-gray-900 mt-2">Điểm thưởng</h2>
+            </div>
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-yellow-400 flex items-center justify-center shadow-lg hover:scale-110 hover:rotate-12 transition-all duration-300 animate-bounce-slow">
+              <Trophy className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <p className="text-sm text-amber-700">Tổng điểm</p>
+              <p className="text-5xl font-black bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent mt-2 animate-pulse-slow">{points}</p>
+              <p className="text-xs uppercase tracking-[0.4em] text-amber-600 mt-2">Hạng {tier.name}</p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <p className="text-sm text-gray-600">Tiến độ lên hạng</p>
+              <div className="mt-4">
+                <div className="h-3 rounded-full bg-gray-200 overflow-hidden shadow-inner">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 transition-all duration-1000 ease-out animate-shimmer"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {tier.name === "Platinum" ? "Bạn đã đạt hạng cao nhất" : `Cần thêm ${Math.max(0, tier.nextAt - points)} điểm`}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 flex gap-3 flex-wrap">
+            <Link
+              href="/reservation"
+              className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-100 hover:scale-105 transition-all duration-300"
+            >
+              Đặt bàn ngay
+            </Link>
+            <Link
+              href="/user/loyalty"
+              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:border-amber-300 hover:scale-105 transition-all duration-300"
+            >
+              Quyền lợi thành viên
+            </Link>
+          </div>
+        </section>
+
+        {/* Top Selling Items & Recent Orders - Side by Side */}
+        <section className="grid gap-6 lg:grid-cols-2">
+          {/* Top Selling Items */}
+          <div className="rounded-3xl border border-gray-200/50 bg-white/80 backdrop-blur-xl p-8 shadow-xl hover:shadow-2xl hover:shadow-amber-200/30 transition-all duration-500 animate-fade-in-up animation-delay-200">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">🔥 Món bán chạy</h2>
+                <p className="text-gray-600 text-sm mt-1">Top 4 món phổ biến</p>
+              </div>
+              <Link
+                href="/menu"
+                className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-white px-4 py-2 text-sm font-semibold shadow-lg hover:shadow-amber-300/60 hover:scale-105 transition-all duration-300"
+              >
+                Xem menu <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+            {topSellingRes.loading ? (
+              <div className="text-center py-10 text-gray-500">Đang tải...</div>
+            ) : topSellingRes.error ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-600">{topSellingRes.error}</div>
+            ) : (
+              <div className="space-y-4">
+                {(topSellingRes.data ?? []).slice(0, 4).map((item, idx) => (
+                  <div 
+                    key={item._id} 
+                    className="group rounded-2xl border border-gray-200 bg-white shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden animate-fade-in-up flex gap-4"
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                  >
+                    <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden flex-shrink-0">
+                      {item.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-2xl text-gray-300">🍽️</div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </div>
+                    <div className="flex-1 py-3 pr-4 flex flex-col justify-center">
+                      <h3 className="text-base font-semibold text-gray-900 line-clamp-1 group-hover:text-amber-600 transition-colors">{item.name}</h3>
+                      <div className="flex items-center justify-between text-sm text-gray-500 mt-2">
+                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-semibold">+{item.totalSold} lượt</span>
+                        <span className="font-semibold text-amber-600">{formatCurrency(item.totalRevenue)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {(topSellingRes.data ?? []).length === 0 && <div className="text-gray-400 text-sm text-center py-8">Chưa có dữ liệu.</div>}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Orders */}
+          <div className="rounded-3xl border border-gray-200/50 bg-white/80 backdrop-blur-xl p-8 shadow-xl hover:shadow-2xl hover:shadow-amber-200/30 transition-all duration-500 animate-fade-in-up animation-delay-400">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">📋 Đơn gần đây</h2>
+                <p className="text-gray-500 text-sm mt-1">4 đơn mới nhất</p>
+              </div>
+              <Link href="/user/orders" className="text-sm font-semibold text-amber-600 hover:text-amber-500 hover:scale-105 transition-transform">
+                Xem tất cả
+              </Link>
+            </div>
+            {ordersRes.loading ? (
+              <div className="text-center py-10 text-gray-500">Đang tải...</div>
+            ) : ordersRes.error ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-600">{ordersRes.error}</div>
+            ) : (
+              <div className="space-y-4">
+                {latestOrders.slice(0, 4).map((o, idx) => {
+                  const created = o.createdAt ? new Date(o.createdAt) : null;
+                  const palette = statusPalette[o.status] || statusPalette.pending;
+                  const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
+                  return (
+                    <div
+                      key={o._id}
+                      className={`rounded-2xl border ${palette.bg} p-3 text-gray-900 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-in-up flex gap-3`}
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                      <span className={`text-xl ${palette.text} flex-shrink-0 mt-0.5`}>{palette.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm">#{o._id.slice(-6).toUpperCase()}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {created ? created.toLocaleDateString("vi-VN") : ""} • {itemsCount} món
+                            </p>
+                          </div>
+                          <p className={`text-xs font-semibold px-2 py-0.5 rounded-full ${palette.text} bg-white/50`}>{o.status}</p>
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-base font-bold text-amber-600">{formatCurrency(o.totalPrice || 0)}</p>
+                          <button
+                            onClick={() => openOrder(o._id)}
+                            className="text-xs font-semibold text-amber-600 hover:text-amber-500 hover:underline"
+                          >
+                            Chi tiết
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {latestOrders.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-gray-500">
+                    <p className="text-sm">Bạn chưa có đơn nào.</p>
+                    <Link href="/menu" className="text-amber-600 font-semibold text-sm hover:underline">Đặt món ngay</Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Quick Actions & Suggestion */}
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-3xl border border-gray-200/50 bg-white/80 backdrop-blur-xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 space-y-4 animate-fade-in-up animation-delay-600">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-gray-500">Trải nghiệm</p>
+                <h3 className="text-xl font-bold text-gray-900 mt-2">Bảng điều khiển</h3>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-400 flex items-center justify-center shadow-md">
+                <Gift className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Link
+                href="/reservation"
+                className="block rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:bg-amber-50 hover:translate-x-1 transition-all duration-300"
+              >
+                Đặt bàn cho lần tới
+              </Link>
+              <Link
+                href="/user/profile"
+                className="block rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:bg-amber-50 hover:translate-x-1 transition-all duration-300"
+              >
+                Cập nhật thông tin cá nhân
+              </Link>
+              <Link
+                href="/contact"
+                className="block rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:bg-amber-50 hover:translate-x-1 transition-all duration-300"
+              >
+                Liên hệ hỗ trợ
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-6 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-500 animate-fade-in-up animation-delay-800">
+            <div className="flex items-center gap-3 text-amber-700">
+              <UtensilsCrossed className="w-8 h-8 animate-pulse-slow" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em]">Gợi ý</p>
+                <h3 className="text-2xl font-bold text-amber-900">Thưởng thức món mới</h3>
+              </div>
+            </div>
+            <p className="text-amber-700/80 mt-4 text-sm">
+              Thử món mới mỗi tuần để nhận thêm 100 điểm thưởng. Đừng bỏ lỡ các sự kiện đặc biệt của nhà hàng.
+            </p>
+          </div>
+        </section>
+      </div>
+
       {orderModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" onClick={closeOrder} />
-          <div className="relative z-10 w-full max-w-2xl bg-white rounded-2xl shadow-2xl border p-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Chi tiết đơn hàng</h3>
-              <button onClick={closeOrder} className="p-1.5 rounded hover:bg-gray-100">✕</button>
-            </div>
-            {orderLoading ? (
-              <div className="mt-6 text-sm text-gray-500">Đang tải chi tiết...</div>
-            ) : orderError ? (
-              <div className="mt-6 text-sm text-red-600">{orderError}</div>
-            ) : selectedOrder ? (
-              <div className="mt-4 space-y-4">
-                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                  <span className="font-medium text-gray-900">Mã đơn:</span> {selectedOrder._id}
-                  <span>•</span>
-                  <span>{selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : ""}</span>
-                  <span>•</span>
-                  <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 text-xs">{selectedOrder.status}</span>
-                </div>
-                <div className="divide-y rounded-xl border">
-                  {selectedOrder.items?.map((it, idx) => {
-                    const itemObj: any = (it as any).item;
-                    const name = typeof itemObj === 'object' ? itemObj.name : String(itemObj);
-                    const image = typeof itemObj === 'object' ? (itemObj.images?.[0] || itemObj.image) : undefined;
-                    const price = (it as any).unitPrice || (typeof itemObj === 'object' ? itemObj.price : 0);
-                    const subtotal = (it as any).subtotal || price * (it as any).quantity;
-                    return (
-                      <div key={idx} className="p-4 flex items-center gap-3">
-                        {image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={image} alt={name} className="h-14 w-14 rounded object-cover" />
-                        ) : (
-                          <div className="h-14 w-14 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">IMG</div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 truncate">{name}</div>
-                          <div className="text-xs text-gray-500">SL: {(it as any).quantity} × {formatCurrency(price)}</div>
-                        </div>
-                        <div className="text-sm font-semibold text-gray-900">{formatCurrency(subtotal)}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Tổng tiền</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(selectedOrder.totalPrice || 0)}</span>
-                </div>
-               
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closeOrder} />
+          <div className="relative z-10 w-full max-w-2xl rounded-3xl border border-gray-200 bg-white text-gray-900 shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-amber-500">Chi tiết đơn</p>
+                <h3 className="text-2xl font-bold mt-1">Mã #{selectedOrder?._id?.slice(-6).toUpperCase()}</h3>
               </div>
-            ) : null}
+              <button onClick={closeOrder} className="p-2 rounded-full hover:bg-gray-100">
+                ✕
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              {orderLoading ? (
+                <div className="text-sm text-gray-500">Đang tải...</div>
+              ) : orderError ? (
+                <div className="text-sm text-rose-500">{orderError}</div>
+              ) : selectedOrder ? (
+                <>
+                  <div className="flex flex-wrap gap-3 text-sm text-gray-500">
+                    <span>{selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString("vi-VN") : ""}</span>
+                    <span>•</span>
+                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">{selectedOrder.status}</span>
+                  </div>
+                  <div className="rounded-2xl border border-gray-100 divide-y divide-gray-100">
+                    {selectedOrder.items?.map((it, idx) => {
+                      const itemObj: any = (it as any).item;
+                      const name = typeof itemObj === "object" ? itemObj.name : String(itemObj);
+                      const image = typeof itemObj === "object" ? (itemObj.images?.[0] || itemObj.image) : undefined;
+                      const price = (it as any).unitPrice || (typeof itemObj === "object" ? itemObj.price : 0);
+                      const subtotal = (it as any).subtotal || price * (it as any).quantity;
+                      return (
+                        <div key={idx} className="p-4 flex items-center gap-4">
+                          {image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={image} alt={name} className="h-14 w-14 rounded-xl object-cover" />
+                          ) : (
+                            <div className="h-14 w-14 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-xs">IMG</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 truncate">{name}</p>
+                            <p className="text-xs text-gray-500">
+                              SL {(it as any).quantity} × {formatCurrency(price)}
+                            </p>
+                          </div>
+                          <p className="font-semibold text-gray-900">{formatCurrency(subtotal)}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Tổng tiền</span>
+                    <span className="text-2xl font-bold text-gray-900">{formatCurrency(selectedOrder.totalPrice || 0)}</span>
+                  </div>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       )}

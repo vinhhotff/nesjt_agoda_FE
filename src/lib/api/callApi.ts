@@ -43,6 +43,15 @@ api.interceptors.response.use(
   async (error) => {
     // Only attempt refresh if we have a 401 and it's not already a refresh request
     if (error.response?.status === 401 && !error.config?.url?.includes('/auth/refresh')) {
+      // Check if this is a public route that doesn't require auth
+      const publicRoutes = ['/reservations/public', '/payment/payos/', '/guests', '/tables'];
+      const isPublicRoute = publicRoutes.some(route => error.config?.url?.includes(route));
+      
+      // If it's a public route, don't try to refresh token
+      if (isPublicRoute) {
+        return Promise.reject(error);
+      }
+      
       try {
         const res = await api.get('/auth/refresh');
         const newToken = res.data?.accessToken || res.data?.data?.accessToken;

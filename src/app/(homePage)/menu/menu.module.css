@@ -2,7 +2,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
-  background-color: #111827;
+  background: linear-gradient(135deg, #111827 0% 50%, #111827 100%);
   color: #f9fafb;
   min-height: 100vh;
 }
@@ -41,7 +41,6 @@
   border: 1px solid #374151;
   border-radius: 8px;
   font-size: 1rem;
-  background-color: #1f2937;
   color: #f9fafb;
 }
 
@@ -57,7 +56,6 @@
 }
 
 .filterBox {
-  background-color: #1f2937;
   padding: 0.875rem;
   border-radius: 10px;
   border: 1px solid #374151;
@@ -68,7 +66,7 @@
   font-weight: 600;
   margin-bottom: 0.625rem;
   font-size: 0.9375rem;
-  color: #facc15;
+  color: #eab308;
 }
 
 .filterItem {
@@ -79,7 +77,7 @@
 }
 
 .filterItem:hover {
-  color: #facc15;
+  color: #eab308;
 }
 
 .menuGrid {
@@ -89,7 +87,6 @@
 }
 
 .menuCard {
-  background-color: #1f2937;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -102,7 +99,7 @@
 
 .menuCard:hover {
   transform: translateY(-6px);
-  border: 1px solid #facc15;
+  border: 1px solid #eab308;
 }
 
 .menuImage {
@@ -122,7 +119,7 @@
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 0.375rem;
-  color: #facc15;
+  color: #eab308;
 }
 
 .menuDescription {
@@ -172,7 +169,7 @@
 .menuPrice {
   font-weight: 700;
   font-size: 1rem;
-  color: #facc15;
+  color: #eab308;
   margin: 0;
 }
 
@@ -184,7 +181,7 @@
 }
 
 .addToCartButton {
-  background-color: #facc15;
+  background: linear-gradient(135deg, #eab308, #ca8a04);
   font-size: 1 rem;
   color: #111827;
   border: none;
@@ -196,7 +193,7 @@
 }
 
 .addToCartButton:hover:not(:disabled) {
-  background-color: #fde047;
+  background: linear-gradient(135deg, #ca8a04, #a16207);
   transform: scale(1.05);
 }
 
@@ -217,7 +214,7 @@
 
 .pagination button {
   padding: 0.5rem 1rem;
-  background-color: #facc15;
+  background: linear-gradient(135deg, #eab308, #ca8a04);
   color: #111827;
   border: none;
   border-radius: 6px;
@@ -227,7 +224,7 @@
 }
 
 .pagination button:hover:not(:disabled) {
-  background-color: #fde047;
+  background: linear-gradient(135deg, #ca8a04, #a16207);
   transform: scale(1.05);
 }
 
@@ -255,7 +252,7 @@
 .loading_text {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #facc15;
+  color: #eab308;
 }
 
 /* Media Queries for Responsive Design */

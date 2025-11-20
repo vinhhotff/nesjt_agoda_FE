@@ -147,22 +147,22 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
             <div 
-                className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+                className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity"
                 onClick={handleClose}
             />
             
             {/* Modal */}
-            <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] m-4 overflow-hidden">
+            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] m-4 overflow-hidden border border-amber-100">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <div className="flex items-center justify-between p-6 border-b border-amber-100 bg-gradient-to-r from-amber-50 to-yellow-50">
+                    <h2 className="text-2xl font-semibold text-gray-900">
                         Edit Menu Item
                     </h2>
                     <button
                         onClick={handleClose}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 hover:bg-amber-100 rounded-lg transition-colors"
                     >
-                        <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        <X className="w-5 h-5 text-gray-600" />
                     </button>
                 </div>
 
@@ -170,9 +170,9 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                 <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
                     {fetchLoading ? (
                         <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                            <div className="text-lg text-gray-500 dark:text-gray-400">Loading menu item data...</div>
-                            <div className="text-sm text-gray-400 dark:text-gray-500">ID: {itemId}</div>
+                            <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-200 border-t-amber-500"></div>
+                            <div className="text-lg text-gray-600">Loading menu item data...</div>
+                            <div className="text-sm text-gray-500">ID: {itemId}</div>
                         </div>
                     ) : menuItem ? (
                         <form onSubmit={handleSubmit} className="p-6">
@@ -181,7 +181,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                                 <div className="space-y-6">
                                     {/* Name */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Item Name
                                         </label>
                                         <input
@@ -190,20 +190,20 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             placeholder="e.g., Margherita Pizza"
-                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
                                         />
                                     </div>
 
                                     {/* Description */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Description
                                         </label>
                                         <textarea
                                             value={formData.description}
                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                             placeholder="A brief description of the item..."
-                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-sm"
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition resize-none text-sm"
                                             rows={4}
                                         />
                                     </div>
@@ -214,9 +214,9 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                                             type="checkbox"
                                             checked={formData.available}
                                             onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
-                                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                            className="h-4 w-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500"
                                         />
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                        <span className="text-sm font-medium text-gray-700">
                                             Item is Available
                                         </span>
                                     </label>
@@ -226,7 +226,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                                 <div className="space-y-6">
                                     {/* Price */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Price ($)
                                         </label>
                                         <input
@@ -237,19 +237,19 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                                             value={formData.price}
                                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                             placeholder="0.00"
-                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
                                         />
                                     </div>
 
                                     {/* Category */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Category
                                         </label>
                                         <select
                                             value={formData.category}
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
                                         >
                                             {categories.map((cat) => (
                                                 <option key={cat.value} value={cat.value}>
@@ -261,7 +261,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
 
                                     {/* Images */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Upload Images
                                         </label>
                                         <DragDropImageUploader
@@ -273,18 +273,18 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                             </div>
 
                             {/* Actions */}
-                            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-amber-100">
                                 <button
                                     type="button"
                                     onClick={handleClose}
-                                    className="px-6 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200 text-gray-700 text-sm font-medium transition-colors"
+                                    className="px-6 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium transition-colors disabled:cursor-not-allowed"
+                                    className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 disabled:from-amber-300 disabled:to-yellow-300 text-white text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
                                 >
                                     {loading ? 'Updating...' : 'Update Item'}
                                 </button>
@@ -292,7 +292,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                         </form>
                     ) : (
                         <div className="flex items-center justify-center h-64">
-                            <div className="text-lg text-gray-500 dark:text-gray-400">
+                            <div className="text-lg text-gray-500">
                                 No menu item data found
                             </div>
                         </div>

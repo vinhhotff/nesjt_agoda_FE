@@ -31,10 +31,10 @@ const StatsCard: React.FC<StatsCardProps> = ({
       valueColor: 'text-green-700',
     },
     yellow: {
-      gradient: 'from-yellow-500 to-orange-500',
-      iconBg: 'bg-yellow-100',
-      iconColor: 'text-yellow-600',
-      valueColor: 'text-yellow-700',
+      gradient: 'from-amber-500 to-orange-500',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      valueColor: 'text-amber-700',
     },
     purple: {
       gradient: 'from-purple-500 to-purple-600',

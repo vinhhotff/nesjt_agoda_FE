@@ -22,7 +22,7 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({
       case 'served':
         return { bg: 'bg-green-500', text: 'text-green-700', light: 'bg-green-100' };
       case 'pending':
-        return { bg: 'bg-yellow-500', text: 'text-yellow-700', light: 'bg-yellow-100' };
+        return { bg: 'bg-amber-500', text: 'text-amber-700', light: 'bg-amber-100' };
       case 'preparing':
         return { bg: 'bg-blue-500', text: 'text-blue-700', light: 'bg-blue-100' };
       case 'cancelled':

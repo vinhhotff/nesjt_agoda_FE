@@ -109,7 +109,7 @@ export default function CreateReservationModal({
                 value={formData.customerName}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
             </div>
 
@@ -123,7 +123,7 @@ export default function CreateReservationModal({
                 value={formData.customerPhone}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function CreateReservationModal({
               name="customerEmail"
               value={formData.customerEmail}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
 
@@ -153,7 +153,7 @@ export default function CreateReservationModal({
                 onChange={handleChange}
                 required
                 min={new Date().toISOString().slice(0, 16)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
             </div>
 
@@ -169,7 +169,7 @@ export default function CreateReservationModal({
                 required
                 min={1}
                 max={20}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function CreateReservationModal({
               value={formData.specialRequests}
               onChange={handleChange}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
               placeholder="Ví dụ: Bàn gần cửa sổ, không có đậu phộng..."
             />
           </div>
@@ -199,7 +199,7 @@ export default function CreateReservationModal({
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-yellow-500 text-white hover:bg-yellow-600 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-amber-500 text-white hover:bg-yellow-600 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Đang tạo...' : 'Tạo đặt bàn'}
             </button>

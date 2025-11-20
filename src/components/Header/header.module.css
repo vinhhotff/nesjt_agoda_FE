@@ -36,7 +36,7 @@
 }
 
 .logo a:hover {
-  color: #edb021;
+  color: #f59e0b;
   transform: scale(1.05);
 }
 
@@ -64,7 +64,7 @@
 }
 
 .navLink:hover {
-  color: #edb021;
+  color: #f59e0b;
   background: rgba(237, 176, 33, 0.1);
   transform: translateY(-2px);
 }
@@ -76,7 +76,7 @@
   left: 50%;
   width: 0;
   height: 2px;
-  background: #edb021;
+  background: #f59e0b;
   transition: all 0.3s ease;
   transform: translateX(-50%);
 }
@@ -90,13 +90,13 @@
 }
 
 .scrolled .navLink:hover {
-  color: #edb021;
+  color: #f59e0b;
   background: rgba(237, 176, 33, 0.1);
 }
 
 .login-btn {
   padding: 12px 28px;
-  background: linear-gradient(135deg, #edb021, #d4a017);
+  background: linear-gradient(135deg, #f59e0b, #f97316);
   color: white;
   border: none;
   border-radius: 30px;
@@ -116,7 +116,7 @@
 }
 
 .scrolled .login-btn {
-  background: linear-gradient(135deg, #edb021, #d4a017);
+  background: linear-gradient(135deg, #f59e0b, #f97316);
 }
 
 .rightItems {
@@ -222,7 +222,7 @@
 
 .sub-title {
   font-size: 4.5em;
-  color: #edb021;
+  color: #f59e0b;
   margin: 20px 0 40px;
   font-weight: 800;
   text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
@@ -352,8 +352,8 @@
   }
   
   .navLink:hover {
-    border-color: #edb021;
-    background: rgba(237, 176, 33, 0.1);
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
   }
   
   .login-btn {
