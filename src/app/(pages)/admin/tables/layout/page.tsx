@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/Context/AuthContext";
-import { Table } from "@/src/Types";
+import { Table, TableLayout } from "@/src/Types";
 import { getTables } from "@/src/lib/api";
 import { AdminLayout } from "@/src/components/layout";
 import { LoadingSpinner } from "@/src/components/ui";
@@ -10,31 +10,13 @@ import AdminPageHeader from "@/src/components/admin/common/AdminPageHeader";
 import { Layout, Plus, Save, Trash2, Edit2, Check, Star } from "lucide-react";
 import { toast } from "@/src/lib/utils/toast";
 import TableLayoutEditor from "@/src/components/admin/tables/TableLayoutEditor";
-
-interface TableLayout {
-  _id?: string;
-  name: string;
-  gridCols: number;
-  gridRows: number;
-  isActive?: boolean; // Layout chính được hiển thị cho khách hàng
-  zones?: {
-    zoneId: string;
-    zoneName: string;
-    bounds: { x1: number; y1: number; x2: number; y2: number };
-  }[];
-  tables: {
-    tableId: string;
-    tableName: string;
-    position: { x: number; y: number; rotation?: number };
-    width?: number;
-    height?: number;
-    zoneName?: string;
-    type?: string;
-    capacity?: number;
-  }[];
-  backgroundImage?: string;
-  description?: string;
-}
+import {
+  fetchTableLayouts,
+  createTableLayout,
+  updateTableLayout,
+  deleteTableLayout,
+  setActiveTableLayout,
+} from "@/src/lib/api/tableLayoutApi";
 
 export default function TableLayoutPage() {
   const { user, loading } = useAuth();
@@ -46,77 +28,14 @@ export default function TableLayoutPage() {
 
   useEffect(() => {
     loadData();
-    // Migration: Fix layouts without isActive field
-    fixLayoutsActiveStatus();
   }, []);
-
-  // Migration function to fix existing layouts
-  function fixLayoutsActiveStatus() {
-    try {
-      const saved = localStorage.getItem('table-layouts');
-      if (!saved) return;
-
-      let layouts: TableLayout[] = JSON.parse(saved);
-      let needsUpdate = false;
-
-      // 🔧 FIX 1: Remove "Default Layout" if other layouts exist
-      const hasDefaultLayout = layouts.some(l => l.name === 'Default Layout');
-      const hasOtherLayouts = layouts.some(l => l.name !== 'Default Layout');
-      
-      if (hasDefaultLayout && hasOtherLayouts) {
-        console.log('🔧 Removing "Default Layout" because other layouts exist');
-        layouts = layouts.filter(l => l.name !== 'Default Layout');
-        needsUpdate = true;
-      }
-
-      // 🔧 FIX 2: Check if any layout has undefined isActive
-      const hasUndefined = layouts.some(l => l.isActive === undefined);
-      
-      if (hasUndefined) {
-        console.log('🔧 Fixing layouts with undefined isActive...');
-        // Prefer non-default layout as active
-        const nonDefaultLayout = layouts.find(l => l.name !== 'Default Layout');
-        layouts.forEach((l, index) => {
-          if (l.isActive === undefined) {
-            l.isActive = nonDefaultLayout ? (l._id === nonDefaultLayout._id) : (index === 0);
-            needsUpdate = true;
-          }
-        });
-      }
-
-      // 🔧 FIX 3: Ensure only one layout is active
-      const activeLayouts = layouts.filter(l => l.isActive === true);
-      if (activeLayouts.length > 1) {
-        console.log('🔧 Multiple active layouts found, keeping first non-default...');
-        const preferredActive = activeLayouts.find(l => l.name !== 'Default Layout') || activeLayouts[0];
-        layouts.forEach(l => {
-          l.isActive = (l._id === preferredActive._id);
-        });
-        needsUpdate = true;
-      } else if (activeLayouts.length === 0 && layouts.length > 0) {
-        console.log('🔧 No active layout, setting first as active...');
-        layouts[0].isActive = true;
-        needsUpdate = true;
-      }
-
-      if (needsUpdate) {
-        localStorage.setItem('table-layouts', JSON.stringify(layouts));
-        console.log('✅ Fixed layouts:', layouts.map(l => ({ name: l.name, isActive: l.isActive })));
-        toast.info('🔧 Đã tự động sửa và dọn dẹp layouts');
-        // Reload data
-        loadData();
-      }
-    } catch (error) {
-      console.error('Error fixing layouts:', error);
-    }
-  }
 
   async function loadData() {
     setIsLoading(true);
     try {
       const [tablesData, savedLayouts] = await Promise.all([
         getTables({}),
-        loadSavedLayouts(),
+        fetchTableLayouts(),
       ]);
       // Ensure tables is always an array
       const tablesArray = Array.isArray(tablesData) ? tablesData : [];
@@ -137,28 +56,6 @@ export default function TableLayoutPage() {
     }
   }
 
-  // Load layouts from localStorage (tạm thời, có thể thay bằng API sau)
-  function loadSavedLayouts(): TableLayout[] {
-    try {
-      const saved = localStorage.getItem('table-layouts');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  // Save layouts to localStorage (tạm thời)
-  function saveLayouts(layouts: TableLayout[], showToast: boolean = true) {
-    try {
-      localStorage.setItem('table-layouts', JSON.stringify(layouts));
-      if (showToast) {
-        toast.success("💾 Đã lưu layout thành công!");
-      }
-    } catch (error) {
-      toast.error("❌ Không thể lưu layout");
-    }
-  }
-
   function handleCreateLayout() {
     const newLayout: TableLayout = {
       name: `Layout ${layouts.length + 1}`,
@@ -176,46 +73,61 @@ export default function TableLayoutPage() {
     setShowEditor(true);
   }
 
-  function handleDeleteLayout(layoutId: string) {
-    if (confirm('Bạn có chắc muốn xóa layout này?')) {
-      const updated = layouts.filter(l => l._id !== layoutId);
-      setLayouts(updated);
-      saveLayouts(updated, false); // Không hiển thị toast từ saveLayouts
+  async function handleDeleteLayout(layoutId: string, isActive?: boolean) {
+    if (isActive) {
+      toast.error("❌ Không thể xóa layout đang được sử dụng");
+      return;
+    }
+    if (!confirm('Bạn có chắc muốn xóa layout này?')) return;
+    try {
+      await deleteTableLayout(layoutId);
+      setLayouts((prev) => prev.filter((l) => l._id !== layoutId));
       toast.success("🗑️ Đã xóa layout thành công!");
+    } catch (error: any) {
+      console.error("Error deleting layout:", error);
+      toast.error(error?.response?.data?.message || "Không thể xóa layout");
     }
   }
 
-  function handleSaveLayout(layout: TableLayout) {
-    if (layout._id) {
-      // Update existing
-      const updated = layouts.map(l => l._id === layout._id ? layout : l);
-      setLayouts(updated);
-      saveLayouts(updated);
-    } else {
-      // Create new - nếu là layout đầu tiên, set làm active
-      const isFirstLayout = layouts.length === 0;
-      const newLayout = { 
-        ...layout, 
-        _id: Date.now().toString(),
-        isActive: isFirstLayout 
-      };
-      const updated = [...layouts, newLayout];
-      setLayouts(updated);
-      saveLayouts(updated);
+  async function handleSaveLayout(layout: TableLayout) {
+    try {
+      if (layout._id) {
+        const updatedLayout = await updateTableLayout(layout._id, layout);
+        setLayouts((prev) =>
+          prev.map((l) => (l._id === updatedLayout._id ? updatedLayout : l))
+        );
+        toast.success("💾 Đã cập nhật layout thành công!");
+      } else {
+        const payload: Partial<TableLayout> = {
+          ...layout,
+          isActive: layouts.length === 0 ? true : layout.isActive,
+        };
+        const createdLayout = await createTableLayout(payload);
+        setLayouts((prev) => [...prev, createdLayout]);
+        toast.success("✨ Đã tạo layout mới!");
+      }
+      setShowEditor(false);
+      setSelectedLayout(null);
+    } catch (error: any) {
+      console.error("Error saving layout:", error);
+      toast.error(error?.response?.data?.message || "Không thể lưu layout");
     }
-    setShowEditor(false);
-    setSelectedLayout(null);
   }
 
-  function handleSetActiveLayout(layoutId: string) {
-    // Set layout này làm active, các layout khác thành inactive
-    const updated = layouts.map(l => ({
-      ...l,
-      isActive: l._id === layoutId
-    }));
-    setLayouts(updated);
-    saveLayouts(updated, false); // Không hiển thị toast từ saveLayouts
-    toast.success("✅ Đã đặt layout chính thành công!");
+  async function handleSetActiveLayout(layoutId: string) {
+    try {
+      const updatedLayout = await setActiveTableLayout(layoutId);
+      setLayouts((prev) =>
+        prev.map((layout) => ({
+          ...layout,
+          isActive: layout._id === updatedLayout._id,
+        }))
+      );
+      toast.success("✅ Đã đặt layout chính thành công!");
+    } catch (error: any) {
+      console.error("Error setting active layout:", error);
+      toast.error(error?.response?.data?.message || "Không thể cập nhật layout chính");
+    }
   }
 
   if (loading || !user) {
@@ -395,7 +307,7 @@ export default function TableLayoutPage() {
                         <Edit2 className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => layout._id && handleDeleteLayout(layout._id)}
+                        onClick={() => layout._id && handleDeleteLayout(layout._id, layout.isActive)}
                         disabled={layout.isActive}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title={layout.isActive ? "Không thể xóa layout chính" : "Xóa layout"}

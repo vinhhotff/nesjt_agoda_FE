@@ -320,17 +320,17 @@ export const createGuest = async (data: {
 };
 
 export const getGuests = async (params?: Record<string, unknown>) => {
-  const res = await api.get<Guest[]>("/guests", { params });
+  const res = await api.get<Guest[] | { data?: Guest[]; results?: Guest[] }>("/guests", { params });
   // Xử lý response có thể là array trực tiếp hoặc nested trong data/results
-  const data = res.data;
+  const data: unknown = res.data;
   if (Array.isArray(data)) {
     return data;
   }
   // Nếu là object có nested array
-  if (data?.data && Array.isArray(data.data)) {
+  if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
     return data.data;
   }
-  if (data?.results && Array.isArray(data.results)) {
+  if (data && typeof data === 'object' && 'results' in data && Array.isArray(data.results)) {
     return data.results;
   }
   // Fallback: trả về array rỗng
@@ -416,9 +416,13 @@ export const createMenuItem = async (data: FormData) => {
 };
 
 export const getMenuItem = async (id: string) => {
-  const res = await api.get<IMenuItem>(`/menu-items/${id}`);
+  const res = await api.get<IMenuItem | { data: IMenuItem }>(`/menu-items/${id}`);
   // Handle nested data structure: { statusCode, message, data: {...} }
-  return res.data?.data || res.data;
+  const data: unknown = res.data;
+  if (data && typeof data === 'object' && 'data' in data) {
+    return (data as { data: IMenuItem }).data;
+  }
+  return data as IMenuItem;
 };
 
 export const updateMenuItem = async (id: string, data: Partial<IMenuItem>) => {

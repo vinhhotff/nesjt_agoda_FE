@@ -7,6 +7,21 @@ interface CardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
+interface CardContentProps {
+  children: ReactNode;
+  className?: string;
+}
+
+interface CardHeaderProps {
+  children: ReactNode;
+  className?: string;
+}
+
+interface CardTitleProps {
+  children: ReactNode;
+  className?: string;
+}
+
 const paddingStyles = {
   none: '',
   sm: 'p-4',
@@ -14,7 +29,7 @@ const paddingStyles = {
   lg: 'p-8',
 };
 
-export default function Card({
+function Card({
   children,
   className = '',
   hoverable = false,
@@ -33,4 +48,19 @@ export default function Card({
       {children}
     </div>
   );
+}
+
+export default Card;
+export { Card };
+
+export function CardContent({ children, className = '' }: CardContentProps) {
+  return <div className={className}>{children}</div>;
+}
+
+export function CardHeader({ children, className = '' }: CardHeaderProps) {
+  return <div className={className}>{children}</div>;
+}
+
+export function CardTitle({ children, className = '' }: CardTitleProps) {
+  return <h3 className={`font-semibold text-gray-900 ${className}`}>{children}</h3>;
 }

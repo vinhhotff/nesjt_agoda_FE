@@ -25,6 +25,7 @@ export default function OrderTable({
   onViewDetails,
   onDelete
 }: OrderTableProps) {
+  const [updatingPayment, setUpdatingPayment] = React.useState<string | null>(null);
   const headers = ['Order ID', 'Guest', 'Items', 'Total', 'Status', 'Payment', 'Created', 'Actions'];
 
   const emptyState = (
@@ -86,15 +87,33 @@ export default function OrderTable({
           </td>
           <td className="py-4 px-6">
             <button
-              onClick={() => onMarkAsPaid(order._id, !order.isPaid)}
-              className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+              onClick={async () => {
+                setUpdatingPayment(order._id);
+                try {
+                  await onMarkAsPaid(order._id, !order.isPaid);
+                } finally {
+                  setUpdatingPayment(null);
+                }
+              }}
+              disabled={updatingPayment === order._id}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 order.isPaid 
                   ? 'bg-green-100 text-green-800 hover:bg-green-200' 
                   : 'bg-red-100 text-red-800 hover:bg-red-200'
               }`}
               title={`Click to mark as ${order.isPaid ? 'unpaid' : 'paid'}`}
             >
-              {order.isPaid ? 'Paid' : 'Unpaid'}
+              {updatingPayment === order._id ? (
+                <span className="flex items-center gap-1">
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Updating...
+                </span>
+              ) : (
+                order.isPaid ? 'Paid' : 'Unpaid'
+              )}
             </button>
           </td>
           <td className="py-4 px-6">

@@ -88,12 +88,23 @@ const OrdersPage: React.FC = () => {
 
   const handleMarkAsPaid = async (orderId: string, isPaid: boolean) => {
     try {
-      await markOrderAsPaid(orderId, isPaid);
+      console.log('🔄 Updating payment status:', { orderId, isPaid });
+      const result = await markOrderAsPaid(orderId, isPaid);
+      console.log('✅ Payment status updated:', result);
       toast.success(`Order marked as ${isPaid ? 'paid' : 'unpaid'}`);
       refetch();
-    } catch (error) {
-      console.error('Error updating payment status:', error);
-      toast.error('Failed to update payment status');
+    } catch (error: any) {
+      console.error('❌ Error updating payment status:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status
+      });
+      
+      const errorMessage = error?.response?.data?.message || 
+                          error?.message || 
+                          'Failed to update payment status';
+      toast.error(errorMessage);
     }
   };
 

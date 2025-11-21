@@ -2,35 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { X, Save, Plus, Trash2, RotateCw, MapPin } from 'lucide-react';
-import { Table, Zone } from '@/src/Types';
+import { Table, Zone, TableLayout, TableLayoutZone } from '@/src/Types';
 import { motion } from 'framer-motion';
 import { getZones, createZone } from '@/src/lib/api/zoneApi';
 import { updateTable } from '@/src/lib/api';
 import { toast } from 'react-toastify';
-
-interface TableLayout {
-  _id?: string;
-  name: string;
-  gridCols: number;
-  gridRows: number;
-  zones?: {
-    zoneId: string;
-    zoneName: string;
-    bounds: { x1: number; y1: number; x2: number; y2: number }; // Vùng của khu
-  }[];
-  tables: {
-    tableId: string;
-    tableName: string;
-    position: { x: number; y: number; rotation?: number };
-    width?: number; // Kích thước gốc của bàn
-    height?: number; // Kích thước gốc của bàn
-    zoneName?: string; // Tên khu mà bàn thuộc về
-    type?: string;
-    capacity?: number;
-  }[];
-  backgroundImage?: string;
-  description?: string;
-}
 
 interface TableLayoutEditorProps {
   layout: TableLayout;
@@ -413,7 +389,7 @@ export default function TableLayoutEditor({
   };
 
   // Helper: Lấy zone mà một ô thuộc về
-  const getZoneForCell = (x: number, y: number): TableLayout['zones'][0] | undefined => {
+  const getZoneForCell = (x: number, y: number): TableLayoutZone | undefined => {
     if (!layout.zones) return undefined;
     return layout.zones.find(zone => isCellInZone(x, y, zone));
   };

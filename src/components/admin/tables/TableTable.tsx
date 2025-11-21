@@ -60,36 +60,38 @@ export default function TableTable({ tables, onEdit, onDelete, onView }: Props) 
   }, [tables]);
 
   const handleDelete = (id: string, tableName: string) => {
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-2">
-          <span>Bạn có chắc muốn xóa bàn {tableName}?</span>
-          <div className="flex justify-end gap-2">
-            <button
-              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Hủy
-            </button>
-            <button
-              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-              onClick={async () => {
-                toast.dismiss(t.id);
-                try {
-                  await onDelete(id);
-                  setLocalTables((prev) => prev.filter((table) => table._id !== id));
-                  toast.success('Xóa thành công!');
-                } catch (err: any) {
-                  toast.error(err?.message || 'Xóa thất bại!');
-                }
-              }}
-            >
-              Xóa
-            </button>
-          </div>
+    const toastId = toast.info(
+      <div className="flex flex-col gap-2">
+        <span>Bạn có chắc muốn xóa bàn {tableName}?</span>
+        <div className="flex justify-end gap-2">
+          <button
+            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+            onClick={() => toast.dismiss(toastId)}
+          >
+            Hủy
+          </button>
+          <button
+            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+            onClick={async () => {
+              toast.dismiss(toastId);
+              try {
+                await onDelete(id);
+                setLocalTables((prev) => prev.filter((table) => table._id !== id));
+                toast.success('Xóa thành công!');
+              } catch (err: any) {
+                toast.error(err?.message || 'Xóa thất bại!');
+              }
+            }}
+          >
+            Xóa
+          </button>
         </div>
-      ),
-      { toastId: `delete-${id}` }
+      </div>,
+      { 
+        toastId: `delete-${id}`,
+        autoClose: false,
+        closeButton: false
+      }
     );
   };
 

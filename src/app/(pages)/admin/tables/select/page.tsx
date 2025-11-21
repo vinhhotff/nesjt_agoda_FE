@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/Context/AuthContext";
-import { Table, Guest } from "@/src/Types";
+import { Table, Guest, TableLayout } from "@/src/Types";
 import { getTables, getGuests } from "@/src/lib/api";
 import TableSeatSelector from "@/src/components/admin/tables/TableSeatSelector";
 import { AdminLayout } from "@/src/components/layout";
@@ -11,30 +11,7 @@ import AdminPageHeader from "@/src/components/admin/common/AdminPageHeader";
 import { Table as TableIcon, Users } from "lucide-react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-
-interface TableLayout {
-  _id?: string;
-  name: string;
-  gridCols: number;
-  gridRows: number;
-  zones?: {
-    zoneId: string;
-    zoneName: string;
-    bounds: { x1: number; y1: number; x2: number; y2: number };
-  }[];
-  tables: {
-    tableId: string;
-    tableName: string;
-    position: { x: number; y: number; rotation?: number };
-    width?: number;
-    height?: number;
-    zoneName?: string;
-    type?: string;
-    capacity?: number;
-  }[];
-  backgroundImage?: string;
-  description?: string;
-}
+import { fetchTableLayouts } from "@/src/lib/api/tableLayoutApi";
 
 export default function TableSelectionPage() {
   const { user, loading } = useAuth();
@@ -56,12 +33,13 @@ export default function TableSelectionPage() {
     }
   }, [selectedTable]);
 
-  // Load layouts from localStorage
-  function loadSavedLayouts(): TableLayout[] {
+  // Load layouts from backend
+  async function loadSavedLayouts(): Promise<TableLayout[]> {
     try {
-      const saved = localStorage.getItem('table-layouts');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
+      return await fetchTableLayouts();
+    } catch (error) {
+      console.error("Error loading layouts:", error);
+      toast.error("Không thể tải danh sách layout");
       return [];
     }
   }
@@ -80,16 +58,18 @@ export default function TableSelectionPage() {
         }),
       ]);
       setTables(Array.isArray(tablesData) ? tablesData : []);
-      const guestsArray = Array.isArray(guestsData) ? guestsData : (guestsData?.data || guestsData?.results || []);
+      // getGuests always returns an array
+      const guestsArray = Array.isArray(guestsData) ? guestsData : [];
       setGuests(guestsArray);
       
       // Load layouts
-      const savedLayouts = loadSavedLayouts();
+      const savedLayouts = await loadSavedLayouts();
       setLayouts(savedLayouts);
       
-      // Auto-select first layout if available
-      if (savedLayouts.length > 0 && !selectedLayout) {
-        setSelectedLayout(savedLayouts[0]);
+      // Auto-select active layout if available
+      if (savedLayouts.length > 0) {
+        const activeLayout = savedLayouts.find((layout) => layout.isActive);
+        setSelectedLayout(activeLayout || savedLayouts[0]);
       }
     } catch (error: any) {
       console.error("Error loading data:", error);
@@ -105,8 +85,8 @@ export default function TableSelectionPage() {
   async function loadGuestsForTable(tableName: string) {
     try {
       const guestsData = await getGuests({ tableName });
-      // Đảm bảo guestsData là array
-      const guestsArray = Array.isArray(guestsData) ? guestsData : (guestsData?.data || guestsData?.results || []);
+      // getGuests always returns an array
+      const guestsArray = Array.isArray(guestsData) ? guestsData : [];
       // Cập nhật guests, giữ lại guests từ các bàn khác
       setGuests(prev => {
         const prevArray = Array.isArray(prev) ? prev : [];

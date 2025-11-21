@@ -33,9 +33,8 @@ export default function OrderDetailsModal({
       onClose={onClose} 
       title={`Order Details - #${order._id ? order._id.slice(-8) : 'N/A'}`}
       size="xl"
-      className="max-h-[90vh] overflow-y-auto"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
         {/* Order Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">

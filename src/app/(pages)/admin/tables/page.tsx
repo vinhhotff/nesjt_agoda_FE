@@ -77,13 +77,15 @@ export default function AdminTablesPage() {
     try {
       console.log('Saving table:', form);
       if (selectedTable) {
-        const updated = await updateTable(selectedTable._id, form);
+        // When updating, exclude tableName if backend doesn't allow it
+        const { tableName, ...updateData } = form;
+        const updated = await updateTable(selectedTable._id, updateData);
         console.log('Updated table:', updated);
-        toast.success("Cập nhật bàn thành công!");
+        toast.success("✅ Cập nhật bàn thành công!");
       } else {
         const created = await createTable(form);
         console.log('Created table:', created);
-        toast.success("Tạo bàn thành công!");
+        toast.success("✅ Tạo bàn thành công!");
       }
       // Wait a bit to ensure backend has processed
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -97,7 +99,7 @@ export default function AdminTablesPage() {
         response: err?.response?.data,
         status: err?.response?.status
       });
-      toast.error(err?.response?.data?.message || err?.message || "Có lỗi xảy ra");
+      toast.error(`❌ ${err?.response?.data?.message || err?.message || "Có lỗi xảy ra"}`);
     } finally {
       setFormLoading(false);
     }

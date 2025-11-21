@@ -155,6 +155,44 @@ export interface Table {
   updatedAt: string;
 }
 
+export interface TableLayoutZoneBounds {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export interface TableLayoutZone {
+  zoneId: string;
+  zoneName: string;
+  bounds: TableLayoutZoneBounds;
+}
+
+export interface TableLayoutTable {
+  tableId: string;
+  tableName: string;
+  position: { x: number; y: number; rotation?: number };
+  width?: number;
+  height?: number;
+  zoneName?: string;
+  type?: string;
+  capacity?: number;
+}
+
+export interface TableLayout {
+  _id?: string;
+  name: string;
+  gridCols: number;
+  gridRows: number;
+  isActive?: boolean;
+  zones?: TableLayoutZone[];
+  tables: TableLayoutTable[];
+  backgroundImage?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Zone {
   _id: string;
   name: string;

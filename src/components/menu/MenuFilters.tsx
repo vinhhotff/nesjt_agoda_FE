@@ -203,7 +203,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
             {tags.map(tag => (
               <Button
                 key={tag}
-                variant={selectedTags.includes(tag) ? "default" : "outline"}
+                variant={selectedTags.includes(tag) ? "primary" : "outline"}
                 onClick={() => onTagToggle(tag)}
                 className="text-xs"
               >

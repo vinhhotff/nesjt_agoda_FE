@@ -24,7 +24,7 @@ const sizeStyles = {
   lg: 'px-8 py-4 text-lg',
 };
 
-export default function Button({
+function Button({
   variant = 'primary',
   size = 'md',
   loading = false,
@@ -62,3 +62,6 @@ export default function Button({
     </button>
   );
 }
+
+export default Button;
+export { Button };

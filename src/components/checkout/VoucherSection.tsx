@@ -31,7 +31,7 @@ export default function VoucherSection({
             placeholder="Enter voucher code"
             value={voucherCode}
             onChange={(e) => onVoucherCodeChange(e.target.value)}
-            error={!!error}
+            error={error || undefined}
           />
           <button
             type="button"

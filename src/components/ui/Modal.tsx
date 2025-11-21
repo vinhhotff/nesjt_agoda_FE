@@ -11,6 +11,7 @@ interface ModalProps {
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   showCloseButton?: boolean;
+  className?: string;
 }
 
 const sizeStyles = {
@@ -28,6 +29,7 @@ export default function Modal({
   children,
   size = 'md',
   showCloseButton = true,
+  className = '',
 }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
@@ -70,7 +72,7 @@ export default function Modal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
-              className={`relative w-full ${sizeStyles[size]} bg-white rounded-3xl shadow-2xl`}
+              className={`relative w-full ${sizeStyles[size]} bg-white rounded-3xl shadow-2xl ${className}`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}

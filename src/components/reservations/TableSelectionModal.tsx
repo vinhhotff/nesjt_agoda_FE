@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { X, Check, Users, MapPin, RotateCw, Layout } from 'lucide-react';
-import { Table } from '@/src/Types';
+import { Table, TableLayout } from '@/src/Types';
 import { getTables } from '@/src/lib/api';
 import { reservationsAPI } from '@/src/lib/api/reservationsApi';
+import { getActiveTableLayout } from '@/src/lib/api/tableLayoutApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   getTableCellColor,
@@ -15,7 +16,6 @@ import {
   CELL_BASE_CLASSES,
   SCREEN_INDICATOR,
 } from '@/src/lib/utils/tableLayoutStyles';
-import { debugLayouts } from '@/src/lib/utils/debugLayout';
 
 interface TableSelectionModalProps {
   isOpen: boolean;
@@ -32,31 +32,6 @@ interface TableAvailability {
   isAvailable: boolean;
   isReserved: boolean;
   reservedBy?: string; // Customer name who reserved
-}
-
-interface TableLayout {
-  _id?: string;
-  name: string;
-  gridCols: number;
-  gridRows: number;
-  isActive?: boolean; // Layout chính được hiển thị cho khách hàng
-  zones?: {
-    zoneId: string;
-    zoneName: string;
-    bounds: { x1: number; y1: number; x2: number; y2: number };
-  }[];
-  tables: {
-    tableId: string;
-    tableName: string;
-    position: { x: number; y: number; rotation?: number };
-    width?: number;
-    height?: number;
-    zoneName?: string;
-    type?: string;
-    capacity?: number;
-  }[];
-  backgroundImage?: string;
-  description?: string;
 }
 
 export default function TableSelectionModal({
@@ -76,88 +51,55 @@ export default function TableSelectionModal({
   const [gridCols, setGridCols] = useState(12); // Default grid columns
   const [gridRows, setGridRows] = useState(10); // Default grid rows
   const [selectedLayout, setSelectedLayout] = useState<TableLayout | null>(null);
+  const [isLayoutFetching, setIsLayoutFetching] = useState(false);
+  const [layoutError, setLayoutError] = useState<string | null>(null);
 
-  // Load active layout from localStorage or create default
-  const loadActiveLayout = (availableTables: Table[]): TableLayout | null => {
+  const fetchActiveLayout = async (availableTables: Table[]) => {
+    setIsLayoutFetching(true);
+    setLayoutError(null);
     try {
-      const saved = localStorage.getItem('table-layouts');
-      
-      // Nếu có layouts trong localStorage
-      if (saved) {
-        let layouts: TableLayout[] = JSON.parse(saved);
-        console.log('✅ Loaded layouts from localStorage:', {
-          layoutsCount: layouts.length,
-          layouts: layouts.map(l => ({ name: l.name, isActive: l.isActive, tablesCount: l.tables.length }))
+      console.log('🔍 Fetching active layout from backend...');
+      const layout = await getActiveTableLayout();
+      if (layout && layout.tables?.length) {
+        console.log('✅ Active layout loaded:', {
+          name: layout.name,
+          isActive: layout.isActive,
+          tablesCount: layout.tables.length,
         });
-        
-        // 🔧 FIX: Nếu có "Default Layout" và có layouts khác, xóa "Default Layout"
-        const hasDefaultLayout = layouts.some(l => l.name === 'Default Layout');
-        const hasOtherLayouts = layouts.some(l => l.name !== 'Default Layout');
-        
-        if (hasDefaultLayout && hasOtherLayouts) {
-          console.log('🔧 Removing "Default Layout" because other layouts exist');
-          layouts = layouts.filter(l => l.name !== 'Default Layout');
-          // Ensure at least one layout is active
-          const hasActive = layouts.some(l => l.isActive === true);
-          if (!hasActive && layouts.length > 0) {
-            layouts[0].isActive = true;
-          }
-          // Save cleaned layouts
-          localStorage.setItem('table-layouts', JSON.stringify(layouts));
-          console.log('✅ Cleaned layouts:', layouts.map(l => ({ name: l.name, isActive: l.isActive })));
-        }
-        
-        // Tìm layout có isActive = true
-        const activeLayouts = layouts.filter(l => l.isActive === true);
-        
-        // 🔧 FIX: Nếu có nhiều hơn 1 layout active, chỉ giữ layout đầu tiên (không phải Default Layout)
-        if (activeLayouts.length > 1) {
-          console.log('⚠️ Multiple active layouts found, fixing...');
-          const preferredActive = activeLayouts.find(l => l.name !== 'Default Layout') || activeLayouts[0];
-          layouts.forEach(l => {
-            l.isActive = (l._id === preferredActive._id);
-          });
-          localStorage.setItem('table-layouts', JSON.stringify(layouts));
-          console.log('✅ Fixed multiple active layouts, selected:', preferredActive.name);
-          return preferredActive;
-        }
-        
-        if (activeLayouts.length === 1) {
-          console.log('✅ Found active layout:', activeLayouts[0].name);
-          return activeLayouts[0];
-        }
-        
-        // Fallback: nếu không có layout nào active, ưu tiên layout không phải "Default Layout"
-        if (layouts.length > 0) {
-          console.log('⚠️ No active layout found, selecting best layout...');
-          const nonDefaultLayout = layouts.find(l => l.name !== 'Default Layout');
-          const selectedLayout = nonDefaultLayout || layouts[0];
-          
-          // Set selected layout as active
-          layouts.forEach(l => {
-            l.isActive = (l._id === selectedLayout._id);
-          });
-          localStorage.setItem('table-layouts', JSON.stringify(layouts));
-          console.log('✅ Set active layout:', selectedLayout.name);
-          return selectedLayout;
-        }
+        setSelectedLayout(layout);
+        setGridCols(layout.gridCols);
+        setGridRows(layout.gridRows);
+        return;
       }
-      
-      // CHỈ tạo default layout nếu KHÔNG CÓ layout nào trong localStorage
-      console.log('⚠️ No layouts found in localStorage, creating default...');
+
       if (availableTables.length > 0) {
-        console.log('📝 Creating default layout with', availableTables.length, 'tables');
-        const defaultLayout = createDefaultLayout(availableTables);
-        localStorage.setItem('table-layouts', JSON.stringify([defaultLayout]));
-        console.log('✅ Default layout created and saved');
-        return defaultLayout;
+        console.log('⚠️ Không có layout nào trong backend, sử dụng layout mặc định tạm thời');
+        const fallbackLayout = createDefaultLayout(availableTables);
+        setSelectedLayout(fallbackLayout);
+        setGridCols(fallbackLayout.gridCols);
+        setGridRows(fallbackLayout.gridRows);
+        return;
       }
-      
-      console.log('❌ No tables available to create default layout');
-    } catch (error) {
-      console.error('❌ Error loading layout:', error);
+
+      setSelectedLayout(null);
+    } catch (error: any) {
+      console.error('❌ Error fetching layout:', error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Không thể tải layout. Đang sử dụng layout mặc định tạm thời.';
+      setLayoutError(message);
+      if (availableTables.length > 0) {
+        const fallbackLayout = createDefaultLayout(availableTables);
+        setSelectedLayout(fallbackLayout);
+        setGridCols(fallbackLayout.gridCols);
+        setGridRows(fallbackLayout.gridRows);
+      } else {
+        setSelectedLayout(null);
+      }
+    } finally {
+      setIsLayoutFetching(false);
     }
-    return null;
   };
 
   // Helper: Tạo layout mặc định
@@ -199,32 +141,18 @@ export default function TableSelectionModal({
   useEffect(() => {
     if (isOpen) {
       console.log('🔵 Modal opened, loading tables...');
-      console.log('🔍 Current layouts in localStorage:');
-      debugLayouts();
       // Reset selected layout khi mở modal
       setSelectedLayout(null);
       loadTables();
     }
   }, [isOpen]);
 
-  // Load layout after tables are loaded
+  // Load layout after tables are loaded or modal reopened
   useEffect(() => {
-    if (tables.length > 0 && !selectedLayout) {
-      console.log('🔵 Tables loaded, loading active layout...', tables.length, 'tables');
-      const layout = loadActiveLayout(tables);
-      console.log('🔵 Active layout loaded:', layout ? {
-        name: layout.name,
-        isActive: layout.isActive,
-        tablesCount: layout.tables.length,
-        gridSize: `${layout.gridCols}x${layout.gridRows}`
-      } : 'null');
-      setSelectedLayout(layout);
-      if (layout) {
-        setGridCols(layout.gridCols);
-        setGridRows(layout.gridRows);
-      }
-    }
-  }, [tables, selectedLayout]);
+    if (!isOpen) return;
+    if (tables.length === 0) return;
+    fetchActiveLayout(tables);
+  }, [tables, isOpen]);
 
   // Update filtered tables when tables or layout changes
   useEffect(() => {
@@ -476,15 +404,11 @@ export default function TableSelectionModal({
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                console.log('🔄 Reloading layout...');
-                const layout = loadActiveLayout(tables);
-                setSelectedLayout(layout);
-                if (layout) {
-                  setGridCols(layout.gridCols);
-                  setGridRows(layout.gridRows);
-                }
+                console.log('🔄 Reloading layout from backend...');
+                fetchActiveLayout(tables);
               }}
-              className="p-2 hover:bg-amber-100 rounded-lg transition-colors"
+              disabled={isLayoutFetching}
+              className="p-2 hover:bg-amber-100 rounded-lg transition-colors disabled:opacity-50"
               title="Reload layout"
             >
               <RotateCw className="w-5 h-5 text-gray-600" />
@@ -497,6 +421,11 @@ export default function TableSelectionModal({
             </button>
           </div>
         </div>
+        {layoutError && (
+          <div className="px-6 py-2 bg-red-50 border-b border-red-100 text-sm text-red-700">
+            {layoutError} — đang hiển thị layout mặc định tạm thời.
+          </div>
+        )}
 
         {/* Legend */}
         <div className="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200">
@@ -617,13 +546,13 @@ export default function TableSelectionModal({
                   // Lấy Table object từ layout table
                   const table = layoutTable ? getTableFromLayoutTable(layoutTable) : null;
                   const availability = table ? tableAvailability[table._id] : undefined;
-                  const isSelected = table && selectedTableId === table._id;
-                  const isHovered = table && hoveredTable === table._id;
+                  const isSelected = table ? selectedTableId === table._id : false;
+                  const isHovered = table ? hoveredTable === table._id : false;
                   
                   // Xác định có thể chọn không
-                  const isSelectable = table && (availability 
+                  const isSelectable = table ? (availability 
                     ? (availability.isAvailable && !availability.isReserved)
-                    : (table.status === 'available' || table.status === 'reserved') && table.status !== 'maintenance');
+                    : (table.status === 'available' || table.status === 'reserved')) : false;
 
                   // Sử dụng shared color function
                   const cellColor = layoutTable && isMainCell && table

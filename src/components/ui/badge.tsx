@@ -22,7 +22,7 @@ const sizeStyles = {
   lg: 'px-4 py-1.5 text-base',
 };
 
-export default function Badge({
+function Badge({
   children,
   variant = 'primary',
   size = 'md',
@@ -43,3 +43,6 @@ export default function Badge({
     </span>
   );
 }
+
+export default Badge;
+export { Badge };
