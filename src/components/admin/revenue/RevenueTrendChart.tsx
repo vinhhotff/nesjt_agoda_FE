@@ -38,7 +38,7 @@ const RevenueTrendChart: React.FC<RevenueTrendChartProps> = ({ data }) => {
           <YAxis 
             yAxisId="left"
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+            tickFormatter={(value) => `${((value || 0) / 1000).toFixed(0)}K`}
           />
           <YAxis 
             yAxisId="right" 
@@ -46,11 +46,12 @@ const RevenueTrendChart: React.FC<RevenueTrendChartProps> = ({ data }) => {
             tick={{ fontSize: 12 }}
           />
           <Tooltip 
-            formatter={(value: number, name: string) => {
+            formatter={(value: any, name: string) => {
+              const numValue = typeof value === 'number' ? value : 0;
               if (name === 'revenue') {
-                return [`${value.toLocaleString()} VND`, 'Revenue'];
+                return [`${numValue.toLocaleString()} VND`, 'Revenue'];
               }
-              return [value, 'Orders'];
+              return [numValue, 'Orders'];
             }}
             labelFormatter={(label) => `Date: ${label}`}
           />

@@ -88,7 +88,11 @@ export default function TableDetailsModal({
                   <span className="text-sm font-medium">Vị trí</span>
                 </div>
                 <p className="text-lg font-semibold text-gray-900">
-                  {table.location || 'Chưa có'}
+                  {typeof table.location === 'string' 
+                    ? table.location 
+                    : table.location 
+                      ? `(${table.location.x}, ${table.location.y}) - ${table.location.width}x${table.location.height}`
+                      : 'Chưa có'}
                 </p>
               </div>
               <div>
@@ -157,7 +161,7 @@ export default function TableDetailsModal({
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <Calendar className="w-3 h-3" />
                           <span>
-                            Tham gia: {new Date(guest.joinedAt).toLocaleString('vi-VN')}
+                            Tham gia: {guest.joinedAt ? new Date(guest.joinedAt).toLocaleString('vi-VN') : 'N/A'}
                           </span>
                         </div>
                         {guest.orders && guest.orders.length > 0 && (

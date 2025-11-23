@@ -196,7 +196,13 @@ export default function UserDashboardPage() {
                   <Shield className="w-5 h-5 text-gray-600 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-xs text-gray-500 mb-1">Role</p>
-                    <p className="text-sm font-medium text-gray-900 capitalize">{user.role}</p>
+                    <p className="text-sm font-medium text-gray-900 capitalize">
+                      {typeof user.role === 'string' 
+                        ? user.role 
+                        : user.role && typeof user.role === 'object' && 'name' in user.role
+                          ? (user.role as { name: string }).name
+                          : 'user'}
+                    </p>
                   </div>
                 </div>
 

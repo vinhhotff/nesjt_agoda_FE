@@ -43,9 +43,37 @@ export const setActiveTableLayout = async (
 };
 
 export const getActiveTableLayout = async (): Promise<TableLayout | null> => {
-  const response = await api.get('/table-layouts/active');
-  const data = unwrapResponse<TableLayout | null>(response);
-  return data ?? null;
+  try {
+    const response = await api.get('/table-layouts/active');
+    
+    // Backend controller now returns: layout or null
+    // ResponseInterceptor wraps it as: { statusCode, message, data: layout, timestamp }
+    // So response.data = { statusCode, message, data: layout, timestamp }
+    // And response.data.data = layout (or null)
+    
+    const unwrapped = unwrapResponse<TableLayout | null>(response);
+    
+    // unwrapResponse should extract response.data.data (which is layout or null)
+    if (unwrapped === null || unwrapped === undefined) {
+      return null;
+    }
+    
+    // Check if it's a valid TableLayout object
+    if (unwrapped._id || unwrapped.tables || unwrapped.gridCols !== undefined) {
+      return unwrapped as TableLayout;
+    }
+    
+    return null;
+  } catch (error: any) {
+    // API endpoint might not exist yet, return null to use fallback
+    const statusCode = error?.response?.status;
+    if (statusCode === 404) {
+      // 404 means no active layout found, which is valid
+      return null;
+    }
+    console.warn('⚠️ Active layout endpoint error, using fallback:', error?.message);
+    return null;
+  }
 };
 
 

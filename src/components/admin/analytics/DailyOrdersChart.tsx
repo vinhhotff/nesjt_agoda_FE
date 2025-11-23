@@ -23,7 +23,7 @@ const DailyOrdersChart: React.FC<DailyOrdersChartProps> = ({
   }
 
   // Find the maximum value for scaling
-  const maxCount = Math.max(...dailyOrders.map(item => item.count));
+  const maxCount = Math.max(...dailyOrders.map(item => item.count || item.value || 0));
   const safeMaxCount = maxCount || 1; // Prevent division by zero
 
   // Format date for display
@@ -47,7 +47,8 @@ const DailyOrdersChart: React.FC<DailyOrdersChartProps> = ({
         {/* Chart container */}
         <div className="flex items-end justify-between h-48 mb-4 space-x-2">
           {dailyOrders.map((item, index) => {
-            const height = safeMaxCount > 0 ? (item.count / safeMaxCount) * 100 : 0;
+            const count = item.count || item.value || 0;
+            const height = safeMaxCount > 0 ? (count / safeMaxCount) * 100 : 0;
             
             return (
               <div key={item.date} className="flex flex-col items-center flex-1">
@@ -58,12 +59,12 @@ const DailyOrdersChart: React.FC<DailyOrdersChartProps> = ({
                     animate={{ height: `${height}%` }}
                     transition={{ delay: index * 0.1, duration: 0.5 }}
                     className="w-full max-w-8 bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-colors duration-200 relative group"
-                    style={{ minHeight: item.count > 0 ? '4px' : '0px' }}
+                    style={{ minHeight: count > 0 ? '4px' : '0px' }}
                   >
                     {/* Tooltip on hover */}
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                       <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        {item.count} orders
+                        {count} orders
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-2 border-transparent border-t-gray-800" />
                       </div>
                     </div>
@@ -96,14 +97,14 @@ const DailyOrdersChart: React.FC<DailyOrdersChartProps> = ({
             Total ({dailyOrders.length} days)
           </span>
           <span className="text-gray-600">
-            {dailyOrders.reduce((sum, item) => sum + item.count, 0).toLocaleString()} orders
+            {dailyOrders.reduce((sum, item) => sum + (item.count || item.value || 0), 0).toLocaleString()} orders
           </span>
         </div>
         <div className="flex justify-between text-sm mt-1">
           <span className="font-medium text-gray-700">Average per day</span>
           <span className="text-gray-600">
             {Math.round(
-              dailyOrders.reduce((sum, item) => sum + item.count, 0) / dailyOrders.length
+              dailyOrders.reduce((sum, item) => sum + (item.count || item.value || 0), 0) / dailyOrders.length
             ).toLocaleString()} orders
           </span>
         </div>

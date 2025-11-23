@@ -19,7 +19,8 @@ import {
   TrendingUp,
   ChevronRight,
   LogOut,
-  Sparkles
+  Sparkles,
+  Star
 } from "lucide-react";
 
 const navLinks = [
@@ -33,6 +34,7 @@ const navLinks = [
   { href: "/admin/tables/select", label: "Chọn bàn", icon: MousePointerClick },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/revenue", label: "Revenue", icon: TrendingUp },
+  { href: "/admin/reviews", label: "Reviews", icon: Star },
 ];
 
 const Aside = () => {

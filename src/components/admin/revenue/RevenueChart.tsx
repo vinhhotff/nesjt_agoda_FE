@@ -48,7 +48,7 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
     );
   }
 
-  const maxValue = Math.max(...data.map(item => item.count));
+  const maxValue = Math.max(...data.map(item => item.count || 0));
   const safeMaxValue = maxValue || 1;
 
   const formatDate = (dateString: string) => {
@@ -77,7 +77,7 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
       <div className="relative">
         <div className="flex items-end justify-between h-48 mb-4 space-x-1">
           {data.map((item, index) => {
-            const height = safeMaxValue > 0 ? (item.count / safeMaxValue) * 100 : 0;
+            const height = safeMaxValue > 0 ? ((item.count || 0) / safeMaxValue) * 100 : 0;
             
             return (
               <div key={item.date} className="flex flex-col items-center flex-1">
@@ -87,11 +87,11 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
                     animate={{ height: `${height}%` }}
                     transition={{ delay: index * 0.1, duration: 0.5 }}
                     className="w-full max-w-8 bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-colors duration-200 relative group"
-                    style={{ minHeight: item.count > 0 ? '4px' : '0px' }}
+                    style={{ minHeight: (item.count || 0) > 0 ? '4px' : '0px' }}
                   >
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                       <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        {formatValue(item.count)}
+                        {formatValue(item.count || 0)}
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-2 border-transparent border-t-gray-800" />
                       </div>
                     </div>
@@ -122,13 +122,13 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
           <div>
             <span className="text-gray-500">Total:</span>
             <div className="font-semibold">
-              {formatValue(data.reduce((sum, item) => sum + item.count, 0))}
+              {formatValue(data.reduce((sum, item) => sum + (item.count || 0), 0))}
             </div>
           </div>
           <div>
             <span className="text-gray-500">Average:</span>
             <div className="font-semibold">
-              {formatValue(Math.round(data.reduce((sum, item) => sum + item.count, 0) / data.length))}
+              {formatValue(Math.round(data.reduce((sum, item) => sum + (item.count || 0), 0) / data.length))}
             </div>
           </div>
           <div>
@@ -152,6 +152,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
   // Convert RevenueChartData[] to ChartDataPoint[] for consistent chart display
   const chartData: ChartDataPoint[] = data.map(item => ({
     date: item.date,
+    value: item.revenue,
     count: item.revenue // Using revenue as count for chart visualization
   }));
 

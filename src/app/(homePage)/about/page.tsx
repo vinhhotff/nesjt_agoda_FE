@@ -119,7 +119,7 @@ export default function AboutPage() {
                     >
                       <div className="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden">
                         <Image
-                          src={section.url}
+                          src={section.url || section.image || '/default.jpeg'}
                           alt={section.title}
                           fill
                           unoptimized
@@ -153,7 +153,7 @@ export default function AboutPage() {
                         </h2>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {section.teamMembers.map((member, i) => (
+                        {section.teamMembers?.map((member, i) => (
                           <motion.div
                             key={i}
                             className="group text-center"
@@ -201,7 +201,7 @@ export default function AboutPage() {
                             <Quote className="w-6 h-6 text-white" />
                           </div>
                           <blockquote className="text-2xl md:text-3xl font-medium text-gray-900 italic leading-relaxed">
-                            "{section.quote}"
+                            "{section.quote || ''}"
                           </blockquote>
                         </div>
                       </div>
@@ -228,7 +228,7 @@ export default function AboutPage() {
                       </div>
                       <div className="rounded-2xl overflow-hidden">
                         <video
-                          src={section.url}
+                          src={section.url || ''}
                           controls
                           className="w-full rounded-2xl"
                         />

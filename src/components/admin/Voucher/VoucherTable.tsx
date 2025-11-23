@@ -115,7 +115,7 @@ const VoucherTable: React.FC<Props> = ({ items, onDelete }) => {
                       <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
                         <div 
                           className="bg-gradient-to-r from-yellow-500 to-amber-500 h-1.5 rounded-full transition-all"
-                          style={{ width: `${Math.min((v.usedCount / v.usageLimit) * 100, 100)}%` }}
+                          style={{ width: `${Math.min(((v.usedCount || 0) / v.usageLimit) * 100, 100)}%` }}
                         />
                       </div>
                     )}

@@ -70,7 +70,11 @@ export default function TableSeatSelector({
 
   // Group tables by location for better organization
   const tablesByLocation = tables.reduce((acc, table) => {
-    const location = table.location || 'Khác';
+    const location = typeof table.location === 'string' 
+      ? table.location 
+      : table.location 
+        ? `(${table.location.x}, ${table.location.y})`
+        : 'Khác';
     if (!acc[location]) {
       acc[location] = [];
     }

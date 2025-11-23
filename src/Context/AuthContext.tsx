@@ -26,6 +26,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function checkAuth() {
       setLoading(true);
 
+      // Check if token exists before calling refresh
+      const token = Cookies.get(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!);
+      if (!token) {
+        // No token, user is not logged in
+        setUser(null);
+        localStorage.removeItem("user");
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await refresh(); // gọi API
         if (response.data?.data?.user) {
@@ -36,10 +46,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           localStorage.removeItem("user");
         }
-      } catch (err) {
-        console.error("Refresh error:", err);
-        setUser(null);
-        localStorage.removeItem("user");
+      } catch (err: any) {
+        // Silently handle auth errors - 400/401 are normal when user is not logged in
+        // Only log unexpected errors
+        if (err?.response?.status === 400 || err?.response?.status === 401) {
+          // Normal case: user is not authenticated, silently set user to null
+          setUser(null);
+          localStorage.removeItem("user");
+        } else {
+          // Unexpected error - log it but don't show error overlay
+          console.error("Refresh error:", err);
+          setUser(null);
+          localStorage.removeItem("user");
+        }
       }
 
       setLoading(false);

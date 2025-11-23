@@ -8,7 +8,8 @@ interface PaymentListProps {
 }
 
 const PaymentList: FC<PaymentListProps> = ({ payments, onEdit, onDelete }) => {
-  const renderGuest = (guest: string | Guest) => {
+  const renderGuest = (guest: string | Guest | undefined) => {
+    if (!guest) return "N/A";
     if (typeof guest === "string") return guest; // là id
     return guest.guestName || guest.guestPhone || "Unknown Guest"; // là object
   };
