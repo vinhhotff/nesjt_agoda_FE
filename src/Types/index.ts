@@ -15,6 +15,31 @@ export interface User {
   updatedAt?: string;
 }
 
+export interface UserStatusUpdate {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  role?: string | { _id: string; name: string };
+  avatar?: string;
+}
+
+export interface UserFilter {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ApiError {
+  message: string | string[];
+  statusCode?: number;
+  error?: string;
+}
+
 export interface Role {
   _id: string;
   name: string;
@@ -256,6 +281,33 @@ export interface Voucher {
   updatedAt?: string;
 }
 
+export interface ApplyVoucherPayload {
+  code: string;
+  orderTotal: number;
+  items?: {
+    itemId: string;
+    quantity: number;
+    price?: number;
+  }[];
+  userId?: string;
+}
+
+export interface ApplyVoucherResponse {
+  code: string;
+  discountAmount: number;
+  finalTotal: number;
+  voucherId: string;
+  message?: string;
+}
+
+export interface PaginatedVoucher {
+  items: Voucher[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 // ============================
 // Analytics Types
 // ============================
@@ -296,6 +348,12 @@ export interface RevenueChartData {
   orders: number;
 }
 
+export interface StatusDistribution {
+  status: string;
+  count: number;
+  percentage: number;
+}
+
 export interface OrderAnalytics {
   totalOrders: number;
   pendingOrders?: number;
@@ -305,7 +363,7 @@ export interface OrderAnalytics {
   preparing?: number;
   served?: number;
   cancelled?: number;
-  statusDistribution?: Record<string, number>;
+  statusDistribution?: StatusDistribution[];
   dailyOrders?: ChartDataPoint[];
   averagePreparationTime?: number;
   peakHours?: Array<{
@@ -449,6 +507,3 @@ export interface CreateOnlineOrderDto {
   deliveryAddress?: string;
   specialInstructions?: string;
 }
-
-// Explicit re-exports for better module resolution
-export type { OrderType, OrderStatus };

@@ -164,12 +164,12 @@ export const updateUser = async (id: string, data: UserStatusUpdate): Promise<Us
     
     // Validate data matches BE UpdateUserDto (extends CreateUserDto)
     const validFields = ['name', 'email', 'phone', 'address', 'role', 'avatar'];
-    const sanitizedData: UserStatusUpdate = {};
+    const sanitizedData: Partial<UserStatusUpdate> = {};
     
     // Only include valid fields that BE accepts
     Object.keys(data).forEach(key => {
       if (validFields.includes(key) && data[key as keyof UserStatusUpdate] !== undefined) {
-        sanitizedData[key as keyof UserStatusUpdate] = data[key as keyof UserStatusUpdate];
+        (sanitizedData as any)[key] = data[key as keyof UserStatusUpdate];
       }
     });
 

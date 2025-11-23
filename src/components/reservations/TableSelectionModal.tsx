@@ -555,7 +555,7 @@ export default function TableSelectionModal({
                   if (layoutTable && isMainCell) {
                     const tableWidth = layoutTable.width ?? 1;
                     const tableHeight = layoutTable.height ?? 1;
-                    const rotation = layoutTable.position.rotation || 0;
+                    const rotation = layoutTable.position?.rotation || 0;
                     
                     const isRotated = rotation === 90 || rotation === 270;
                     displayWidth = isRotated ? tableHeight : tableWidth;
@@ -629,13 +629,13 @@ export default function TableSelectionModal({
                         <div
                           className="w-full h-full relative"
                           style={{
-                            transform: `rotate(${layoutTable.position.rotation || 0}deg)`,
+                            transform: `rotate(${layoutTable.position?.rotation || 0}deg)`,
                           }}
                         >
                           <div 
                             className="text-xs font-bold absolute inset-0 flex items-center justify-center pointer-events-none"
                             style={{
-                              transform: `rotate(${-(layoutTable.position.rotation || 0)}deg)`,
+                              transform: `rotate(${-(layoutTable.position?.rotation || 0)}deg)`,
                             }}
                           >
                             {table.tableName}
@@ -667,7 +667,7 @@ export default function TableSelectionModal({
                 return selectedTable ? (
                   <p className="text-sm text-gray-600">
                     Bàn đã chọn: <span className="font-semibold text-gray-900">{selectedTable.tableName}</span>
-                    {selectedTable.location && (
+                    {selectedTable.location && typeof selectedTable.location === 'string' && (
                       <span className="text-gray-500 ml-2">({selectedTable.location})</span>
                     )}
                   </p>

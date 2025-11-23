@@ -398,12 +398,14 @@ export const getMenuItemsPaginate = async (
       apiData.totalRecords ||
       0;
 
+    const totalPages = Math.ceil(total / limit);
 
     return {
       items: items,
       total: total,
       page: page,
       limit: limit,
+      totalPages: totalPages,
     };
   } catch (error) {
     console.error("Error in getMenuItemsPaginate:", error);
@@ -464,16 +466,17 @@ export const createOrder = async (data: Partial<Order>): Promise<Order> => {
   const response = await api.post<Order>("/orders", data);
   return response.data;
 };
- export function extractOrders(res: OrdersApiResponse): Order[] {
+ export function extractOrders(res: OrdersApiResponse | any): Order[] {
   if (Array.isArray(res)) return res;
   if ("orders" in res && Array.isArray(res.orders)) return res.orders;
   if ("results" in res && Array.isArray(res.results)) return res.results;
   if ("data" in res) {
-    if (Array.isArray(res.data)) return res.data;
-    if ("orders" in res.data && Array.isArray(res.data.orders))
-      return res.data.orders;
-    if ("results" in res.data && Array.isArray(res.data.results))
-      return res.data.results;
+    const data = res.data as any;
+    if (Array.isArray(data)) return data;
+    if ("orders" in data && Array.isArray(data.orders))
+      return data.orders;
+    if ("results" in data && Array.isArray(data.results))
+      return data.results;
   }
   return [];
 }
@@ -1034,7 +1037,7 @@ export const exportOrdersToCSV = async (filters?: {
           typeof order.guest === "string"
             ? order.guest
             : (order.guest as any)?.guestName || "N/A";
-        const createdDate = new Date(order.createdAt).toLocaleDateString();
+        const createdDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A";
 
         return `${order._id},"${guestName}",${order.items.length},${
           order.totalPrice
