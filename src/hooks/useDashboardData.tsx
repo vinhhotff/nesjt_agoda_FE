@@ -129,9 +129,9 @@ export function useDashboardData(isAuthorized: boolean) {
         setLoading({ core: true, today: true, trends: true, orders: true });
 
         loadCoreStats();
-        setTimeout(() => loadTodayStats(), 100);
-        setTimeout(() => loadWeeklyTrends(), 300);
-        setTimeout(() => loadRecentOrders(), 500);
+        loadTodayStats();
+        loadWeeklyTrends();
+        loadRecentOrders();
     }, [cache, loadCoreStats, loadTodayStats, loadWeeklyTrends, loadRecentOrders]);
 
     // Main effect to load data
@@ -139,9 +139,9 @@ export function useDashboardData(isAuthorized: boolean) {
         if (!isAuthorized) return;
 
         loadCoreStats();
-        setTimeout(() => loadTodayStats(), 100);
-        setTimeout(() => loadWeeklyTrends(), 300);
-        setTimeout(() => loadRecentOrders(), 500);
+        loadTodayStats();
+        loadWeeklyTrends();
+        loadRecentOrders();
     }, [isAuthorized, loadCoreStats, loadTodayStats, loadWeeklyTrends, loadRecentOrders]);
 
     // Computed values

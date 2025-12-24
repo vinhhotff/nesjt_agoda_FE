@@ -87,8 +87,8 @@ export default function AdminTablesPage() {
         console.log('Created table:', created);
         toast.success("✅ Tạo bàn thành công!");
       }
-      // Wait a bit to ensure backend has processed
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Remove unnecessary delay for faster UI response
+      // await new Promise(resolve => setTimeout(resolve, 500));
       refetch(); // Use refetch from pagination hook
       setModalOpen(false);
       setSelectedTable(null);

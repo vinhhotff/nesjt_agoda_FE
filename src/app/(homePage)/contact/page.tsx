@@ -45,8 +45,8 @@ const ContactPage = () => {
 
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Remove unnecessary delay for faster form submission
+    // await new Promise(resolve => setTimeout(resolve, 1000));
     
     toast.success("Your message has been sent successfully!");
     setForm({ name: "", email: "", subject: "", message: "" });

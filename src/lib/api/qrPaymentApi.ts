@@ -96,8 +96,8 @@ class QRPaymentAPI {
 
   // Simulate QR payment creation (for development)
   async createMockQRPayment(paymentRequest: QRPaymentRequest): Promise<QRPaymentResponse> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Remove unnecessary delay for faster loading
+    // await new Promise(resolve => setTimeout(resolve, 1000));
 
     const paymentId = `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes

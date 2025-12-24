@@ -96,7 +96,8 @@ function UserProfileContent() {
       await api.patch(`/users/${user?._id}`, updatePayload);
       toast.success("Cập nhật thông tin thành công!");
       setModalOpen(false);
-      setTimeout(() => window.location.reload(), 1000);
+      // Remove delay and reload immediately for better UX
+      window.location.reload();
     } catch (error: any) {
       console.error("Update failed:", error);
       toast.error(error?.response?.data?.message || "Cập nhật thất bại. Vui lòng thử lại.");
