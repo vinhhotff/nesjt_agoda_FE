@@ -9,6 +9,7 @@ import { ShoppingCart, User, LogOut, LayoutDashboard, Menu, X, ChevronDown } fro
 
 const DynamicCartModal = dynamic(() => import("../Cart/CartModal"), { ssr: false });
 const DynamicCheckoutModal = dynamic(() => import("../CheckoutModal/CheckoutModal"), { ssr: false });
+const DynamicNotificationCenter = dynamic(() => import("../notifications/NotificationCenter"), { ssr: false });
 
 const links = [
   { id: 1, title: "Home", url: "/" },
@@ -97,6 +98,11 @@ const Header = () => {
             
             {/* Actions */}
             <div className="flex items-center gap-4">
+              {/* Notification Center */}
+              {(user || typeof window !== 'undefined' && localStorage.getItem('guestId')) && (
+                <DynamicNotificationCenter />
+              )}
+
               {/* Cart Button */}
               <button
                 onClick={() => setIsCartOpen(true)}

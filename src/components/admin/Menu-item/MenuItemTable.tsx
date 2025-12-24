@@ -4,7 +4,8 @@ import { IMenuItem } from '@/src/Types';
 import { Pencil, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import React from 'react';
-import { toast } from 'react-toastify';
+import { toast } from '@/src/lib/utils/toast';
+import { toast as reactToast, Id } from 'react-toastify';
 
 interface Props {
     items: IMenuItem[];
@@ -50,46 +51,46 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
     }, [items]);
 
     const handleDelete = (id: string) => {
-        const toastId = toast(
+        const toastId = reactToast(
             ({ closeToast }: any) => (
                 <div className="flex flex-col gap-3 p-2">
                     <div className="flex items-center gap-2 text-gray-900">
                         <Trash2 className="w-5 h-5 text-red-600" />
-                        <span className="font-semibold">Xác nhận xóa món</span>
+                        <span className="font-semibold">Confirm Delete</span>
                     </div>
-                    <p className="text-sm text-gray-600">Bạn có chắc muốn xóa món này? Hành động này không thể hoàn tác.</p>
+                    <p className="text-sm text-gray-600">Are you sure you want to delete this item? This action cannot be undone.</p>
                     <div className="flex justify-end gap-2 mt-2">
                         <button
                             type="button"
                             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
                             onClick={() => {
                                 if (closeToast) closeToast();
-                                toast.dismiss(toastId);
+                                reactToast.dismiss(toastId);
                             }}
                         >
-                            Hủy
+                            Cancel
                         </button>
                         <button
                             type="button"
                             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors shadow-md"
                             onClick={async () => {
                                 if (closeToast) closeToast();
-                                toast.dismiss(toastId);
-                                const loadingToast = toast.loading('Đang xóa...');
+                                reactToast.dismiss(toastId);
+                                const loadingToast = toast.loading('Deleting...');
                                 try {
                                     await onDelete(id);
                                     setLocalItems((prev) =>
                                         prev.filter((item) => item._id !== id)
                                     );
                                     toast.dismiss(loadingToast);
-                                    toast.success('Xóa món thành công!');
+                                    toast.success('Item deleted successfully!');
                                 } catch (err: any) {
                                     toast.dismiss(loadingToast);
-                                    toast.error(err?.message || 'Xóa món thất bại!');
+                                    toast.error(err?.message || 'Failed to delete item!');
                                 }
                             }}
                         >
-                            Xóa ngay
+                            Delete Now
                         </button>
                     </div>
                 </div>
@@ -108,11 +109,11 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
             <table className="w-full border-collapse bg-white/80 backdrop-blur-sm text-sm md:text-base">
                 <thead>
                     <tr className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 text-left text-gray-700">
-                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Tên món</th>
-                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Giá</th>
-                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Trạng thái</th>
-                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Mô tả</th>
-                        <th className="p-5 text-center font-bold text-xs uppercase tracking-wider">Hành động</th>
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Item Name</th>
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Price</th>
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Status</th>
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Description</th>
+                        <th className="p-5 text-center font-bold text-xs uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -127,8 +128,8 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
                                         <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
                                             <span className="text-3xl">🍽️</span>
                                         </div>
-                                        <p className="font-semibold">Không có món nào</p>
-                                        <p className="text-sm">Thêm món mới để bắt đầu</p>
+                                        <p className="font-semibold">No items found</p>
+                                        <p className="text-sm">Add new items to get started</p>
                                     </div>
                                 </td>
                             </tr>
@@ -155,12 +156,12 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
                                         {item.available ? (
                                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-200 shadow-sm">
                                                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                                                Có sẵn
+                                                Available
                                             </span>
                                         ) : (
                                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-200 shadow-sm">
                                                 <span className="w-2 h-2 bg-red-500 rounded-full" />
-                                                Hết hàng
+                                                Out of Stock
                                             </span>
                                         )}
                                     </td>
@@ -172,7 +173,7 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
                                             <ActionButton
                                                 onClick={() => onEdit(item)}
                                                 hoverColor="hover:bg-blue-50 border-2 border-blue-200"
-                                                title="Sửa món"
+                                                title="Edit Item"
                                             >
                                                 <Pencil className="w-5 h-5 text-blue-600" />
                                             </ActionButton>
@@ -180,7 +181,7 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
                                             <ActionButton
                                                 onClick={() => handleDelete(item._id)}
                                                 hoverColor="hover:bg-red-50 border-2 border-red-200"
-                                                title="Xóa món"
+                                                title="Delete Item"
                                             >
                                                 <Trash2 className="w-5 h-5 text-red-600" />
                                             </ActionButton>

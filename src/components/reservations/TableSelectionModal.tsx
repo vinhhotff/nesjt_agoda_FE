@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Check, Users, MapPin, RotateCw, Layout } from 'lucide-react';
 import { Table, TableLayout } from '@/src/Types';
 import { getTables } from '@/src/lib/api';
@@ -58,42 +58,58 @@ export default function TableSelectionModal({
     setIsLayoutFetching(true);
     setLayoutError(null);
     try {
-      console.log('🔍 Fetching active layout from backend...');
       const layout = await getActiveTableLayout();
-      if (layout && layout.tables?.length) {
-        console.log('✅ Active layout loaded:', {
-          name: layout.name,
-          isActive: layout.isActive,
-          tablesCount: layout.tables.length,
-        });
+      console.log('📋 Fetched active layout:', layout);
+      
+      // Check if layout exists and has tables
+      if (layout && layout.tables && Array.isArray(layout.tables) && layout.tables.length > 0) {
+        console.log('✅ Using active layout from backend:', layout.name || layout._id);
         setSelectedLayout(layout);
-        setGridCols(layout.gridCols);
-        setGridRows(layout.gridRows);
+        setGridCols(layout.gridCols ?? 12);
+        setGridRows(layout.gridRows ?? 10);
         return;
       }
 
+      // If layout exists but has no tables, log warning
+      if (layout && (!layout.tables || layout.tables.length === 0)) {
+        console.warn('⚠️ Active layout found but has no tables, using fallback');
+      } else if (!layout) {
+        console.log('ℹ️ No active layout found, using default layout');
+      }
+
+      // Use fallback default layout
       if (availableTables.length > 0) {
-        console.log('⚠️ Không có layout nào trong backend, sử dụng layout mặc định tạm thời');
         const fallbackLayout = createDefaultLayout(availableTables);
+        console.log('📐 Using default fallback layout');
         setSelectedLayout(fallbackLayout);
-        setGridCols(fallbackLayout.gridCols);
-        setGridRows(fallbackLayout.gridRows);
+        setGridCols(fallbackLayout.gridCols ?? 12);
+        setGridRows(fallbackLayout.gridRows ?? 10);
+        setLayoutError(null);
         return;
       }
 
       setSelectedLayout(null);
     } catch (error: any) {
       console.error('❌ Error fetching layout:', error);
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Không thể tải layout. Đang sử dụng layout mặc định tạm thời.';
-      setLayoutError(message);
+      // Only show error for actual errors, not for missing endpoint
+      const statusCode = error?.response?.status;
+      if (statusCode && statusCode !== 404) {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          'Unable to load layout. Using default layout temporarily.';
+        setLayoutError(message);
+      } else {
+        // 404 or missing endpoint - use fallback silently
+        setLayoutError(null);
+      }
+      
       if (availableTables.length > 0) {
         const fallbackLayout = createDefaultLayout(availableTables);
+        console.log('📐 Using default fallback layout (error case)');
         setSelectedLayout(fallbackLayout);
-        setGridCols(fallbackLayout.gridCols);
-        setGridRows(fallbackLayout.gridRows);
+        setGridCols(fallbackLayout.gridCols ?? 12);
+        setGridRows(fallbackLayout.gridRows ?? 10);
       } else {
         setSelectedLayout(null);
       }
@@ -140,7 +156,6 @@ export default function TableSelectionModal({
 
   useEffect(() => {
     if (isOpen) {
-      console.log('🔵 Modal opened, loading tables...');
       // Reset selected layout khi mở modal
       setSelectedLayout(null);
       loadTables();
@@ -153,54 +168,6 @@ export default function TableSelectionModal({
     if (tables.length === 0) return;
     fetchActiveLayout(tables);
   }, [tables, isOpen]);
-
-  // Update filtered tables when tables or layout changes
-  useEffect(() => {
-    if (selectedLayout && tables.length > 0) {
-      // Filter tables to only show those in the selected layout
-      // Try matching by tableId first, then fallback to tableName
-      const layoutTableIds = selectedLayout.tables.map(t => t.tableId);
-      const layoutTableNames = selectedLayout.tables.map(t => t.tableName);
-      
-      console.log('Filtering tables:', {
-        layoutName: selectedLayout.name,
-        layoutTablesCount: selectedLayout.tables.length,
-        layoutTableIds: layoutTableIds,
-        layoutTableNames: layoutTableNames,
-        allTablesCount: tables.length,
-        allTableIds: tables.map(t => t._id),
-        allTableNames: tables.map(t => t.tableName)
-      });
-      
-      const filtered = tables.filter(table => {
-        // Match by tableId (preferred)
-        if (layoutTableIds.includes(table._id)) {
-          return true;
-        }
-        // Fallback: match by tableName if tableId doesn't match
-        if (layoutTableNames.includes(table.tableName)) {
-          console.log(`Table ${table.tableName} matched by name (tableId mismatch)`);
-          return true;
-        }
-        return false;
-      });
-      
-      console.log('Filtered tables:', {
-        filteredCount: filtered.length,
-        filteredTableNames: filtered.map(t => t.tableName),
-        filteredTableIds: filtered.map(t => t._id)
-      });
-      
-      setFilteredTables(filtered);
-      // Check availability after filtering
-      checkTableAvailability(filtered);
-    } else {
-      // If no layout, show all tables
-      console.log('No layout selected, showing all tables:', tables.length);
-      setFilteredTables(tables);
-      checkTableAvailability(tables);
-    }
-  }, [tables, selectedLayout, reservationDate, reservationTime]);
 
   const loadTables = async () => {
     setLoading(true);
@@ -217,7 +184,7 @@ export default function TableSelectionModal({
     }
   };
 
-  const checkTableAvailability = async (tablesToCheck: Table[]) => {
+  const checkTableAvailability = useCallback(async (tablesToCheck: Table[]) => {
     try {
       // Get all reservations for the selected date/time
       if (reservationDate && reservationTime) {
@@ -284,7 +251,38 @@ export default function TableSelectionModal({
       }
       setTableAvailability(availability);
     }
-  };
+  }, [reservationDate, reservationTime]);
+
+  // Update filtered tables when tables or layout changes
+  useEffect(() => {
+    if (selectedLayout && tables.length > 0) {
+      // Filter tables to only show those in the selected layout
+      // Try matching by tableId first, then fallback to tableName
+      if (!selectedLayout.tables) return;
+      const layoutTableIds = selectedLayout.tables.map(t => t.tableId);
+      const layoutTableNames = selectedLayout.tables.map(t => t.tableName);
+      
+      const filtered = tables.filter(table => {
+        // Match by tableId (preferred)
+        if (layoutTableIds.includes(table._id)) {
+          return true;
+        }
+        // Fallback: match by tableName if tableId doesn't match
+        if (layoutTableNames.includes(table.tableName)) {
+          return true;
+        }
+        return false;
+      });
+      
+      setFilteredTables(filtered);
+      // Check availability after filtering
+      checkTableAvailability(filtered);
+    } else {
+      // If no layout, show all tables
+      setFilteredTables(tables);
+      checkTableAvailability(tables);
+    }
+  }, [tables, selectedLayout, checkTableAvailability]);
 
   const handleTableClick = (table: Table) => {
     const availability = tableAvailability[table._id];
@@ -335,9 +333,10 @@ export default function TableSelectionModal({
 
   // Helper: Lấy bàn tại vị trí (x, y) từ layout
   const getTableAtPosition = (x: number, y: number) => {
-    if (!selectedLayout) return null;
+    if (!selectedLayout || !selectedLayout.tables) return null;
     
     return selectedLayout.tables.find((lt) => {
+      if (!lt.position) return false;
       const mainX = lt.position.x;
       const mainY = lt.position.y;
       const tableWidth = lt.width || 1;
@@ -355,13 +354,33 @@ export default function TableSelectionModal({
   };
 
   // Helper: Lấy ô chính (top-left) của bàn
-  const getTableMainCell = (layoutTable: TableLayout['tables'][0]) => {
+  const getTableMainCell = (layoutTable: NonNullable<TableLayout['tables']>[0]) => {
+    if (!layoutTable.position) return { x: 0, y: 0 };
     return { x: layoutTable.position.x, y: layoutTable.position.y };
   };
 
   // Helper: Lấy Table object từ layout table
-  const getTableFromLayoutTable = (layoutTable: TableLayout['tables'][0]): Table | null => {
-    return filteredTables.find(t => t._id === layoutTable.tableId || t.tableName === layoutTable.tableName) || null;
+  // Ưu tiên match theo tableId, chỉ fallback về tableName nếu tableId không có hoặc không match
+  const getTableFromLayoutTable = (layoutTable: NonNullable<TableLayout['tables']>[0]): Table | null => {
+    // Nếu layoutTable có tableId, chỉ match theo tableId (chính xác hơn)
+    if (layoutTable.tableId) {
+      const table = filteredTables.find(t => t._id === layoutTable.tableId);
+      if (table) return table;
+    }
+    // Chỉ fallback về tableName nếu không có tableId hoặc không tìm thấy theo tableId
+    // Nhưng cần đảm bảo chỉ match 1 bàn duy nhất
+    if (layoutTable.tableName) {
+      // Tìm tất cả bàn có cùng tên
+      const tablesWithSameName = filteredTables.filter(t => t.tableName === layoutTable.tableName);
+      // Nếu có nhiều hơn 1 bàn cùng tên, không thể xác định được, return null
+      if (tablesWithSameName.length === 1) {
+        return tablesWithSameName[0];
+      }
+      // Nếu có nhiều bàn cùng tên, cần match theo tableId hoặc position để xác định chính xác
+      // Trong trường hợp này, nếu layoutTable có tableId nhưng không match, có thể là data không đồng bộ
+      // Return null để tránh highlight nhầm
+    }
+    return null;
   };
 
   if (!isOpen) return null;
@@ -404,7 +423,6 @@ export default function TableSelectionModal({
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                console.log('🔄 Reloading layout from backend...');
                 fetchActiveLayout(tables);
               }}
               disabled={isLayoutFetching}
@@ -422,8 +440,8 @@ export default function TableSelectionModal({
           </div>
         </div>
         {layoutError && (
-          <div className="px-6 py-2 bg-red-50 border-b border-red-100 text-sm text-red-700">
-            {layoutError} — đang hiển thị layout mặc định tạm thời.
+          <div className="px-6 py-2 bg-yellow-50 border-b border-yellow-100 text-sm text-yellow-700">
+            {layoutError} — Using default layout temporarily.
           </div>
         )}
 
@@ -483,7 +501,7 @@ export default function TableSelectionModal({
                 Hệ thống đang tự động tạo layout cho bạn.
               </p>
             </div>
-          ) : selectedLayout.tables.length === 0 ? (
+          ) : (!selectedLayout.tables || selectedLayout.tables.length === 0) ? (
             <div className="text-center py-16">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-4">
                 <MapPin className="w-10 h-10 text-blue-600" />
@@ -507,11 +525,12 @@ export default function TableSelectionModal({
               {/* Grid Layout - Đồng bộ với TableLayoutEditor */}
               <div 
                 className="grid"
-                style={getGridContainerStyle(selectedLayout.gridCols, selectedLayout.gridRows)}
+                style={getGridContainerStyle(selectedLayout.gridCols ?? 12, selectedLayout.gridRows ?? 10)}
               >
-                {Array.from({ length: selectedLayout.gridRows * selectedLayout.gridCols }).map((_, index) => {
-                  const rowIndex = Math.floor(index / selectedLayout.gridCols);
-                  const colIndex = index % selectedLayout.gridCols;
+                {Array.from({ length: (selectedLayout.gridRows ?? 10) * (selectedLayout.gridCols ?? 12) }).map((_, index) => {
+                  const gridCols = selectedLayout.gridCols ?? 12;
+                  const rowIndex = Math.floor(index / gridCols);
+                  const colIndex = index % gridCols;
                   const layoutTable = getTableAtPosition(colIndex, rowIndex);
                   const isMainCell = layoutTable && getTableMainCell(layoutTable).x === colIndex && getTableMainCell(layoutTable).y === rowIndex;
                   const isPartOfTable = layoutTable && !isMainCell;
@@ -536,7 +555,7 @@ export default function TableSelectionModal({
                   if (layoutTable && isMainCell) {
                     const tableWidth = layoutTable.width ?? 1;
                     const tableHeight = layoutTable.height ?? 1;
-                    const rotation = layoutTable.position.rotation || 0;
+                    const rotation = layoutTable.position?.rotation || 0;
                     
                     const isRotated = rotation === 90 || rotation === 270;
                     displayWidth = isRotated ? tableHeight : tableWidth;
@@ -610,13 +629,13 @@ export default function TableSelectionModal({
                         <div
                           className="w-full h-full relative"
                           style={{
-                            transform: `rotate(${layoutTable.position.rotation || 0}deg)`,
+                            transform: `rotate(${layoutTable.position?.rotation || 0}deg)`,
                           }}
                         >
                           <div 
                             className="text-xs font-bold absolute inset-0 flex items-center justify-center pointer-events-none"
                             style={{
-                              transform: `rotate(${-(layoutTable.position.rotation || 0)}deg)`,
+                              transform: `rotate(${-(layoutTable.position?.rotation || 0)}deg)`,
                             }}
                           >
                             {table.tableName}
@@ -648,7 +667,7 @@ export default function TableSelectionModal({
                 return selectedTable ? (
                   <p className="text-sm text-gray-600">
                     Bàn đã chọn: <span className="font-semibold text-gray-900">{selectedTable.tableName}</span>
-                    {selectedTable.location && (
+                    {selectedTable.location && typeof selectedTable.location === 'string' && (
                       <span className="text-gray-500 ml-2">({selectedTable.location})</span>
                     )}
                   </p>

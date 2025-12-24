@@ -28,6 +28,7 @@ export default function AdminMenuPage() {
     total: 0,
     page: 1,
     limit: 10,
+    totalPages: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -88,10 +89,8 @@ export default function AdminMenuPage() {
   }
 
   async function handleDelete(id: string) {
-    if (confirm("Xóa món này?")) {
-      await deleteMenuItem(id);
-      loadMenuItems(page);
-    }
+    await deleteMenuItem(id);
+    loadMenuItems(page);
   }
 
   return (

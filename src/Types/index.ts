@@ -1,194 +1,195 @@
-// Backend Model Types (synced from NestJS schemas)
+// ============================
+// User Types
+// ============================
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  password?: string;
+  avatar?: string;
+  role?: string | { _id: string; name: string };
+  phone?: string;
+  address?: string;
+  isMember?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UserStatusUpdate {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  role?: string | { _id: string; name: string };
+  avatar?: string;
+}
+
+export interface UserFilter {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ApiError {
+  message: string | string[];
+  statusCode?: number;
+  error?: string;
+}
+
+export interface Role {
+  _id: string;
+  name: string;
+  description?: string;
+  permissions?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ============================
+// Guest Types
+// ============================
 export interface Guest {
   _id: string;
-  tableName: string;
-  guestName: string;
+  guestName?: string;
   guestPhone?: string;
-  isPaid: boolean;
-  orders: string[]; // ObjectId array as strings
-  payment: string | null; // ObjectId as string
-  joinedAt: string;
-  createdAt: string;
-  updatedAt: string;
+  tableCode?: string;
+  tableName?: string;
+  orders?: string[];
+  isPaid?: boolean;
+  joinedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
   isDeleted?: boolean;
   deletedAt?: string;
 }
 
+// ============================
+// Menu Item Types
+// ============================
 export interface IMenuItem {
   _id: string;
   name: string;
   description?: string;
-  images?: string[]; // URLs as strings
   price: number;
-  available: boolean;
   category: string;
+  images?: string[];
+  available: boolean;
   preparationTime?: number;
-  tag?: string[];
   isVegetarian?: boolean;
   isVegan?: boolean;
-  createdBy?: {
-    _id: string;
-    email: string;
-  };
-  updatedBy?: {
-    _id: string;
-    email: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+  tag?: string[];
+  createdAt?: string;
+  updatedAt?: string;
   isDeleted?: boolean;
   deletedAt?: string;
 }
+
+export interface PaginatedMenuItem {
+  items: IMenuItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// ============================
+// Order Types
+// ============================
+export type OrderType = 'dine-in' | 'takeaway' | 'delivery';
+export type OrderStatus = 'pending' | 'preparing' | 'served' | 'cancelled';
 
 export interface Order {
   _id: string;
-  guest?: string | Guest; // Can be ObjectId string or populated Guest object
-  user?: string | { _id: string; name?: string; email: string }; // Can be ObjectId or populated User
-  items: {
-    item: string | IMenuItem; // Can be ObjectId or populated MenuItem
+  items: Array<{
+    item: string | IMenuItem;
     quantity: number;
-    note?: string;
     unitPrice: number;
     subtotal: number;
-    _id?: string;
-  }[];
-  status: "pending" | "preparing" | "served" | "cancelled";
+    note?: string;
+  }>;
   totalPrice: number;
-  isPaid: boolean;
-  specialInstructions?: string;
-  estimatedReadyTime?: string;
-  table?: string; // ObjectId as string
-  orderType: OrderType;
-  deliveryAddress?: string;
-  customerName?: string; // For online orders without guest
+  status: OrderStatus;
+  orderType?: OrderType;
+  user?: string | User;
+  guest?: string | Guest;
+  customerName?: string;
   customerPhone?: string;
-  createdBy?: {
-    _id: string;
-    email: string;
-  };
-  updatedBy?: {
-    _id: string;
-    email: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-  isDeleted?: boolean;
-  deletedAt?: string;
-  __v?: number;
-}
-
-export interface User {
-  _id: string;
-  name?: string;
-  email: string;
-  role: string; // Always normalized to role name string by API layer
-  isMember: boolean;
-  phone?: string;
-  address?: string;
-  avatar?: string;
-  transactions: string[]; // ObjectId array as strings
-  createdBy?: {
-    _id: string;
-    email: string;
-  };
-  updatedBy?: {
-    _id: string;
-    email: string;
-  };
-  deletedBy?: {
-    _id: string;
-    email: string;
-  };
-  refreshToken?: string;
-  createdAt: string;
-  updatedAt: string;
-  // Backend may represent activation state in different ways
-  status?: "active" | "inactive";
-  isActive?: boolean;
-  isDeleted?: boolean;
-  deletedAt?: string;
-}
-
-// Matches the backend DTO
-export enum OrderType {
-  DINE_IN = "DINE_IN",
-  DELIVERY = "DELIVERY",
-  PICKUP = "PICKUP",
-}
-
-class OrderItemDto {
-  item!: string; // MenuItem ID
-  quantity!: number;
-  note?: string;
-}
-
-export class CreateOnlineOrderDto {
-  items!: OrderItemDto[];
-  customerName!: string;
-  customerPhone!: string;
-  orderType!: OrderType;
   deliveryAddress?: string;
   specialInstructions?: string;
-  user?: string; // Optional: if the user is logged in
+  paid?: boolean;
+  isPaid?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Payment {
+// ============================
+// Review Types
+// ============================
+export interface Review {
   _id: string;
-  guest: string | Guest;
-  amount: number;
-  method: "cash" | "QR" | "card";
-  status?: "pending" | "completed" | "failed";
+  menuItem: string | IMenuItem;
+  user?: string | User;
+  guestName?: string;
+  rating: number;
+  comment?: string;
+  images?: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  repliedBy?: {
+    _id: string;
+    email: string;
+    reply: string;
+    repliedAt: string;
+  };
   createdAt: string;
   updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
+export interface ReviewRating {
+  average: number;
+  count: number;
+}
+
+export interface RatingDistribution {
+  5: number;
+  4: number;
+  3: number;
+  2: number;
+  1: number;
+}
+
+export interface PaginatedReview {
+  data: Review[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// ============================
+// Table Types
+// ============================
 export interface Table {
   _id: string;
   tableName: string;
-  location?: string;
-  status: "available" | "occupied" | "reserved" | "maintenance";
-  qrCode?: string;
-  currentOrder?: string; // ObjectId as string
-  width?: number; // Số ô chiếm theo chiều ngang (mặc định: 1)
-  height?: number; // Số ô chiếm theo chiều dọc (mặc định: 1)
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface TableLayoutZoneBounds {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-}
-
-export interface TableLayoutZone {
-  zoneId: string;
-  zoneName: string;
-  bounds: TableLayoutZoneBounds;
-}
-
-export interface TableLayoutTable {
-  tableId: string;
-  tableName: string;
-  position: { x: number; y: number; rotation?: number };
+  capacity: number;
+  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
+  zone?: string | Zone;
+  location?: string | {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
   width?: number;
   height?: number;
-  zoneName?: string;
-  type?: string;
-  capacity?: number;
-}
-
-export interface TableLayout {
-  _id?: string;
-  name: string;
-  gridCols: number;
-  gridRows: number;
-  isActive?: boolean;
-  zones?: TableLayoutZone[];
-  tables: TableLayoutTable[];
-  backgroundImage?: string;
-  description?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -197,73 +198,135 @@ export interface Zone {
   _id: string;
   name: string;
   description?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Legacy User interface for auth context - keep for backward compatibility
-export interface AuthUser {
-  id?: string;
-  _id?: string;
-  email: string;
-  name: string;
-  avatarUrl?: string;
-  role: "ADMIN" | "STAFF" | "USER" | "admin" | "staff" | "user";
+  tables?: Table[];
   createdAt?: string;
   updatedAt?: string;
 }
 
-// Frontend Types
-export interface OrderItem {
-  menuItem: IMenuItem;
-  quantity: number;
+export interface TableLayoutZone {
+  _id?: string;
+  name: string;
+  color?: string;
+  bounds?: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  };
 }
 
-export interface CartItem extends OrderItem {
-  _tempId?: string;
+export interface TableLayout {
+  _id?: string;
+  name: string;
+  isActive?: boolean;
+  gridCols?: number;
+  gridRows?: number;
+  zones?: TableLayoutZone[];
+  tables?: Array<{
+    _id?: string;
+    tableId?: string;
+    tableName: string;
+    capacity: number;
+    zone?: string;
+    width?: number;
+    height?: number;
+    position?: {
+      x: number;
+      y: number;
+      rotation?: number;
+    };
+    location?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+  }>;
+  backgroundImage?: string;
+  description?: string;
+  layout?: {
+    rows: number;
+    cols: number;
+    cells: Array<{
+      row: number;
+      col: number;
+      type: 'table' | 'empty' | 'wall';
+      tableId?: string;
+      tableName?: string;
+    }>;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  loginAdmin: (credentials: {
-    email: string;
-    password: string;
-  }) => Promise<boolean>;
-  loginStaff: (credentials: {
-    email: string;
-    password: string;
-  }) => Promise<boolean>;
-  logoutUser: () => Promise<void>;
-  refreshToken: () => Promise<boolean>;
+// ============================
+// Voucher Types
+// ============================
+export interface Voucher {
+  _id: string;
+  code: string;
+  name: string;
+  description?: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderValue?: number;
+  minOrderTotal?: number;
+  maxDiscount?: number;
+  startDate: string;
+  endDate: string;
+  usageLimit?: number;
+  usedCount?: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface GuestOrderContextType {
-  cart: CartItem[];
-  addToCart: (item: IMenuItem, quantity: number) => void;
-  removeFromCart: (menuItemId: string) => void;
-  updateQuantity: (menuItemId: string, quantity: number) => void;
-  clearCart: () => void;
-  getTotalAmount: () => number;
-  submitOrder: (guestId: string) => Promise<boolean>;
+export interface ApplyVoucherPayload {
+  code: string;
+  orderTotal: number;
+  items?: {
+    itemId: string;
+    quantity: number;
+    price?: number;
+  }[];
+  userId?: string;
 }
 
-// API Response Types
-export interface ApiResponse<T> {
-  data: T;
+export interface ApplyVoucherResponse {
+  code: string;
+  discountAmount: number;
+  finalTotal: number;
+  voucherId: string;
   message?: string;
-  success: boolean;
 }
 
-export interface PaginatedOrder {
-  items: Order[];
+export interface PaginatedVoucher {
+  items: Voucher[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-// Revenue Analytics Types
+// ============================
+// Analytics Types
+// ============================
+export interface TopSellingItem {
+  _id: string;
+  name: string;
+  category: string;
+  totalSold: number;
+  totalRevenue: number;
+  image?: string;
+}
+
+export interface ChartDataPoint {
+  date: string;
+  value: number;
+  count?: number;
+  label?: string;
+}
+
 export interface RevenueStats {
   totalRevenue: number;
   totalOrders: number;
@@ -285,107 +348,107 @@ export interface RevenueChartData {
   orders: number;
 }
 
-export interface TopSellingItem {
-  _id: string;
-  name: string;
-  category: string;
-  totalSold: number;
-  totalRevenue: number;
-  image?: string;
-}
-
-export interface ChartDataPoint {
-  date: string;
+export interface StatusDistribution {
+  status: string;
   count: number;
-}
-
-// Filter Types
-export interface UserFilter {
-  search?: string;
-  role?: string;
-  status?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
-
-export interface OrderFilter {
-  search?: string;
-  status?: 'all' | 'pending' | 'preparing' | 'served' | 'cancelled';
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-  dateFrom?: string;
-  dateTo?: string;
-}
-
-export interface MenuItemFilter {
-  search?: string;
-  category?: string;
-  available?: boolean;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
-
-// API Response wrapper
-export interface ApiError {
-  statusCode: number;
-  message: string | string[];
-  error?: string;
-  timestamp?: string;
-  path?: string;
-}
-
-// User status update payload
-export interface UserStatusUpdate {
-  name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  role?: string;
-  avatar?: string;
+  percentage: number;
 }
 
 export interface OrderAnalytics {
   totalOrders: number;
-  pendingOrders: number;
-  completedOrders: number;
-  cancelledOrders: number;
-  statusDistribution: {
-    status: string;
-    count: number;
-    percentage: number;
-  }[];
-  dailyOrders: ChartDataPoint[];
+  pendingOrders?: number;
+  completedOrders?: number;
+  cancelledOrders?: number;
+  pending?: number;
+  preparing?: number;
+  served?: number;
+  cancelled?: number;
+  statusDistribution?: StatusDistribution[];
+  dailyOrders?: ChartDataPoint[];
+  averagePreparationTime?: number;
+  peakHours?: Array<{
+    hour: number;
+    orderCount: number;
+  }>;
 }
 
 export interface CustomerAnalytics {
   totalCustomers: number;
   newCustomers: number;
   returningCustomers: number;
-  customerGrowth: {
+  averageOrderValue?: number;
+  customerGrowth?: {
     current: number;
     previous: number;
     change: number;
   };
+  topCustomers?: Array<{
+    _id: string;
+    name: string;
+    email: string;
+    totalOrders: number;
+    totalSpent: number;
+  }>;
 }
 
-// User Role interface
-export interface Role {
+export interface Section {
   _id: string;
-  name: string;
-  permissions: string[];
-  description?: string;
+  title: string;
+  content: string;
+  type?: string;
+  url?: string;
+  image?: string;
+  quote?: string;
+  teamMembers?: Array<{
+    name: string;
+    role: string;
+    photo: string;
+  }>;
+  order: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ============================
+// Notification Types
+// ============================
+export type NotificationType = 
+  | 'order_new'
+  | 'order_status_changed'
+  | 'order_cancelled'
+  | 'reservation_new'
+  | 'reservation_confirmed'
+  | 'reservation_cancelled'
+  | 'review_new'
+  | 'review_approved'
+  | 'system';
+
+export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface INotification {
+  _id: string;
+  user?: string;
+  guestId?: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  title: string;
+  message: string;
+  data?: {
+    orderId?: string;
+    reservationId?: string;
+    reviewId?: string;
+    [key: string]: any;
+  };
+  read: boolean;
+  readAt?: string;
+  actionUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
+export interface PaginatedNotification {
+  data: INotification[];
   pagination: {
     page: number;
     limit: number;
@@ -394,75 +457,12 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// Form Types
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
+// Alias for backward compatibility (avoid conflict with browser Notification API)
+export type Notification = INotification;
 
-export interface GuestFormData {
-  tableName: string;
-  guestName: string;
-}
-
-export interface MenuItemFormData {
-  name: string;
-  price: number;
-  description: string;
-  available: boolean;
-  category?: string;
-}
-
-export interface TableFormData {
-  tableName: string;
-  status: "available" | "occupied";
-}
-
-export interface PaymentFormData {
-  guest: string;
-  amount: number;
-  method: "cash" | "QR" | "card";
-}
-
-export type UserRole = "ADMIN" | "STAFF" | "GUEST";
-
-export type Section =
-  | {
-      type: "text";
-      title: string;
-      content: string;
-      order: number;
-    }
-  | {
-      type: "image";
-      title: string;
-      url: string;
-      order: number;
-    }
-  | {
-      type: "team";
-      title: string;
-      teamMembers: { name: string; role: string; photo: string }[];
-      order: number;
-    }
-  | {
-      type: "quote";
-      quote: string;
-      order: number;
-    }
-  | {
-      type: "video";
-      title: string;
-      url: string;
-      order: number;
-    };
-
-export interface PaginatedMenuItem {
-  items: IMenuItem[];
-  total: number;
-  page: number;
-  limit: number;
-}
+// ============================
+// Additional Types
+// ============================
 export interface PaginatedUser {
   items: User[];
   total: number;
@@ -471,51 +471,39 @@ export interface PaginatedUser {
   totalPages: number;
 }
 
-// ============================
-// Voucher Types
-// ============================
-export type VoucherDiscountType = 'percentage' | 'fixed';
-
-export interface Voucher {
+export interface Payment {
   _id: string;
-  code: string;
-  discountType: VoucherDiscountType;
-  discountValue: number;
-  startDate?: string;
-  endDate?: string;
-  usageLimit?: number;
-  usedCount: number;
-  isActive: boolean;
-  minOrderTotal?: number;
-  maxDiscount?: number;
-  createdAt: string;
-  updatedAt: string;
+  order?: string | Order;
+  orders?: string[] | Order[];
+  amount: number;
+  method: string;
+  status?: string;
+  guest?: string | Guest;
+  user?: string | User;
+  transactionId?: string;
+  paidAt?: string;
+  isRefunded?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface PaginatedVoucher {
-  items: Voucher[];
+export interface OrdersApiResponse {
+  items: Order[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-export interface ApplyVoucherPayload {
-  code: string;
-  orderTotal: number;
-  items?: { itemId: string; quantity: number; price?: number }[];
+export interface CreateOnlineOrderDto {
+  items: Array<{
+    item: string;
+    quantity: number;
+  }>;
+  user?: string;
+  customerName?: string;
+  customerPhone?: string;
+  orderType: OrderType;
+  deliveryAddress?: string;
+  specialInstructions?: string;
 }
-
-export interface ApplyVoucherResponse {
-  code: string;
-  discountAmount: number;
-  finalTotal: number;
-  voucherId: string;
-}
-export type OrdersApiResponse =
-| Order[] // trực tiếp
-| { data: Order[] }
-| { data: { orders: Order[] } }
-| { data: { results: Order[] } }
-| { orders: Order[] }
-| { results: Order[] };

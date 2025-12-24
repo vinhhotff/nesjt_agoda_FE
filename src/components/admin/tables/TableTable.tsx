@@ -133,7 +133,13 @@ export default function TableTable({ tables, onEdit, onDelete, onView }: Props) 
                 </div>
               </td>
               <td className="py-4 px-6">
-                <span className="text-gray-700">{table.location || 'Chưa có'}</span>
+                <span className="text-gray-700">
+                  {typeof table.location === 'string' 
+                    ? table.location 
+                    : table.location 
+                      ? `(${table.location.x}, ${table.location.y})`
+                      : 'Chưa có'}
+                </span>
               </td>
               <td className="py-4 px-6">
                 <span

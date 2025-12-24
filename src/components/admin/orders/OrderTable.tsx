@@ -118,8 +118,8 @@ export default function OrderTable({
           </td>
           <td className="py-4 px-6">
             <div className="text-sm">
-              <div className="text-gray-900">{new Date(order.createdAt).toLocaleDateString()}</div>
-              <div className="text-gray-500">{new Date(order.createdAt).toLocaleTimeString()}</div>
+              <div className="text-gray-900">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</div>
+              <div className="text-gray-500">{order.createdAt ? new Date(order.createdAt).toLocaleTimeString() : 'N/A'}</div>
             </div>
           </td>
           <td className="py-4 px-6">

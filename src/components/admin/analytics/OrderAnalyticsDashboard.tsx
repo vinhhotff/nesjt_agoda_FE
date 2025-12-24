@@ -72,21 +72,21 @@ const OrderAnalyticsDashboard: React.FC<OrderAnalyticsDashboardProps> = ({
       {/* Order Summary Stats */}
       <OrderSummary 
         totalOrders={data.totalOrders}
-        pendingOrders={data.pendingOrders}
-        completedOrders={data.completedOrders}
-        cancelledOrders={data.cancelledOrders}
+        pendingOrders={data.pendingOrders || data.pending || 0}
+        completedOrders={data.completedOrders || data.served || 0}
+        cancelledOrders={data.cancelledOrders || data.cancelled || 0}
       />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Status Distribution */}
         <StatusDistributionChart 
-          statusDistribution={data.statusDistribution}
+          statusDistribution={Array.isArray(data.statusDistribution) ? data.statusDistribution : []}
         />
 
         {/* Daily Orders Trend */}
         <DailyOrdersChart 
-          dailyOrders={data.dailyOrders}
+          dailyOrders={data.dailyOrders || []}
         />
       </div>
     </div>

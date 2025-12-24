@@ -31,8 +31,8 @@ const RoleMappingTest: React.FC = () => {
       // Check if roles are properly mapped
       const roleIssues = result.items.filter(user => 
         !user.role || 
-        user.role.length === 24 || // Likely ObjectId
-        typeof user.role !== 'string'
+        (typeof user.role === 'string' && user.role.length === 24) || // Likely ObjectId
+        (typeof user.role === 'object' && !('name' in user.role))
       );
       
       if (roleIssues.length > 0) {
@@ -81,11 +81,15 @@ const RoleMappingTest: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="font-medium">{user.name || 'No Name'}</span>
                   <span className={`px-2 py-1 rounded text-xs ${
-                    user.role && user.role.length < 24 
+                    user.role && (typeof user.role === 'string' || (typeof user.role === 'object' && 'name' in user.role))
                       ? 'bg-green-100 text-green-700' 
                       : 'bg-red-100 text-red-700'
                   }`}>
-                    Role: {user.role || 'No Role'}
+                    Role: {typeof user.role === 'string' 
+                      ? user.role 
+                      : user.role && typeof user.role === 'object' && 'name' in user.role
+                        ? user.role.name
+                        : 'No Role'}
                   </span>
                 </div>
                 <div className="text-sm text-gray-600">{user.email}</div>

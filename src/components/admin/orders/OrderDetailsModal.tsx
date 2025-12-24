@@ -115,7 +115,7 @@ export default function OrderDetailsModal({
                   const itemName = menuItem?.name || (typeof item.item === 'string' ? item.item : 'Unknown item');
                   
                   return (
-                    <div key={item._id || index} className="flex justify-between items-start gap-4 py-3 border-b border-gray-200 last:border-b-0">
+                    <div key={index} className="flex justify-between items-start gap-4 py-3 border-b border-gray-200 last:border-b-0">
                       <div className="flex gap-3 flex-1">
                         {menuItem?.images?.[0] && (
                           <img 

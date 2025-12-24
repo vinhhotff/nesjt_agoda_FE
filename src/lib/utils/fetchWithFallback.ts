@@ -74,10 +74,14 @@ export const validateOrderAnalytics = (data: any): OrderAnalytics | null => {
 export const ensureChartDataPoints = (data: any[]): ChartDataPoint[] => {
   if (!Array.isArray(data)) return [];
   
-  return data.map((item, index) => ({
-    date: item.date || item._id || `Day ${index + 1}`,
-    count: Number(item.count) || Number(item.value) || 0,
-  }));
+  return data.map((item, index) => {
+    const value = Number(item.value) || Number(item.count) || 0;
+    return {
+      date: item.date || item._id || `Day ${index + 1}`,
+      value: value,
+      count: Number(item.count) || value,
+    };
+  });
 };
 
 // API response normalizer

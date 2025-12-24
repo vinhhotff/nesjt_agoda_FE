@@ -105,16 +105,19 @@ export default function TableSelectionPage() {
   // Filter tables based on selected layout
   const filteredTables = selectedLayout
     ? tables.filter(table => 
-        selectedLayout.tables.some(layoutTable => layoutTable.tableId === table._id)
+        selectedLayout.tables?.some(layoutTable => (layoutTable._id || layoutTable.tableId) === table._id) || false
       )
     : tables;
 
   // Calculate guests count per table
   const guestsByTable = (Array.isArray(guests) ? guests : []).reduce((acc, guest) => {
-    if (!acc[guest.tableName]) {
-      acc[guest.tableName] = 0;
+    const tableName = guest.tableName || guest.tableCode || '';
+    if (tableName && !acc[tableName]) {
+      acc[tableName] = 0;
     }
-    acc[guest.tableName]++;
+    if (tableName) {
+      acc[tableName]++;
+    }
     return acc;
   }, {} as Record<string, number>);
 
@@ -189,7 +192,7 @@ export default function TableSelectionPage() {
                         <p className="text-sm text-gray-600 mb-2">{layout.description}</p>
                       )}
                       <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span>{layout.tables.length} bàn</span>
+                        <span>{layout.tables?.length || 0} bàn</span>
                         {layout.zones && layout.zones.length > 0 && (
                           <span>{layout.zones.length} khu</span>
                         )}
@@ -282,7 +285,11 @@ export default function TableSelectionPage() {
                       <div>
                         <p className="text-sm text-gray-600">Vị trí</p>
                         <p className="text-lg font-semibold text-gray-900">
-                          {selectedTable.location || "Chưa có"}
+                          {typeof selectedTable.location === 'string' 
+                            ? selectedTable.location 
+                            : selectedTable.location 
+                              ? `${selectedTable.location.x}, ${selectedTable.location.y}` 
+                              : "Chưa có"}
                         </p>
                       </div>
                       <div>

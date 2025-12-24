@@ -250,6 +250,7 @@ export const getDailyRevenueChart = async (period: string = '7d'): Promise<Chart
     // Convert RevenueChartData[] to ChartDataPoint[]
     return revenueData.map(item => ({
       date: item.date,
+      value: item.revenue,
       count: item.revenue // Using revenue as count for chart display
     }));
   } catch (error) {

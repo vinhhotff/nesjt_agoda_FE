@@ -39,7 +39,13 @@ export default function AdminProfilePage() {
           <h2 className="text-lg font-semibold text-gray-900">Thông tin tài khoản</h2>
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div><div className="text-gray-500">Email</div><div className="font-medium text-gray-900">{user.email}</div></div>
-            <div><div className="text-gray-500">Vai trò</div><div className="font-medium text-gray-900">{user.role}</div></div>
+            <div><div className="text-gray-500">Vai trò</div><div className="font-medium text-gray-900">
+              {typeof user.role === 'string' 
+                ? user.role 
+                : user.role && typeof user.role === 'object' && 'name' in user.role
+                  ? (user.role as { name: string }).name
+                  : 'user'}
+            </div></div>
             <div><div className="text-gray-500">ID</div><div className="font-medium text-gray-900 break-all">{user._id}</div></div>
             <div><div className="text-gray-500">Ngày tạo</div><div className="font-medium text-gray-900">{user.createdAt ? new Date(user.createdAt).toLocaleString() : "—"}</div></div>
           </div>

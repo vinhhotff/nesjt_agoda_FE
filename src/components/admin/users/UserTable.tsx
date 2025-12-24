@@ -103,8 +103,8 @@ export default function UserTable({ users, roles, actionLoading, onEdit, onReset
             </td>
             <td className="py-4 px-6">
               <div className="text-sm">
-                <div className="text-gray-900">{new Date(user.createdAt).toLocaleDateString()}</div>
-                <div className="text-gray-500">{new Date(user.createdAt).toLocaleTimeString()}</div>
+                <div className="text-gray-900">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</div>
+                <div className="text-gray-500">{user.createdAt ? new Date(user.createdAt).toLocaleTimeString() : 'N/A'}</div>
               </div>
             </td>
             <td className="py-4 px-6">

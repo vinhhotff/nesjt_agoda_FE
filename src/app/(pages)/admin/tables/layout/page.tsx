@@ -250,16 +250,16 @@ export default function TableLayoutPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-gray-500">Số bàn:</span>
-                          <span className="font-semibold text-gray-900">{layout.tables.length}</span>
+                          <span className="font-semibold text-gray-900">{layout.tables?.length || 0}</span>
                         </div>
                         {layout.zones && layout.zones.length > 0 && (
                           <div className="flex items-center gap-2">
                             <span className="text-gray-500">Số khu:</span>
                             <span className="font-semibold text-gray-900">{layout.zones.length}</span>
-                            <span className="text-gray-400">({layout.zones.map(z => z.zoneName).join(', ')})</span>
+                            <span className="text-gray-400">({layout.zones.map(z => z.name).join(', ')})</span>
                           </div>
                         )}
-                        {layout.tables.length > 0 && (
+                        {layout.tables && layout.tables.length > 0 && (
                           <div className="flex items-center gap-2">
                             <span className="text-gray-500">Bàn:</span>
                             <div className="flex flex-wrap gap-1">
@@ -269,7 +269,7 @@ export default function TableLayoutPage() {
                                   className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium"
                                 >
                                   {table.tableName}
-                                  {table.zoneName && ` (${table.zoneName})`}
+                                  {table.zone && ` (${table.zone})`}
                                 </span>
                               ))}
                               {layout.tables.length > 5 && (

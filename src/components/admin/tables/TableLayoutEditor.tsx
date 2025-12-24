@@ -112,17 +112,19 @@ export default function TableLayoutEditor({
       if (
         cell.x < 0 ||
         cell.y < 0 ||
-        cell.x >= layout.gridCols ||
-        cell.y >= layout.gridRows
+        (layout.gridCols !== undefined && cell.x >= layout.gridCols) ||
+        (layout.gridRows !== undefined && cell.y >= layout.gridRows)
       ) {
         return true; // Vượt quá grid
       }
     }
 
     // Kiểm tra collision với các bàn khác
+    if (!layout.tables) return false;
     for (const table of layout.tables) {
       if (excludeTableId && table.tableId === excludeTableId) continue;
 
+      if (!table.position) continue;
       const tableWidth = table.width || 1;
       const tableHeight = table.height || 1;
       const tableRotation = table.position.rotation || 0;
@@ -165,7 +167,9 @@ export default function TableLayoutEditor({
     });
 
     // Kiểm tra xem có bàn nào đang chiếm vị trí này không
+    if (!layout.tables) return;
     const existing = layout.tables.find(t => {
+      if (!t.position) return false;
       const cells = getTableOccupiedCells(
         t.position.x,
         t.position.y,
@@ -180,7 +184,7 @@ export default function TableLayoutEditor({
       // Nếu click vào bàn đã có, xóa bàn đó
       setLayout({
         ...layout,
-        tables: layout.tables.filter(t => t.tableId !== existing.tableId),
+        tables: (layout.tables || []).filter(t => t.tableId !== existing.tableId),
       });
       toast.success(`Đã xóa bàn ${existing.tableName} khỏi layout`);
       return;
@@ -194,7 +198,7 @@ export default function TableLayoutEditor({
 
       // Tự động tìm zone cho vị trí này
       const zoneForPosition = getZoneForCell(x, y);
-      const zoneNameToUse = zoneForPosition?.zoneName || selectedZone?.name;
+      const zoneNameToUse = zoneForPosition?.name || selectedZone?.name;
 
       // Add new table - đảm bảo lưu đúng width và height
       const newTable = {
@@ -218,7 +222,7 @@ export default function TableLayoutEditor({
     
     setLayout({
       ...layout,
-      tables: [...layout.tables, newTable],
+      tables: [...(layout.tables || []), newTable],
     });
 
     // Tự động cập nhật location của bàn trong database
@@ -267,8 +271,9 @@ export default function TableLayoutEditor({
       setDraggedTable(null);
     } else if (draggedPlacedTable) {
       // Di chuyển bàn đã đặt - không tạo bản sao
+      if (!layout.tables) return;
       const table = layout.tables.find(t => t.tableId === draggedPlacedTable);
-      if (table) {
+      if (table && table.position) {
         const originalTable = tables.find(t => t._id === table.tableId);
         if (originalTable) {
           // Kiểm tra xem vị trí mới có hợp lệ không (trừ bàn đang di chuyển)
@@ -292,7 +297,7 @@ export default function TableLayoutEditor({
           // Cập nhật vị trí bàn (di chuyển, không tạo mới)
           setLayout({
             ...layout,
-            tables: layout.tables.map(t =>
+            tables: (layout.tables || []).map(t =>
               t.tableId === draggedPlacedTable
                 ? {
                     ...t,
@@ -322,15 +327,15 @@ export default function TableLayoutEditor({
   const handleRemoveTable = (tableId: string) => {
     setLayout({
       ...layout,
-      tables: layout.tables.filter(t => t.tableId !== tableId),
+      tables: (layout.tables || []).filter(t => t.tableId !== tableId),
     });
   };
 
   const handleRotateTable = (tableId: string) => {
     setLayout({
       ...layout,
-      tables: layout.tables.map(t => {
-        if (t.tableId !== tableId) return t;
+      tables: (layout.tables || []).map(t => {
+        if (t.tableId !== tableId || !t.position) return t;
 
         const currentRotation = t.position.rotation || 0;
         const newRotation = (currentRotation + 90) % 360;
@@ -361,7 +366,9 @@ export default function TableLayoutEditor({
   };
 
   const getTableAtPosition = (x: number, y: number) => {
+    if (!layout.tables) return undefined;
     return layout.tables.find(t => {
+      if (!t.position) return false;
       const cells = getTableOccupiedCells(
         t.position.x,
         t.position.y,
@@ -374,12 +381,14 @@ export default function TableLayoutEditor({
   };
 
   // Helper: Lấy ô chính (top-left) của bàn
-  const getTableMainCell = (table: TableLayout['tables'][0]) => {
+  const getTableMainCell = (table: NonNullable<TableLayout['tables']>[0]) => {
+    if (!table.position) return { x: 0, y: 0 };
     return { x: table.position.x, y: table.position.y };
   };
 
   // Helper: Kiểm tra xem một ô có nằm trong zone không
   const isCellInZone = (x: number, y: number, zone: NonNullable<TableLayout['zones']>[0]) => {
+    if (!zone.bounds) return false;
     const { x1, y1, x2, y2 } = zone.bounds;
     const minX = Math.min(x1, x2);
     const maxX = Math.max(x1, x2);
@@ -447,9 +456,9 @@ export default function TableLayoutEditor({
       y2: Math.max(zoneSelectionStart.y, zoneSelectionEnd.y),
     };
 
-    const newZone = {
-      zoneId: zones.find(z => z.name === zoneSelectionName.trim())?._id || Date.now().toString(),
-      zoneName: zoneSelectionName.trim(),
+    const newZone: TableLayoutZone = {
+      _id: zones.find(z => z.name === zoneSelectionName.trim())?._id || Date.now().toString(),
+      name: zoneSelectionName.trim(),
       bounds: zoneBounds,
     };
 
@@ -467,7 +476,7 @@ export default function TableLayoutEditor({
   };
 
   const availableTables = (Array.isArray(tables) ? tables : []).filter(
-    table => !layout.tables.some(lt => lt.tableId === table._id)
+    table => !(layout.tables || []).some(lt => lt.tableId === table._id)
   );
 
   return (
@@ -519,7 +528,7 @@ export default function TableLayoutEditor({
             type="number"
             min="4"
             max="30"
-            value={layout.gridCols}
+            value={layout.gridCols ?? 12}
             onChange={(e) =>
               setLayout({ ...layout, gridCols: parseInt(e.target.value) || 12 })
             }
@@ -534,7 +543,7 @@ export default function TableLayoutEditor({
             type="number"
             min="4"
             max="30"
-            value={layout.gridRows}
+            value={layout.gridRows ?? 10}
             onChange={(e) =>
               setLayout({ ...layout, gridRows: parseInt(e.target.value) || 10 })
             }
@@ -616,7 +625,7 @@ export default function TableLayoutEditor({
                   key={index}
                   className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-medium border border-emerald-300"
                 >
-                  {zone.zoneName} ({(zone.bounds.x2 - zone.bounds.x1 + 1)}x{zone.bounds.y2 - zone.bounds.y1 + 1})
+                  {zone.name} {(zone.bounds ? `(${(zone.bounds.x2 - zone.bounds.x1 + 1)}x${zone.bounds.y2 - zone.bounds.y1 + 1})` : '')}
                 </div>
               ))}
             </div>
@@ -653,7 +662,11 @@ export default function TableLayoutEditor({
                     <span>{table.tableName}</span>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {table.location || 'Chưa có vị trí'} • {table.width || 1}x{table.height || 1} ô
+                    {typeof table.location === 'string' 
+                      ? table.location 
+                      : table.location 
+                        ? `(${table.location.x}, ${table.location.y})`
+                        : 'Chưa có vị trí'} • {table.width || 1}x{table.height || 1} ô
                   </div>
                   <div className="text-xs text-blue-600 mt-1">Kéo thả vào grid để đặt bàn</div>
                 </div>
@@ -689,15 +702,15 @@ export default function TableLayoutEditor({
             <div 
               className="grid gap-1"
               style={{
-                gridTemplateColumns: `repeat(${layout.gridCols}, 48px)`,
-                gridTemplateRows: `repeat(${layout.gridRows}, 48px)`,
+                gridTemplateColumns: `repeat(${layout.gridCols ?? 10}, 48px)`,
+                gridTemplateRows: `repeat(${layout.gridRows ?? 10}, 48px)`,
                 width: 'fit-content',
                 margin: '0 auto'
               }}
             >
-              {Array.from({ length: layout.gridRows * layout.gridCols }).map((_, index) => {
-                const rowIndex = Math.floor(index / layout.gridCols);
-                const colIndex = index % layout.gridCols;
+              {Array.from({ length: (layout.gridRows ?? 10) * (layout.gridCols ?? 10) }).map((_, index) => {
+                const rowIndex = Math.floor(index / (layout.gridCols ?? 10));
+                const colIndex = index % (layout.gridCols ?? 10);
                 const table = getTableAtPosition(colIndex, rowIndex);
                 const isSelected = selectedTable !== null;
                 const isMainCell = table && getTableMainCell(table).x === colIndex && getTableMainCell(table).y === rowIndex;
@@ -727,7 +740,7 @@ export default function TableLayoutEditor({
                   const originalTable = tables.find(t => t._id === table.tableId);
                   const tableWidth = table.width ?? originalTable?.width ?? 1;
                   const tableHeight = table.height ?? originalTable?.height ?? 1;
-                  const rotation = table.position.rotation || 0;
+                  const rotation = table.position?.rotation || 0;
                   
                   // 0°: width x height
                   // 90°: height x width (swap)
@@ -795,11 +808,11 @@ export default function TableLayoutEditor({
                     }}
                     title={
                       table && isMainCell
-                        ? `${table.tableName} (${table.width || 1}x${table.height || 1}) - ${table.position.rotation || 0}° - Khu: ${table.zoneName || 'Chưa có'} - Kéo để di chuyển, Click để xóa`
+                        ? `${table.tableName} (${table.width || 1}x${table.height || 1}) - ${table.position?.rotation || 0}° - Khu: ${table.zone || 'Chưa có'} - Kéo để di chuyển, Click để xóa`
                         : isInZoneSelection
                         ? 'Vùng đang chọn cho khu'
                         : zoneForCell
-                        ? `Khu: ${zoneForCell.zoneName} - Bàn đặt vào đây sẽ tự động thuộc khu này`
+                        ? `Khu: ${zoneForCell.name} - Bàn đặt vào đây sẽ tự động thuộc khu này`
                         : isDragOver
                         ? 'Thả bàn vào đây'
                         : isSelected
@@ -812,16 +825,16 @@ export default function TableLayoutEditor({
                     {table && isMainCell ? (
                       <div
                         draggable
-                        onDragStart={(e) => handleDragStartPlaced(e, table.tableId)}
+                        onDragStart={(e) => handleDragStartPlaced(e, table.tableId || '')}
                         className="w-full h-full relative"
                         style={{
-                          transform: `rotate(${table.position.rotation || 0}deg)`, // Xoay container/background
+                          transform: `rotate(${table.position?.rotation || 0}deg)`, // Xoay container/background
                         }}
                       >
                         <div 
                           className="text-xs font-bold absolute inset-0 flex items-center justify-center pointer-events-none"
                           style={{
-                            transform: `rotate(${-(table.position.rotation || 0)}deg)`, // Xoay ngược lại để text giữ nguyên hướng
+                            transform: `rotate(${-(table.position?.rotation || 0)}deg)`, // Xoay ngược lại để text giữ nguyên hướng
                           }}
                         >
                           {table.tableName}
@@ -839,13 +852,13 @@ export default function TableLayoutEditor({
           </div>
 
           {/* Placed Tables List */}
-          {layout.tables.length > 0 && (
+          {(layout.tables || []).length > 0 && (
             <div className="mt-6">
               <h4 className="text-md font-semibold text-gray-900 mb-3">
-                Bàn đã đặt ({layout.tables.length})
+                Bàn đã đặt ({(layout.tables || []).length})
               </h4>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {layout.tables.map((lt) => {
+                {(layout.tables || []).map((lt) => {
                   const table = tables.find(t => t._id === lt.tableId);
                   return (
                     <div
@@ -857,19 +870,21 @@ export default function TableLayoutEditor({
                           {lt.tableName}
                         </span>
                         <span className="text-sm text-gray-500 ml-2">
-                          ({lt.position.x}, {lt.position.y}) - {lt.width || 1}x{lt.height || 1} - {lt.position.rotation || 0}°
+                          {lt.position ? `(${lt.position.x}, ${lt.position.y}) - ${lt.width || 1}x${lt.height || 1} - ${lt.position.rotation || 0}°` : `N/A - ${lt.width || 1}x${lt.height || 1}`}
                         </span>
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleRotateTable(lt.tableId)}
+                          onClick={() => lt.tableId && handleRotateTable(lt.tableId)}
                           className="p-1 text-amber-600 hover:bg-amber-50 rounded transition-colors"
                           title="Xoay bàn"
+                          disabled={!lt.tableId}
                         >
                           <RotateCw className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleRemoveTable(lt.tableId)}
+                          onClick={() => lt.tableId && handleRemoveTable(lt.tableId)}
+                          disabled={!lt.tableId}
                           className="p-1 text-red-600 hover:bg-red-50 rounded"
                           title="Xóa bàn"
                         >
@@ -895,7 +910,7 @@ export default function TableLayoutEditor({
         </button>
         <button
           onClick={() => onSave(layout)}
-          disabled={!layout.name || layout.tables.length === 0}
+          disabled={!layout.name || (layout.tables || []).length === 0}
           className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
         >
           <Save className="w-5 h-5" />

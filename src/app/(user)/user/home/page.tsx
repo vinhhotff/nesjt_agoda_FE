@@ -133,9 +133,9 @@ export default function UserDashboardPage() {
         );
 
   const quickStats = [
-    { label: "Đơn gần đây", value: (ordersRes.data ?? []).length, accent: "from-amber-200 to-amber-100" },
-    { label: "Món bán chạy", value: (topSellingRes.data ?? []).length, accent: "from-sky-200 to-sky-100" },
-    { label: "Hạng hiện tại", value: tier.name, accent: "from-emerald-200 to-emerald-100" },
+    { label: "Đơn gần đây", value: String((ordersRes.data ?? []).length), accent: "from-amber-200 to-amber-100" },
+    { label: "Món bán chạy", value: String((topSellingRes.data ?? []).length), accent: "from-sky-200 to-sky-100" },
+    { label: "Hạng hiện tại", value: String(tier.name), accent: "from-emerald-200 to-emerald-100" },
   ];
 
   if (loading || !user) {

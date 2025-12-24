@@ -239,7 +239,7 @@ const fetchWithFallback = async <T,>(apiCall: () => Promise<T>, defaultValue: T,
           <StatsCard
             title="Total Revenue"
             value={revenueStats?.totalRevenue || 0}
-            change={revenueStats?.growth.revenue}
+            change={revenueStats?.growth.revenue || 0}
             icon={<DollarSign className="w-6 h-6" />}
             color="green"
             suffix=" VND"
@@ -247,7 +247,7 @@ const fetchWithFallback = async <T,>(apiCall: () => Promise<T>, defaultValue: T,
           <StatsCard
             title="Total Orders"
             value={revenueStats?.totalOrders || 0}
-            change={revenueStats?.growth.orders}
+            change={revenueStats?.growth.orders || 0}
             icon={<ShoppingCart className="w-6 h-6" />}
             color="blue"
           />
@@ -261,7 +261,7 @@ const fetchWithFallback = async <T,>(apiCall: () => Promise<T>, defaultValue: T,
           <StatsCard
             title="Total Customers"
             value={customerAnalytics?.totalCustomers || 0}
-            change={customerAnalytics?.customerGrowth.change}
+            change={customerAnalytics?.customerGrowth?.change || 0}
             icon={<Users className="w-6 h-6" />}
             color="yellow"
           />
@@ -273,7 +273,7 @@ const fetchWithFallback = async <T,>(apiCall: () => Promise<T>, defaultValue: T,
             <RevenueTrendChart data={revenueChart} />
           </div>
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-            <OrderStatusChart data={orderAnalytics?.statusDistribution || []} />
+            <OrderStatusChart data={Array.isArray(orderAnalytics?.statusDistribution) ? orderAnalytics.statusDistribution : []} />
           </div>
         </div>
 
@@ -355,7 +355,7 @@ const fetchWithFallback = async <T,>(apiCall: () => Promise<T>, defaultValue: T,
                   <span className="text-gray-700 font-semibold">Success Rate</span>
                   <span className="font-bold text-green-700 text-xl">
                     {orderAnalytics && orderAnalytics.totalOrders > 0 ? 
-                      ((orderAnalytics.completedOrders / orderAnalytics.totalOrders) * 100).toFixed(1) 
+                      (((orderAnalytics.completedOrders || orderAnalytics.served || 0) / orderAnalytics.totalOrders) * 100).toFixed(1) 
                       : 0}%
                   </span>
                 </div>

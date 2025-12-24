@@ -1,5 +1,8 @@
 "use client";
 
+// PUBLIC PAGE - No authentication required
+// This page allows guests to make reservations without logging in
+
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "@/src/lib/utils/toast";
@@ -46,6 +49,13 @@ export default function ReservationPage() {
     // kiểm tra ngày giờ phải ở tương lai
     if (reservationDateTime <= now) {
       toast.error("Ngày và giờ đặt bàn phải ở tương lai!");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Nếu đã chọn bàn nhưng chưa có date/time, báo lỗi
+    if (form.tableNumber && (!form.date || !form.time)) {
+      toast.error("Vui lòng chọn ngày và giờ trước khi chọn bàn!");
       setIsSubmitting(false);
       return;
     }
@@ -417,10 +427,7 @@ export default function ReservationPage() {
                   </label>
                   <div
                     onClick={() => {
-                      if (!form.date || !form.time) {
-                        toast.warning("Please select date and time first to check table availability");
-                        return;
-                      }
+                      // Allow opening modal even without date/time - validation will happen on submit
                       setShowTableModal(true);
                     }}
                     className="relative w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-gray-100/50 border-2 border-gray-200 rounded-2xl hover:from-yellow-50 hover:to-yellow-100/50 hover:border-yellow-400 transition-all text-left flex items-center justify-between cursor-pointer group/btn shadow-sm hover:shadow-md"
@@ -444,7 +451,7 @@ export default function ReservationPage() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setForm({ ...form, tableNumber: '', tableId: '' });
-                          toast.info("Table selection removed. You can book without deposit.");
+                          // No toast - user can see the change visually
                         }}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                       >
