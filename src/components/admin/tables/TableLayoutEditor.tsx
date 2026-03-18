@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { X, Save, Plus, Trash2, RotateCw, MapPin } from 'lucide-react';
 import { Table, Zone, TableLayout, TableLayoutZone } from '@/src/Types';
 import { motion } from 'framer-motion';
@@ -14,6 +14,135 @@ interface TableLayoutEditorProps {
   onSave: (layout: TableLayout) => void;
   onCancel: () => void;
 }
+
+// MEMOIZED CELL COMPONENT - Prevents unnecessary re-renders
+interface GridCellProps {
+  rowIndex: number;
+  colIndex: number;
+  table: any;
+  isSelected: boolean;
+  isMainCell: boolean;
+  isDragOver: boolean;
+  isInZoneSelection: boolean;
+  zoneForCell: TableLayoutZone | undefined;
+  displayWidth: number;
+  displayHeight: number;
+  onClick: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  onMouseDown: () => void;
+  onMouseEnter: () => void;
+  onMouseUp: () => void;
+  onDragStartPlaced: (e: React.DragEvent) => void;
+  selectedZone: Zone | null;
+}
+
+const GridCell = React.memo<GridCellProps>(function GridCell({
+  rowIndex,
+  colIndex,
+  table,
+  isMainCell,
+  isDragOver,
+  isInZoneSelection,
+  zoneForCell,
+  displayWidth,
+  displayHeight,
+  onClick,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onMouseDown,
+  onMouseEnter,
+  onMouseUp,
+  onDragStartPlaced,
+  selectedZone,
+}: GridCellProps) {
+  if (!table) {
+    // Empty cell
+    return (
+      <div
+        key={`${rowIndex}-${colIndex}`}
+        onMouseDown={onMouseDown}
+        onMouseEnter={onMouseEnter}
+        onMouseUp={onMouseUp}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onClick={onClick}
+        className={`
+          rounded-lg border-2 transition-all relative
+          ${isInZoneSelection
+            ? 'bg-amber-300 border-amber-500 border-dashed'
+            : zoneForCell
+            ? 'bg-amber-100 border-amber-300'
+            : isDragOver
+            ? 'bg-amber-200 border-amber-400 border-dashed'
+            : 'bg-white border-gray-300 hover:bg-gray-50'
+          }
+        `}
+        style={{
+          gridColumn: `${colIndex + 1}`,
+          gridRow: `${rowIndex + 1}`,
+        }}
+      />
+    );
+  }
+
+  // Table cell
+  if (!isMainCell) {
+    return (
+      <div
+        key={`${rowIndex}-${colIndex}`}
+        className="w-12 h-12"
+        style={{
+          gridColumn: colIndex + 1,
+          gridRow: rowIndex + 1
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      key={`${rowIndex}-${colIndex}`}
+      onMouseDown={onMouseDown}
+      onMouseEnter={onMouseEnter}
+      onMouseUp={onMouseUp}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onClick={onClick}
+      className={`
+        rounded-lg border-2 transition-all relative
+        bg-gradient-to-br from-amber-500 to-orange-500 border-amber-600 text-white cursor-move shadow-md
+      `}
+      style={{
+        gridColumn: `${colIndex + 1} / span ${displayWidth}`,
+        gridRow: `${rowIndex + 1} / span ${displayHeight}`,
+      }}
+      title={`${table.tableName} (${table.width || 1}x${table.height || 1}) - ${table.position?.rotation || 0}° - Khu: ${table.zone || 'Chưa có'} - Kéo để di chuyển, Click để xóa`}
+    >
+      <div
+        draggable
+        onDragStart={onDragStartPlaced}
+        className="w-full h-full relative"
+        style={{
+          transform: `rotate(${table.position?.rotation || 0}deg)`,
+        }}
+      >
+        <div
+          className="text-xs font-bold absolute inset-0 flex items-center justify-center pointer-events-none"
+          style={{
+            transform: `rotate(${-(table.position?.rotation || 0)}deg)`,
+          }}
+        >
+          {table.tableName}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export default function TableLayoutEditor({
   layout: initialLayout,
@@ -36,6 +165,39 @@ export default function TableLayoutEditor({
   const [zoneSelectionEnd, setZoneSelectionEnd] = useState<{ x: number; y: number } | null>(null);
   const [zoneSelectionName, setZoneSelectionName] = useState('');
   const [showZoneSaveModal, setShowZoneSaveModal] = useState(false);
+
+  // SPATIAL MAP: Tạo map để lookup nhanh hơn cho collision detection
+  // Key: "x,y" -> Value: table info
+  const spatialMapRef = useRef<Map<string, { tableId: string; cells: Array<{x: number; y: number}> }>>(new Map());
+
+  useEffect(() => {
+    // Rebuild spatial map khi layout.tables thay đổi
+    const map = new Map<string, { tableId: string; cells: Array<{x: number; y: number}> }>();
+    if (layout.tables) {
+      for (const table of layout.tables) {
+        if (!table.position) continue;
+        const cells = getTableOccupiedCells(
+          table.position.x,
+          table.position.y,
+          table.width || 1,
+          table.height || 1,
+          table.position.rotation || 0
+        );
+        for (const cell of cells) {
+          map.set(`${cell.x},${cell.y}`, { tableId: table.tableId, cells });
+        }
+      }
+    }
+    spatialMapRef.current = map;
+  }, [layout.tables, layout.gridCols, layout.gridRows]);
+
+  // MEMOIZED: Zone lookup cache
+  const zoneLookupCacheRef = useRef<Map<string, TableLayoutZone | undefined>>(new Map());
+
+  useEffect(() => {
+    // Clear zone cache khi layout.zones thay đổi
+    zoneLookupCacheRef.current.clear();
+  }, [layout.zones]);
 
   useEffect(() => {
     setLayout(initialLayout);
@@ -96,8 +258,8 @@ export default function TableLayoutEditor({
     return cells;
   };
 
-  // Helper: Kiểm tra xem có bàn nào đang chiếm các ô này không
-  const checkCollision = (
+  // Helper: Kiểm tra xem có bàn nào đang chiếm các ô này không (OPTIMIZED với spatial map)
+  const checkCollision = useCallback((
     x: number,
     y: number,
     width: number,
@@ -119,56 +281,31 @@ export default function TableLayoutEditor({
       }
     }
 
-    // Kiểm tra collision với các bàn khác
-    if (!layout.tables) return false;
-    for (const table of layout.tables) {
-      if (excludeTableId && table.tableId === excludeTableId) continue;
-
-      if (!table.position) continue;
-      const tableWidth = table.width || 1;
-      const tableHeight = table.height || 1;
-      const tableRotation = table.position.rotation || 0;
-      const tableCells = getTableOccupiedCells(
-        table.position.x,
-        table.position.y,
-        tableWidth,
-        tableHeight,
-        tableRotation
-      );
-
-      // Kiểm tra xem có ô nào trùng không
-      for (const cell of cells) {
-        if (tableCells.some(tc => tc.x === cell.x && tc.y === cell.y)) {
-          return true; // Có collision
-        }
+    // Sử dụng spatial map để kiểm tra collision (O(cells) thay vì O(tables * cells))
+    for (const cell of cells) {
+      const key = `${cell.x},${cell.y}`;
+      const existing = spatialMapRef.current.get(key);
+      if (existing && existing.tableId !== excludeTableId) {
+        return true; // Có collision
       }
     }
 
     return false;
-  };
+  }, [layout.gridCols, layout.gridRows]);
 
-  const handleGridClick = (x: number, y: number) => {
+  const handleGridClick = useCallback((x: number, y: number) => {
     if (selectedTable) {
       placeTableAtPosition(selectedTable, x, y);
       setSelectedTable(null);
     }
-  };
+  }, [selectedTable]);
 
   const placeTableAtPosition = async (table: Table, x: number, y: number, rotation: number = 0) => {
-    // Đảm bảo lấy width và height từ table object
     const tableWidth = table.width ?? 1;
     const tableHeight = table.height ?? 1;
-    
-    console.log('placeTableAtPosition:', {
-      tableName: table.tableName,
-      tableWidth,
-      tableHeight,
-      tableObject: table
-    });
 
-    // Kiểm tra xem có bàn nào đang chiếm vị trí này không
-    if (!layout.tables) return;
-    const existing = layout.tables.find(t => {
+    // Kiểm tra xem có bàn nào đang chiếm vị trí này không (sử dụng spatial map)
+    const existing = layout.tables?.find(t => {
       if (!t.position) return false;
       const cells = getTableOccupiedCells(
         t.position.x,
@@ -212,14 +349,6 @@ export default function TableLayoutEditor({
         capacity: 4,
       };
     
-    console.log('Placing table:', {
-      tableName: table.tableName,
-      width: tableWidth,
-      height: tableHeight,
-      position: { x, y, rotation },
-      newTable
-    });
-    
     setLayout({
       ...layout,
       tables: [...(layout.tables || []), newTable],
@@ -239,27 +368,40 @@ export default function TableLayoutEditor({
     }
   };
 
-  const handleDragStart = (e: React.DragEvent, table: Table) => {
+  const handleDragStart = useCallback((e: React.DragEvent, table: Table) => {
     setDraggedTable(table);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', table._id);
-  };
+  }, []);
 
-  const handleDragStartPlaced = (e: React.DragEvent, tableId: string) => {
+  const handleDragStartPlaced = useCallback((e: React.DragEvent, tableId: string) => {
     setDraggedPlacedTable(tableId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', tableId);
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent, x: number, y: number) => {
+  // Debounced drag over handler - reduce re-renders during drag
+  const dragOverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const handleDragOver = useCallback((e: React.DragEvent, x: number, y: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverCell({ x, y });
-  };
+    
+    // Debounce drag over updates to reduce re-renders
+    if (dragOverTimeoutRef.current) {
+      clearTimeout(dragOverTimeoutRef.current);
+    }
+    dragOverTimeoutRef.current = setTimeout(() => {
+      setDragOverCell({ x, y });
+    }, 10); // 10ms debounce
+  }, []);
 
-  const handleDragLeave = () => {
+  const handleDragLeave = useCallback(() => {
+    if (dragOverTimeoutRef.current) {
+      clearTimeout(dragOverTimeoutRef.current);
+    }
     setDragOverCell(null);
-  };
+  }, []);
 
   const handleDrop = async (e: React.DragEvent, x: number, y: number) => {
     e.preventDefault();
@@ -324,61 +466,50 @@ export default function TableLayoutEditor({
     }
   };
 
-  const handleRemoveTable = (tableId: string) => {
-    setLayout({
-      ...layout,
-      tables: (layout.tables || []).filter(t => t.tableId !== tableId),
+  const handleRemoveTable = useCallback((tableId: string) => {
+    setLayout(prev => ({
+      ...prev,
+      tables: (prev.tables || []).filter(t => t.tableId !== tableId),
+    }));
+  }, []);
+
+  const handleRotateTable = useCallback((tableId: string) => {
+    setLayout(prev => {
+      // Find the table first to check collision
+      const table = (prev.tables || []).find(t => t.tableId === tableId && t.position);
+      if (!table) return prev;
+
+      const currentRotation = table.position.rotation || 0;
+      const newRotation = (currentRotation + 90) % 360;
+      const tableWidth = table.width || 1;
+      const tableHeight = table.height || 1;
+
+      // Check collision before rotating
+      if (checkCollision(table.position.x, table.position.y, tableWidth, tableHeight, newRotation, tableId)) {
+        alert('Không thể xoay bàn ở vị trí này. Vị trí sau khi xoay sẽ bị collision.');
+        return prev;
+      }
+
+      return {
+        ...prev,
+        tables: (prev.tables || []).map(t =>
+          t.tableId === tableId && t.position
+            ? { ...t, position: { ...t.position, rotation: newRotation } }
+            : t
+        ),
+      };
     });
-  };
+  }, [checkCollision]);
 
-  const handleRotateTable = (tableId: string) => {
-    setLayout({
-      ...layout,
-      tables: (layout.tables || []).map(t => {
-        if (t.tableId !== tableId || !t.position) return t;
-
-        const currentRotation = t.position.rotation || 0;
-        const newRotation = (currentRotation + 90) % 360;
-        const tableWidth = t.width || 1;
-        const tableHeight = t.height || 1;
-
-        // Tính toán effective width/height sau khi xoay
-        // Mỗi lần xoay 90°: swap width và height
-        const isRotated = newRotation === 90 || newRotation === 270;
-        const effectiveWidth = isRotated ? tableHeight : tableWidth;
-        const effectiveHeight = isRotated ? tableWidth : tableHeight;
-
-        // Kiểm tra collision sau khi xoay
-        if (checkCollision(t.position.x, t.position.y, tableWidth, tableHeight, newRotation, tableId)) {
-          alert('Không thể xoay bàn ở vị trí này. Vị trí sau khi xoay sẽ bị collision.');
-          return t;
-        }
-
-        return {
-          ...t,
-          position: {
-            ...t.position,
-            rotation: newRotation,
-          },
-        };
-      }),
-    });
-  };
-
-  const getTableAtPosition = (x: number, y: number) => {
-    if (!layout.tables) return undefined;
-    return layout.tables.find(t => {
-      if (!t.position) return false;
-      const cells = getTableOccupiedCells(
-        t.position.x,
-        t.position.y,
-        t.width || 1,
-        t.height || 1,
-        t.position.rotation || 0
-      );
-      return cells.some(cell => cell.x === x && cell.y === y);
-    });
-  };
+  // Helper: Lấy bàn tại vị trí (OPTIMIZED với spatial map)
+  const getTableAtPosition = useCallback((x: number, y: number) => {
+    const key = `${x},${y}`;
+    const existing = spatialMapRef.current.get(key);
+    if (existing && layout.tables) {
+      return layout.tables.find(t => t.tableId === existing.tableId);
+    }
+    return undefined;
+  }, [layout.tables]);
 
   // Helper: Lấy ô chính (top-left) của bàn
   const getTableMainCell = (table: NonNullable<TableLayout['tables']>[0]) => {
@@ -397,37 +528,58 @@ export default function TableLayoutEditor({
     return x >= minX && x <= maxX && y >= minY && y <= maxY;
   };
 
-  // Helper: Lấy zone mà một ô thuộc về
-  const getZoneForCell = (x: number, y: number): TableLayoutZone | undefined => {
+  // Helper: Lấy zone mà một ô thuộc về (OPTIMIZED với cache)
+  const getZoneForCell = useCallback((x: number, y: number): TableLayoutZone | undefined => {
     if (!layout.zones) return undefined;
-    return layout.zones.find(zone => isCellInZone(x, y, zone));
-  };
+    
+    const key = `${x},${y}`;
+    
+    // Check cache first
+    if (zoneLookupCacheRef.current.has(key)) {
+      return zoneLookupCacheRef.current.get(key);
+    }
+    
+    // Find zone and cache result
+    const zone = layout.zones.find(z => isCellInZone(x, y, z));
+    zoneLookupCacheRef.current.set(key, zone);
+    return zone;
+  }, [layout.zones]);
 
-  const handleZoneSelectionStart = (x: number, y: number) => {
+  // Debounced zone selection move
+  const zoneMoveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleZoneSelectionStart = useCallback((x: number, y: number) => {
     if (zoneSelectionMode) {
       setZoneSelectionStart({ x, y });
       setZoneSelectionEnd({ x, y });
     }
-  };
+  }, [zoneSelectionMode]);
 
-  const handleZoneSelectionMove = (x: number, y: number) => {
+  const handleZoneSelectionMove = useCallback((x: number, y: number) => {
     if (zoneSelectionMode && zoneSelectionStart) {
-      setZoneSelectionEnd({ x, y });
+      // Debounce zone selection moves
+      if (zoneMoveTimeoutRef.current) {
+        clearTimeout(zoneMoveTimeoutRef.current);
+      }
+      zoneMoveTimeoutRef.current = setTimeout(() => {
+        setZoneSelectionEnd({ x, y });
+      }, 16); // ~60fps
     }
-  };
+  }, [zoneSelectionMode, zoneSelectionStart]);
 
-  const handleZoneSelectionEnd = () => {
+  const handleZoneSelectionEnd = useCallback(() => {
+    if (zoneMoveTimeoutRef.current) {
+      clearTimeout(zoneMoveTimeoutRef.current);
+    }
     if (zoneSelectionMode && zoneSelectionStart && zoneSelectionEnd) {
-      // Kiểm tra xem có vùng được chọn không
       if (zoneSelectionStart.x !== zoneSelectionEnd.x || zoneSelectionStart.y !== zoneSelectionEnd.y) {
         setShowZoneSaveModal(true);
       } else {
-        // Reset nếu không có vùng nào được chọn
         setZoneSelectionStart(null);
         setZoneSelectionEnd(null);
       }
     }
-  };
+  }, [zoneSelectionMode, zoneSelectionStart, zoneSelectionEnd]);
 
   const handleSaveZoneSelection = async () => {
     if (!zoneSelectionStart || !zoneSelectionEnd || !zoneSelectionName.trim()) {
@@ -475,9 +627,20 @@ export default function TableLayoutEditor({
     setShowZoneSaveModal(false);
   };
 
-  const availableTables = (Array.isArray(tables) ? tables : []).filter(
-    table => !(layout.tables || []).some(lt => lt.tableId === table._id)
-  );
+  const availableTables = useMemo(() => 
+    (Array.isArray(tables) ? tables : []).filter(
+      table => !(layout.tables || []).some(lt => lt.tableId === table._id)
+    ), [tables, layout.tables]);
+
+  // MEMOIZED: Grid cells array
+  const gridCells = useMemo(() => {
+    const cols = layout.gridCols ?? 10;
+    const rows = layout.gridRows ?? 10;
+    return Array.from({ length: rows * cols }).map((_, index) => ({
+      rowIndex: Math.floor(index / cols),
+      colIndex: index % cols,
+    }));
+  }, [layout.gridCols, layout.gridRows]);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
@@ -708,9 +871,7 @@ export default function TableLayoutEditor({
                 margin: '0 auto'
               }}
             >
-              {Array.from({ length: (layout.gridRows ?? 10) * (layout.gridCols ?? 10) }).map((_, index) => {
-                const rowIndex = Math.floor(index / (layout.gridCols ?? 10));
-                const colIndex = index % (layout.gridCols ?? 10);
+              {gridCells.map(({ rowIndex, colIndex }) => {
                 const table = getTableAtPosition(colIndex, rowIndex);
                 const isSelected = selectedTable !== null;
                 const isMainCell = table && getTableMainCell(table).x === colIndex && getTableMainCell(table).y === rowIndex;
@@ -731,36 +892,17 @@ export default function TableLayoutEditor({
                 }
 
                 // Tính toán kích thước hiển thị dựa trên rotation
-                // Mỗi lần xoay 90°: swap width và height
                 let displayWidth = 1;
                 let displayHeight = 1;
                 if (table && isMainCell) {
-                  // Lấy width và height từ layout table (đã lưu khi đặt bàn)
-                  // Nếu không có trong layout, fallback về original table từ props
                   const originalTable = tables.find(t => t._id === table.tableId);
                   const tableWidth = table.width ?? originalTable?.width ?? 1;
                   const tableHeight = table.height ?? originalTable?.height ?? 1;
                   const rotation = table.position?.rotation || 0;
                   
-                  // 0°: width x height
-                  // 90°: height x width (swap)
-                  // 180°: width x height
-                  // 270°: height x width (swap)
                   const isRotated = rotation === 90 || rotation === 270;
                   displayWidth = isRotated ? tableHeight : tableWidth;
                   displayHeight = isRotated ? tableWidth : tableHeight;
-                  
-                  // Debug log để kiểm tra
-                  if (tableWidth !== 1 || tableHeight !== 1) {
-                    console.log(`Table ${table.tableName} display:`, {
-                      layoutTable: { width: table.width, height: table.height },
-                      originalTable: { width: originalTable?.width, height: originalTable?.height },
-                      final: { width: tableWidth, height: tableHeight },
-                      rotation: `${rotation}°`,
-                      display: `${displayWidth}x${displayHeight}`,
-                      isRotated
-                    });
-                  }
                 }
 
                 const isDragOver = dragOverCell?.x === colIndex && dragOverCell?.y === rowIndex;

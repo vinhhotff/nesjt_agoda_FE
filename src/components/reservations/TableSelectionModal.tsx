@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, Check, Users, MapPin, RotateCw, Layout } from 'lucide-react';
 import { Table, TableLayout } from '@/src/Types';
 import { getTables } from '@/src/lib/api';
@@ -53,6 +53,51 @@ export default function TableSelectionModal({
   const [selectedLayout, setSelectedLayout] = useState<TableLayout | null>(null);
   const [isLayoutFetching, setIsLayoutFetching] = useState(false);
   const [layoutError, setLayoutError] = useState<string | null>(null);
+
+  // SPATIAL MAP: Tạo map để lookup nhanh hơn cho getTableAtPosition
+  const spatialMapRef = useRef<Map<string, string>>(new Map());
+
+  // Rebuild spatial map when selectedLayout changes
+  useEffect(() => {
+    const map = new Map<string, string>();
+    if (selectedLayout?.tables) {
+      for (const table of selectedLayout.tables) {
+        if (!table.position) continue;
+        
+        const tableWidth = table.width || 1;
+        const tableHeight = table.height || 1;
+        const rotation = table.position.rotation || 0;
+        const isRotated = rotation === 90 || rotation === 270;
+        const displayWidth = isRotated ? tableHeight : tableWidth;
+        const displayHeight = isRotated ? tableWidth : tableHeight;
+        
+        for (let dy = 0; dy < displayHeight; dy++) {
+          for (let dx = 0; dx < displayWidth; dx++) {
+            const x = table.position.x + dx;
+            const y = table.position.y + dy;
+            map.set(`${x},${y}`, table.tableId);
+          }
+        }
+      }
+    }
+    spatialMapRef.current = map;
+  }, [selectedLayout]);
+
+  // MEMOIZED: Grid cells array
+  const gridCells = useMemo(() => {
+    const cols = selectedLayout?.gridCols ?? 12;
+    const rows = selectedLayout?.gridRows ?? 10;
+    return Array.from({ length: rows * cols }).map((_, index) => ({
+      rowIndex: Math.floor(index / cols),
+      colIndex: index % cols,
+    }));
+  }, [selectedLayout?.gridCols, selectedLayout?.gridRows]);
+
+  // MEMOIZED: Layout table IDs set for faster lookup
+  const layoutTableIdsSet = useMemo(() => {
+    if (!selectedLayout?.tables) return new Set<string>();
+    return new Set(selectedLayout.tables.map(t => t.tableId));
+  }, [selectedLayout?.tables]);
 
   const fetchActiveLayout = async (availableTables: Table[]) => {
     setIsLayoutFetching(true);
@@ -331,27 +376,17 @@ export default function TableSelectionModal({
     return 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed opacity-50';
   };
 
-  // Helper: Lấy bàn tại vị trí (x, y) từ layout
-  const getTableAtPosition = (x: number, y: number) => {
+  // Helper: Lấy bàn tại vị trí (x, y) từ layout (OPTIMIZED với spatial map)
+  const getTableAtPosition = useCallback((x: number, y: number) => {
     if (!selectedLayout || !selectedLayout.tables) return null;
     
-    return selectedLayout.tables.find((lt) => {
-      if (!lt.position) return false;
-      const mainX = lt.position.x;
-      const mainY = lt.position.y;
-      const tableWidth = lt.width || 1;
-      const tableHeight = lt.height || 1;
-      const rotation = lt.position.rotation || 0;
-      
-      // Tính toán kích thước hiển thị dựa trên rotation
-      const isRotated = rotation === 90 || rotation === 270;
-      const displayWidth = isRotated ? tableHeight : tableWidth;
-      const displayHeight = isRotated ? tableWidth : tableHeight;
-      
-      // Kiểm tra xem (x, y) có nằm trong vùng của bàn không
-      return x >= mainX && x < mainX + displayWidth && y >= mainY && y < mainY + displayHeight;
-    });
-  };
+    // Use spatial map for O(1) lookup
+    const tableId = spatialMapRef.current.get(`${x},${y}`);
+    if (tableId) {
+      return selectedLayout.tables.find(t => t.tableId === tableId);
+    }
+    return null;
+  }, [selectedLayout]);
 
   // Helper: Lấy ô chính (top-left) của bàn
   const getTableMainCell = (layoutTable: NonNullable<TableLayout['tables']>[0]) => {
@@ -527,10 +562,7 @@ export default function TableSelectionModal({
                 className="grid"
                 style={getGridContainerStyle(selectedLayout.gridCols ?? 12, selectedLayout.gridRows ?? 10)}
               >
-                {Array.from({ length: (selectedLayout.gridRows ?? 10) * (selectedLayout.gridCols ?? 12) }).map((_, index) => {
-                  const gridCols = selectedLayout.gridCols ?? 12;
-                  const rowIndex = Math.floor(index / gridCols);
-                  const colIndex = index % gridCols;
+                {gridCells.map(({ rowIndex, colIndex }) => {
                   const layoutTable = getTableAtPosition(colIndex, rowIndex);
                   const isMainCell = layoutTable && getTableMainCell(layoutTable).x === colIndex && getTableMainCell(layoutTable).y === rowIndex;
                   const isPartOfTable = layoutTable && !isMainCell;
