@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Use stored user immediately (non-blocking)
       const storedUser = getStoredUser();
       if (storedUser) {
         setUser(storedUser);
@@ -65,19 +66,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(userData);
           localStorage.setItem(USER_KEY, JSON.stringify(userData));
         } else {
-          setUser(null);
-          localStorage.removeItem(USER_KEY);
+          if (!storedUser) {
+            setUser(null);
+            localStorage.removeItem(USER_KEY);
+          }
         }
       } catch (err: any) {
         if (err?.response?.status === 400 || err?.response?.status === 401) {
           setUser(null);
           localStorage.removeItem(USER_KEY);
-        } else if (storedUser) {
-          setUser(storedUser);
-        } else {
-          setUser(null);
-          localStorage.removeItem(USER_KEY);
         }
+        // If we have stored user, keep them logged in
       }
 
       setLoading(false);
