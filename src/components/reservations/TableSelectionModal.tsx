@@ -75,7 +75,9 @@ export default function TableSelectionModal({
           for (let dx = 0; dx < displayWidth; dx++) {
             const x = table.position.x + dx;
             const y = table.position.y + dy;
-            map.set(`${x},${y}`, table.tableId);
+            if (table.tableId) {
+              map.set(`${x},${y}`, table.tableId);
+            }
           }
         }
       }

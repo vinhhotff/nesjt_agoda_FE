@@ -184,7 +184,9 @@ export default function TableLayoutEditor({
           table.position.rotation || 0
         );
         for (const cell of cells) {
-          map.set(`${cell.x},${cell.y}`, { tableId: table.tableId, cells });
+          if (table.tableId) {
+            map.set(`${cell.x},${cell.y}`, { tableId: table.tableId, cells });
+          }
         }
       }
     }
@@ -477,7 +479,7 @@ export default function TableLayoutEditor({
     setLayout(prev => {
       // Find the table first to check collision
       const table = (prev.tables || []).find(t => t.tableId === tableId && t.position);
-      if (!table) return prev;
+      if (!table || !table.position) return prev;
 
       const currentRotation = table.position.rotation || 0;
       const newRotation = (currentRotation + 90) % 360;
