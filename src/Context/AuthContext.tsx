@@ -5,6 +5,9 @@ import { login, refresh, logout } from '../lib/api';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 
+const TOKEN_KEY = process.env.NEXT_PUBLIC_JWT_COOKIE_NAME || 'token';
+const USER_KEY = 'user';
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -19,45 +22,61 @@ export const useAuth = () => {
   return ctx;
 
 }
+function getStoredUser(): User | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(USER_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  useEffect(() => {
-    async function checkAuth() {
-      setLoading(true);
+  const [isMounted, setIsMounted] = useState(false);
 
-      // Check if token exists before calling refresh
-      const token = Cookies.get(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
+    async function checkAuth() {
+      const token = Cookies.get(TOKEN_KEY);
       if (!token) {
-        // No token, user is not logged in
         setUser(null);
-        localStorage.removeItem("user");
+        localStorage.removeItem(USER_KEY);
         setLoading(false);
         return;
       }
 
+      const storedUser = getStoredUser();
+      if (storedUser) {
+        setUser(storedUser);
+      }
+
       try {
-        const response = await refresh(); // gọi API
+        const response = await refresh();
         if (response.data?.data?.user) {
-          const user = response.data.data.user;
-          setUser(user);
-          localStorage.setItem("user", JSON.stringify(user));
+          const userData = response.data.data.user;
+          setUser(userData);
+          localStorage.setItem(USER_KEY, JSON.stringify(userData));
         } else {
           setUser(null);
-          localStorage.removeItem("user");
+          localStorage.removeItem(USER_KEY);
         }
       } catch (err: any) {
-        // Silently handle auth errors - 400/401 are normal when user is not logged in
-        // Only log unexpected errors
         if (err?.response?.status === 400 || err?.response?.status === 401) {
-          // Normal case: user is not authenticated, silently set user to null
           setUser(null);
-          localStorage.removeItem("user");
+          localStorage.removeItem(USER_KEY);
+        } else if (storedUser) {
+          setUser(storedUser);
         } else {
-          // Unexpected error - log it but don't show error overlay
-          console.error("Refresh error:", err);
           setUser(null);
-          localStorage.removeItem("user");
+          localStorage.removeItem(USER_KEY);
         }
       }
 
@@ -65,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     checkAuth();
-  }, []);
+  }, [isMounted]);
 
 
   const loginUser = useCallback(async (email: string, password: string): Promise<{ success: boolean; role?: string }> => {
@@ -81,8 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const accessToken = res.data.data.accessToken;
 
       setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      Cookies.set(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!, accessToken, {
+      localStorage.setItem(USER_KEY, JSON.stringify(userData));
+      Cookies.set(TOKEN_KEY, accessToken, {
         expires: 1,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -120,33 +139,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = res.data.data.user;
         const accessToken = res.data.data.accessToken;
 
-        // Check if user is admin
         if (userData.role.toLowerCase() !== 'admin') {
           toast.error('Access denied. Admin privileges required.');
           return false;
         }
 
-        // Store user data and token
         setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-        Cookies.set(process.env.NEXT_PUBLIC_JWT_COOKIE_NAME!, accessToken, {
-          expires: 1, // or whatever your expiration logic is
+        localStorage.setItem(USER_KEY, JSON.stringify(userData));
+        Cookies.set(TOKEN_KEY, accessToken, {
+          expires: 1,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict',
           path: '/',
         });
 
-        // Show success toast
         toast.success(`Welcome back, Admin ${userData.name}!`);
         return true;
       } else {
-        // Login failed - wrong credentials
         toast.error('Invalid email or password. Please try again.');
       }
     } catch (error: any) {
       console.error('Admin login failed:', error);
 
-      // Handle different error types
       if (error.response?.status === 400 || error.response?.status === 401) {
         toast.error('Invalid email or password. Please try again.');
       } else if (error.response?.status === 403) {
@@ -163,6 +177,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const logoutUser = useCallback(async (redirectTo: string = "/") => {
     setUser(null);
+    localStorage.removeItem(USER_KEY);
+    Cookies.remove(TOKEN_KEY, { path: '/' });
     await logout();
     toast.success("Logged out successfully");
     setTimeout(() => {
