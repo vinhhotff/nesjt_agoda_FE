@@ -1,11 +1,10 @@
 'use client'
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { User } from '../Types';
-import { login, refresh, logout } from '../lib/api';
+import { login as apiLogin, refresh as apiRefresh, logout as apiLogout } from '../lib/api';
 import { toast } from 'react-toastify';
-import Cookies from 'js-cookie';
 
-const TOKEN_KEY = process.env.NEXT_PUBLIC_JWT_COOKIE_NAME || 'token';
+const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user';
 
 interface AuthContextType {
@@ -32,6 +31,11 @@ function getStoredUser(): User | null {
   }
 }
 
+function getStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -45,10 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isMounted) return;
 
     async function checkAuth() {
-      const token = Cookies.get(TOKEN_KEY);
+      const token = getStoredToken();
       if (!token) {
         setUser(null);
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(TOKEN_KEY);
         setLoading(false);
         return;
       }
@@ -60,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const response = await refresh();
+        const response = await apiRefresh();
         if (response.data?.data?.user) {
           const userData = response.data.data.user;
           setUser(userData);
@@ -69,14 +74,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!storedUser) {
             setUser(null);
             localStorage.removeItem(USER_KEY);
+            localStorage.removeItem(TOKEN_KEY);
           }
         }
       } catch (err: any) {
         if (err?.response?.status === 400 || err?.response?.status === 401) {
           setUser(null);
           localStorage.removeItem(USER_KEY);
+          localStorage.removeItem(TOKEN_KEY);
         }
-        // If we have stored user, keep them logged in
       }
 
       setLoading(false);
@@ -88,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginUser = useCallback(async (email: string, password: string): Promise<{ success: boolean; role?: string }> => {
     try {
-      const res = await login(email, password);
+      const res = await apiLogin(email, password);
 
       if (!res || !res.data || !res.data.data || !res.data.data.user) {
         toast.error('Invalid server response. Please try again.');
@@ -100,12 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(userData);
       localStorage.setItem(USER_KEY, JSON.stringify(userData));
-      Cookies.set(TOKEN_KEY, accessToken, {
-        expires: 1,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/',
-      });
+      if (accessToken) {
+        localStorage.setItem(TOKEN_KEY, accessToken);
+      }
 
       toast.success(`Welcome back, ${userData.name}!`);
       const role = userData.role.toLowerCase();
@@ -132,60 +135,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const loginAdmin = useCallback(async (data: { email: string; password: string }) => {
     try {
-      const res = await login(data.email, data.password);
+      const res = await apiLogin(data.email, data.password);
 
-      if (res.data && res.data.data && res.data.data.user) {
-        const userData = res.data.data.user;
-        const accessToken = res.data.data.accessToken;
-
-        if (userData.role.toLowerCase() !== 'admin') {
-          toast.error('Access denied. Admin privileges required.');
-          return false;
-        }
-
-        setUser(userData);
-        localStorage.setItem(USER_KEY, JSON.stringify(userData));
-        Cookies.set(TOKEN_KEY, accessToken, {
-          expires: 1,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          path: '/',
-        });
-
-        toast.success(`Welcome back, Admin ${userData.name}!`);
-        return true;
-      } else {
-        toast.error('Invalid email or password. Please try again.');
+      if (!res || !res.data || !res.data.data || !res.data.data.user) {
+        return false;
       }
-    } catch (error: any) {
-      console.error('Admin login failed:', error);
 
-      if (error.response?.status === 400 || error.response?.status === 401) {
+      const userData = res.data.data.user;
+      const accessToken = res.data.data.accessToken;
+
+      setUser(userData);
+      localStorage.setItem(USER_KEY, JSON.stringify(userData));
+      if (accessToken) {
+        localStorage.setItem(TOKEN_KEY, accessToken);
+      }
+
+      const role = userData.role?.name?.toLowerCase() || userData.role?.toLowerCase() || '';
+      
+      if (role !== 'admin') {
+        toast.error('You do not have permission to access the admin area.');
+        setUser(null);
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(TOKEN_KEY);
+        return false;
+      }
+
+      toast.success(`Welcome back, ${userData.name}!`);
+      return true;
+    } catch (apiError: any) {
+      console.error('API Error in loginAdmin:', apiError);
+      if (apiError.response?.status === 400 || apiError.response?.status === 401) {
         toast.error('Invalid email or password. Please try again.');
-      } else if (error.response?.status === 403) {
-        toast.error('Access denied. Admin privileges required.');
-      } else if (error.response?.status >= 500) {
+      } else if (apiError.response?.status === 403) {
+        toast.error('Access denied. You do not have permission to access the admin area.');
+      } else if (apiError.response?.status >= 500) {
         toast.error('Server error. Please try again later.');
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
+      } else if (apiError.code === 'NETWORK_ERROR' || apiError.message?.includes('Network Error')) {
+        toast.error('Network error. Please check your connection.');
       } else {
         toast.error('Login failed. Please try again.');
       }
+      return false;
     }
-    return false;
   }, []);
-  const logoutUser = useCallback(async (redirectTo: string = "/") => {
+  const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem(USER_KEY);
-    Cookies.remove(TOKEN_KEY, { path: '/' });
-    await logout();
-    toast.success("Logged out successfully");
-    setTimeout(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.href = '/login';
+  }, []);
+  
+  const logoutUser = useCallback((redirectTo?: string) => {
+    try {
+      apiLogout();
+    } catch (error) {
+      console.error('Logout API error:', error);
+    }
+    
+    setUser(null);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    
+    if (redirectTo) {
       window.location.href = redirectTo;
-    }, 500);
+    } else {
+      window.location.href = '/login';
+    }
   }, []);
 
-  const value = useMemo(() => ({ user, loading, login: loginUser, loginAdmin, logoutUser }), [user, loading, loginUser, loginAdmin, logoutUser]);
+  const value = useMemo(() => ({
+    user,
+    loading,
+    login: loginUser,
+    loginAdmin,
+    logoutUser,
+  }), [user, loading, loginUser, loginAdmin, logoutUser]);
 
   return (
     <AuthContext.Provider value={value}>
@@ -193,5 +217,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-export { AuthContext }
