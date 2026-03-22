@@ -10,6 +10,9 @@ export * from './orderApi';
 // Export Loyalty APIs
 export * from './loyaltyApi';
 
+// Export Reservation Approval APIs
+export * from './reservationApprovalApi';
+
 // Export userApi functions first (new implementation)
 export {
   createUser,
