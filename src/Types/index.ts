@@ -100,7 +100,8 @@ export interface PaginatedMenuItem {
 // ============================
 // Order Types
 // ============================
-export type OrderType = 'dine-in' | 'takeaway' | 'delivery';
+// Backend enum: DINE_IN, DELIVERY, PICKUP
+export type OrderType = 'DINE_IN' | 'DELIVERY' | 'PICKUP';
 export type OrderStatus = 'pending' | 'preparing' | 'served' | 'cancelled';
 
 export interface Order {

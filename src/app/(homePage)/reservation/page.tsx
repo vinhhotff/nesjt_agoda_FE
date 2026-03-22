@@ -9,9 +9,11 @@ import { toast } from "@/src/lib/utils/toast";
 import { reservationsAPI, CreateReservationDto } from "@/src/lib/api/reservationsApi";
 import TableSelectionModal from "@/src/components/reservations/TableSelectionModal";
 import { createPayOSPaymentLink } from "@/src/lib/api/payosApi";
-import { MapPin, Calendar, Clock, Users, Mail, Phone, User, MessageSquare, Sparkles, AlertCircle } from "lucide-react";
+import { useCart } from "@/src/Context/CartContext";
+import { MapPin, Calendar, Clock, Users, Mail, Phone, User, MessageSquare, Sparkles, AlertCircle, UtensilsCrossed } from "lucide-react";
 
 export default function ReservationPage() {
+  const { cartItems, getCartTotal } = useCart();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -23,8 +25,12 @@ export default function ReservationPage() {
     tableNumber: "",
     tableId: "",
   });
+  const [preOrderFood, setPreOrderFood] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
+
+  const cartTotal = getCartTotal();
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -126,8 +132,15 @@ export default function ReservationPage() {
 
         await reservationsAPI.createReservationPublic(reservationData);
 
-        toast.success("Đặt bàn của bạn đã được gửi thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.");
+        const successMessage = preOrderFood && cartItemCount > 0
+          ? `Đặt bàn thành công! Bạn đã đặt trước ${cartItemCount} món ăn. Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.`
+          : "Đặt bàn của bạn đã được gửi thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.";
+        toast.success(successMessage);
         setForm({ name: "", email: "", phone: "", date: "", time: "", guests: 1, specialRequests: "", tableNumber: "", tableId: "" });
+        // Keep cart if pre-order was selected
+        if (!preOrderFood) {
+          // Clear cart only if not pre-ordering
+        }
       } catch (error: any) {
         console.error("Error creating reservation:", error);
         const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra khi gửi đặt bàn. Vui lòng thử lại.";
@@ -417,6 +430,68 @@ export default function ReservationPage() {
                   />
                 </div>
 
+                {/* Pre-order Food Option */}
+                <div className="group">
+                  <div 
+                    onClick={() => setPreOrderFood(!preOrderFood)}
+                    className="relative w-full px-5 py-4 bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-2xl hover:from-orange-100 hover:to-yellow-100 hover:border-orange-400 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-orange-100 rounded-xl shadow-sm">
+                          <UtensilsCrossed className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <span className="text-gray-900 font-bold block">Pre-order Food</span>
+                          <span className="text-xs text-gray-600">Order your meals in advance</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {cartItemCount > 0 && (
+                          <span className="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
+                            {cartItemCount} items
+                          </span>
+                        )}
+                        <div className={`w-12 h-7 rounded-full transition-all duration-300 ${preOrderFood ? 'bg-orange-500' : 'bg-gray-300'}`}>
+                          <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 mt-1 ${preOrderFood ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {preOrderFood && (
+                    <div className="mt-3 space-y-3 animate-fade-in">
+                      <p className="text-sm text-gray-600 flex items-start gap-2">
+                        <span className="text-orange-500">💡</span>
+                        <span>Browse our menu and add items to your cart. You can complete your food order later.</span>
+                      </p>
+                      <a
+                        href="/menu"
+                        className="flex items-center justify-center gap-2 w-full px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all"
+                      >
+                        <UtensilsCrossed className="w-5 h-5" />
+                        Browse Menu & Add to Cart
+                      </a>
+                      {cartItemCount > 0 && (
+                        <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-gray-900">Your pre-order cart</p>
+                              <p className="text-sm text-gray-600">{cartItemCount} items • {cartTotal.toLocaleString('vi-VN')} VND</p>
+                            </div>
+                            <a
+                              href="/menu"
+                              className="px-4 py-2 text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-100 rounded-lg transition-colors"
+                            >
+                              Add more
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Table Selection */}
                 <div className="group/table">
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
@@ -509,15 +584,38 @@ export default function ReservationPage() {
                   ) : form.tableNumber ? (
                     <>
                       <Calendar className="w-6 h-6" />
-                      Pay 300k to Reserve Table
+                      {preOrderFood && cartItemCount > 0
+                        ? `Reserve Table + Pay 300k (${cartItemCount} food items)`
+                        : 'Pay 300k to Reserve Table'}
                     </>
                   ) : (
                     <>
                       <Calendar className="w-6 h-6" />
-                      Book Now
+                      {preOrderFood && cartItemCount > 0
+                        ? `Book Table + ${cartItemCount} Food Items`
+                        : 'Book Now'}
                     </>
                   )}
                 </button>
+                
+                {/* Pre-order Notice */}
+                {preOrderFood && cartItemCount > 0 && (
+                  <div className="mt-3 p-4 bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-300 rounded-2xl">
+                    <div className="flex items-start gap-3">
+                      <UtensilsCrossed className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900 mb-1">Pre-order Summary</p>
+                        <p className="text-sm text-gray-600 mb-2">
+                          You have <strong>{cartItemCount} items</strong> worth <strong>{cartTotal.toLocaleString('vi-VN')} VND</strong> in your cart. 
+                          Your food will be ready when you arrive!
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Note: Food payment will be processed separately at the restaurant or together with your order.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </form>
           </div>

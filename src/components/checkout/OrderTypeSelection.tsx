@@ -17,9 +17,9 @@ export default function OrderTypeSelection({
   onDeliveryAddressChange
 }: OrderTypeSelectionProps) {
   const orderTypeOptions = [
-    { value: 'takeaway' as OrderType, label: "Pickup" },
-    { value: 'delivery' as OrderType, label: "Delivery" },
-    { value: 'dine-in' as OrderType, label: "Dine In" }
+    { value: 'PICKUP' as OrderType, label: "Pickup" },
+    { value: 'DELIVERY' as OrderType, label: "Delivery" },
+    { value: 'DINE_IN' as OrderType, label: "Dine In" }
   ];
 
   return (
@@ -34,7 +34,7 @@ export default function OrderTypeSelection({
         />
       </FormField>
 
-      {orderType === 'delivery' && (
+      {orderType === 'DELIVERY' && (
         <FormField label="Delivery Address" required>
           <Input
             type="text"

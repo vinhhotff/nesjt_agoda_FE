@@ -33,7 +33,7 @@ export function useCheckoutForm({
 }: UseCheckoutFormProps) {
   const [name, setName] = useState(user?.name || "");
   const [phone, setPhone] = useState("");
-  const [orderType, setOrderType] = useState<OrderType>('takeaway');
+  const [orderType, setOrderType] = useState<OrderType>('PICKUP');
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [voucherCode, setVoucherCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,7 +69,7 @@ export function useCheckoutForm({
 
     if (isSubmitting) return; // prevent double submits
     
-    if (orderType === 'delivery' && !deliveryAddress.trim()) {
+    if (orderType === 'DELIVERY' && !deliveryAddress.trim()) {
       toast.error('Please enter a delivery address for delivery orders.');
       return;
     }
@@ -91,7 +91,7 @@ export function useCheckoutForm({
       customerName: user?.name || name,
       customerPhone: user ? ((user as any).phone || phone) : phone,
       orderType: orderType,
-      deliveryAddress: orderType === 'delivery' ? deliveryAddress : undefined,
+      deliveryAddress: orderType === 'DELIVERY' ? deliveryAddress : undefined,
       user: user?._id,  // Backend will use user ID to link order
     };
 
