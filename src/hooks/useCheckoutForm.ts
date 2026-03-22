@@ -98,7 +98,7 @@ export function useCheckoutForm({
     try {
       // Step 1: Create order
       const orderResponse = await createOnlineOrder(orderData);
-      console.log('Order response:', orderResponse);
+      // console.log removed
       
       // Handle different response structures
       let orderId: string | undefined;
@@ -117,11 +117,11 @@ export function useCheckoutForm({
         throw new Error('Failed to get order ID from response. Please check console for details.');
       }
 
-      console.log('Order created with ID:', orderId);
+      // console.log removed
       toast.success("Order created! Redirecting to payment...");
 
       // Step 2: Create PayOS payment link
-      console.log('Creating PayOS payment link for order:', orderId, 'amount:', finalTotal);
+      // console.log removed
       
       const paymentLinkResponse = await createPayOSPaymentLink({
         orderId,
@@ -129,7 +129,7 @@ export function useCheckoutForm({
         description: `Order #${orderId}`,
       });
 
-      console.log('Payment link response:', paymentLinkResponse);
+      // console.log removed
 
       if (!paymentLinkResponse) {
         console.error('Payment link response is null or undefined');
@@ -148,7 +148,7 @@ export function useCheckoutForm({
       }
 
       // Step 3: Redirect to PayOS payment page
-      console.log('Redirecting to:', paymentLinkResponse.paymentLink);
+      // console.log removed
       // Don't clear cart yet - wait for payment confirmation
       window.location.href = paymentLinkResponse.paymentLink;
       

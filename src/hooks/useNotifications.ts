@@ -29,12 +29,12 @@ export function useNotifications() {
     });
 
     newSocket.on('connect', () => {
-      console.log('Connected to notification server');
+      // console.log removed
       setSocket(newSocket);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('Disconnected from notification server');
+      // console.log removed
     });
 
     newSocket.on('notification', (notification: INotification) => {

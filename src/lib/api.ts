@@ -26,7 +26,6 @@ export const getRoleName = (role: string | Role): string => {
     if (role.length === 24 && /^[0-9a-fA-F]{24}$/.test(role)) {
       // It's likely an ObjectId, we can't extract the name directly
       // Return 'user' as fallback or try to match with known role IDs
-      console.warn("Role is ObjectId, cannot extract role name:", role);
       return "user";
     }
 
@@ -188,7 +187,7 @@ export const register = async (
     });
     return { success: true, message: "Register successful" };
   } catch (error: any) {
-    console.error("Error during registration:", error);
+    // console.error("Error during registration:", error);
     return {
       success: false,
       message: error?.response?.data?.message || "Register failed",
@@ -201,7 +200,7 @@ export const logout = async (): Promise<boolean> => {
     await api.post("/auth/logout");
     return true;
   } catch (error) {
-    console.error("Error logging out:", error);
+    // console.error("Error logging out:", error);
     return false;
   }
 };
@@ -258,7 +257,6 @@ export const getUserPaginate = async (
       responsePages = Math.ceil(totalCount / limit);
     } else {
       // Unknown structure - log and fallback
-      console.warn("Unknown user API response structure:", res.data);
       users = [];
       totalCount = 0;
       responsePages = 0;
@@ -280,8 +278,8 @@ export const getUserPaginate = async (
 
     return result;
   } catch (error) {
-    console.error("Error in getUserPaginate:", error);
-    console.error("Error details:", (error as any)?.response?.data || (error as any)?.message);
+    // console.error("Error in getUserPaginate:", error);
+    // console.error("Error details:", (error as any)?.response?.data || (error as any)?.message);
     // Return empty result structure on error
     return {
       items: [],
@@ -361,7 +359,7 @@ export const getMenuItems = async () => {
     const response = await api.get("/menu-items"); // Endpoint GET /api/v1/menuitem
     return response.data.data; // Trả về data (array món ăn)
   } catch (error: any) {
-    console.error("Error fetching menu items:", error);
+    // console.error("Error fetching menu items:", error);
     throw error; // Ném lỗi để xử lý ở frontend
   }
 };
@@ -380,7 +378,7 @@ export const getMenuItemsPaginate = async (
     const res = await api.get(`/menu-items/paginate?${params.toString()}`);
 
     if (!res.data || !res.data.data) {
-      console.error("❌ Missing data structure - res.data:", res.data);
+      // console.error("❌ Missing data structure - res.data:", res.data);
       throw new Error("Failed to fetch menu items - missing data structure");
     }
 
@@ -408,7 +406,7 @@ export const getMenuItemsPaginate = async (
       totalPages: totalPages,
     };
   } catch (error) {
-    console.error("Error in getMenuItemsPaginate:", error);
+    // console.error("Error in getMenuItemsPaginate:", error);
     throw error;
   }
 };
@@ -457,7 +455,7 @@ export const createOnlineOrder = async (orderData: CreateOnlineOrderDto) => {
     const response = await api.post("/orders/online", orderData);
     return response.data;
   } catch (error) {
-    console.error("Error creating online order:", error);
+    // console.error("Error creating online order:", error);
     throw error;
   }
 };
@@ -519,32 +517,23 @@ export const getTables = async (
     };
     
     const response = await api.get("/tables", { params: queryParams });
-    console.log('Get tables response:', { 
-      fullResponse: response.data, 
-      data: response.data?.data,
-      queryParams 
-    });
     
     // Backend returns: { statusCode, message, data: { results: [...], meta: {...} } }
     const responseData = response.data?.data || response.data;
     
     // Check if it's paginated response
     if (responseData?.results && Array.isArray(responseData.results)) {
-      console.log('Returning paginated results:', responseData.results.length, 'of', responseData.meta?.total);
       return responseData.results;
     }
     
     // Check if it's direct array
     if (Array.isArray(responseData)) {
-      console.log('Returning direct array:', responseData.length);
       return responseData;
     }
     
     // Fallback: return empty array
-    console.warn('Unexpected response format from /tables:', responseData);
     return [];
   } catch (error) {
-    console.error('Error fetching tables:', error);
     throw error; // Re-throw để component có thể handle
   }
 };
@@ -575,7 +564,6 @@ export const getTablesPaginated = async (
     }
 
     const response = await api.get("/tables", { params });
-    console.log('Get tables paginated response:', response.data);
     
     // Backend returns: { statusCode, message, data: { results: [...], meta: {...} } }
     const responseData = response.data?.data || response.data;
@@ -597,7 +585,6 @@ export const getTablesPaginated = async (
       totalPages: 1,
     };
   } catch (error) {
-    console.error('Error fetching tables paginated:', error);
     throw error;
   }
 };
@@ -612,7 +599,6 @@ export const createTable = async (data: Partial<Table>): Promise<Table> => {
   const response = await api.post("/tables", data);
   // Backend returns: { statusCode, message, data: {...} }
   const tableData = response.data?.data || response.data;
-  console.log('Create table response:', { response: response.data, tableData });
   return tableData;
 };
 
@@ -623,7 +609,6 @@ export const updateTable = async (
   const response = await api.patch(`/tables/${id}`, data);
   // Backend returns: { statusCode, message, data: {...} }
   const tableData = response.data?.data || response.data;
-  console.log('Update table response:', { response: response.data, tableData });
   return tableData;
 };
 
@@ -695,7 +680,7 @@ export const fetchTables = async () => {
     const response = await getTables({});
     return response ?? [];
   } catch (error) {
-    console.error("Error fetching tables:", error);
+    // console.error("Error fetching tables:", error);
     return [];
   }
 };
@@ -705,7 +690,7 @@ export const fetchOrders = async () => {
     const response = await getOrders({});
     return response ?? [];
   } catch (error) {
-    console.error("Error fetching orders:", error);
+    // console.error("Error fetching orders:", error);
     return [];
   }
 };
@@ -715,7 +700,7 @@ export const fetchPayments = async () => {
     const response = await getPayments({});
     return response ?? [];
   } catch (error) {
-    console.error("Error fetching payments:", error);
+    // console.error("Error fetching payments:", error);
     return [];
   }
 };
@@ -725,7 +710,7 @@ export const fetchMenuItems = async () => {
     const response = await getMenuItems();
     return response ?? [];
   } catch (error) {
-    console.error("Error fetching menu items:", error);
+    // console.error("Error fetching menu items:", error);
     return [];
   }
 };
@@ -735,7 +720,7 @@ export const fetchGuests = async () => {
     const response = await getGuests({});
     return response ?? [];
   } catch (error) {
-    console.error("Error fetching guests:", error);
+    // console.error("Error fetching guests:", error);
     return [];
   }
 };
@@ -745,7 +730,7 @@ export const fetchUsers = async () => {
     const response = await getUserPaginate(1, 10, "");
     return response;
   } catch (error) {
-    console.error("Error fetching users:", error);
+    // console.error("Error fetching users:", error);
     return { items: [], total: 0, page: 1, limit: 10 };
   }
 };
@@ -760,13 +745,13 @@ export const getMenuItemCount = async (): Promise<number> => {
     const res = await api.get("/menu-items/count");
     return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
-    console.error("Error fetching menu item count:", error);
+    // console.error("Error fetching menu item count:", error);
     // Fallback: lấy tất cả và đếm
     try {
       const items = await getMenuItems();
       return items?.length || 0;
     } catch (fallbackError) {
-      console.error("Fallback count failed:", fallbackError);
+      // console.error("Fallback count failed:", fallbackError);
       return 0;
     }
   }
@@ -778,13 +763,13 @@ export const getOrderCount = async (): Promise<number> => {
     const res = await api.get("/orders/count");
     return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
-    console.error("Error fetching order count:", error);
+    // console.error("Error fetching order count:", error);
     // Fallback: lấy tất cả và đếm
     try {
       const orders = await getOrders({});
       return orders?.length || 0;
     } catch (fallbackError) {
-      console.error("Fallback count failed:", fallbackError);
+      // console.error("Fallback count failed:", fallbackError);
       return 0;
     }
   }
@@ -797,7 +782,7 @@ export const fetchUsersCount = async (): Promise<number> => {
     if (!res.data) throw new Error("Failed to fetch users");
     return res.data.data?.meta?.total || res.data.meta?.total || 0;
   } catch (error) {
-    console.error("Error fetching user count:", error);
+    // console.error("Error fetching user count:", error);
     return 0;
   }
 };
@@ -808,7 +793,7 @@ export const getRevenue = async (): Promise<number> => {
     const res = await api.get("/payments/revenue");
     return res.data.data?.revenue || res.data.revenue || res.data.data?.total || res.data.total || 0;
   } catch (error) {
-    console.error("Error fetching revenue:", error);
+    // console.error("Error fetching revenue:", error);
     // Fallback: tính từ tất cả payments
     try {
       const payments = await getPayments({});
@@ -816,7 +801,7 @@ export const getRevenue = async (): Promise<number> => {
         payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
       );
     } catch (fallbackError) {
-      console.error("Fallback revenue calculation failed:", fallbackError);
+      // console.error("Fallback revenue calculation failed:", fallbackError);
       return 0;
     }
   }
@@ -828,13 +813,13 @@ export const getTableCount = async (): Promise<number> => {
     const res = await api.get("/tables/count");
     return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
-    console.error("Error fetching table count:", error);
+    // console.error("Error fetching table count:", error);
     // Fallback: lấy tất cả và đếm
     try {
       const tables = await getTables({});
       return tables?.length || 0;
     } catch (fallbackError) {
-      console.error("Fallback count failed:", fallbackError);
+      // console.error("Fallback count failed:", fallbackError);
       return 0;
     }
   }
@@ -846,13 +831,13 @@ export const getGuestCount = async (): Promise<number> => {
     const res = await api.get("/guests/count");
     return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
-    console.error("Error fetching guest count:", error);
+    // console.error("Error fetching guest count:", error);
     // Fallback: lấy tất cả và đếm
     try {
       const guests = await getGuests({});
       return guests?.length || 0;
     } catch (fallbackError) {
-      console.error("Fallback count failed:", fallbackError);
+      // console.error("Fallback count failed:", fallbackError);
       return 0;
     }
   }
@@ -864,13 +849,13 @@ export const getPaymentCount = async (): Promise<number> => {
     const res = await api.get("/payments/count");
     return res.data.data?.total || res.data.total || res.data.count || 0;
   } catch (error) {
-    console.error("Error fetching payment count:", error);
+    // console.error("Error fetching payment count:", error);
     // Fallback: lấy tất cả và đếm
     try {
       const payments = await getPayments({});
       return payments?.length || 0;
     } catch (fallbackError) {
-      console.error("Fallback count failed:", fallbackError);
+      // console.error("Fallback count failed:", fallbackError);
       return 0;
     }
   }
@@ -926,7 +911,6 @@ export const getDashboardStatsOptimized = async () => {
     }
   } catch (error) {
     // Fallback to parallel calls if single endpoint doesn't exist
-    console.log("Single dashboard endpoint not available, using parallel calls");
   }
 
   // Fallback: use parallel calls (same as original getDashboardStats)
@@ -957,9 +941,9 @@ export const updateOrderStatus = async (
     );
     return response.data;
   } catch (error) {
-    console.error("❌ Error updating order status:", error);
-    console.error("📋 Error response:", (error as any)?.response?.data);
-    console.error("🔍 Sent status value:", status);
+    // console.error("❌ Error updating order status:", error);
+    // console.error("📋 Error response:", (error as any)?.response?.data);
+    // console.error("🔍 Sent status value:", status);
     throw error;
   }
 };
@@ -970,7 +954,7 @@ export const getOrderDetails = async (id: string) => {
     const response = await getOrder(id);
     return response;
   } catch (error) {
-    console.error("Error fetching order details:", error);
+    // console.error("Error fetching order details:", error);
     throw error;
   }
 };
@@ -1015,7 +999,7 @@ export const setOrderReadyTime = async (
     const response = await api.patch(`/orders/${id}`, { estimatedReadyTime });
     return response.data;
   } catch (error) {
-    console.error("Error setting order ready time:", error);
+    // console.error("Error setting order ready time:", error);
     throw error;
   }
 };
@@ -1026,7 +1010,7 @@ export const getOrderStats = async () => {
     const response = await api.get("/orders/stats");
     return response.data;
   } catch (error) {
-    console.error("Error fetching order stats:", error);
+    // console.error("Error fetching order stats:", error);
     // Return mock data if endpoint doesn't exist
     return {
       total: 0,
@@ -1080,7 +1064,7 @@ export const exportOrdersToCSV = async (filters?: {
 
     return { success: true };
   } catch (error) {
-    console.error("Error exporting orders to CSV:", error);
+    // console.error("Error exporting orders to CSV:", error);
     throw error;
   }
 };
@@ -1108,12 +1092,7 @@ export const getUsersPaginate = async (
     const response = await getUserPaginate(page, limit, searchQuery);
     return response;
   } catch (error) {
-    console.warn(
-      "Primary user API failed, trying alternative endpoints:",
-      error
-    );
-
-    // Fallback: Try different user endpoints with server-side filtering
+    // Primary user API failed, trying alternative endpoints
     try {
       // Build query params for server-side filtering
       const queryParams: Record<string, string> = {
@@ -1171,8 +1150,6 @@ export const getUsersPaginate = async (
         totalPages: Math.ceil(users.length / limit),
       };
     } catch (fallbackError) {
-      console.warn("Fallback user API also failed:", fallbackError);
-
       // Final fallback: Return empty paginated response (no mock data)
       return {
         items: [],
@@ -1190,24 +1167,12 @@ export const toggleUserStatus = async (id: string, makeActive: boolean) => {
     // Prefer string status field if backend supports it
     return await updateUser(id, { status: makeActive ? 'active' : 'inactive' } as any);
   } catch (err1) {
-    console.warn(
-      'Primary status toggle with "status" failed. Trying "isActive" boolean.',
-      (err1 as any)?.response?.data || (err1 as any)?.message
-    );
     try {
       return await updateUser(id, { isActive: makeActive } as any);
     } catch (err2) {
-      console.warn(
-        'Fallback toggle with "isActive" failed. Trying "disabled" boolean.',
-        (err2 as any)?.response?.data || (err2 as any)?.message
-      );
       try {
         return await updateUser(id, { disabled: !makeActive } as any);
       } catch (err3) {
-        console.error(
-          'All user status toggle strategies failed.',
-          (err3 as any)?.response?.data || (err3 as any)?.message
-        );
         // Re-throw the first error to preserve original backend message
         throw err1;
       }
@@ -1218,13 +1183,11 @@ export const toggleUserStatus = async (id: string, makeActive: boolean) => {
 export const resetUserPassword = async (id: string) => {
   try {
     // Mock password reset since endpoint may not exist
-    console.warn("Password reset API not implemented, showing success message");
     return {
       success: true,
       message: "Password reset instructions sent via email",
     };
   } catch (error) {
-    console.error("Error resetting password:", error);
     throw error;
   }
 };
@@ -1271,7 +1234,6 @@ export const getUserRoles = async () => {
 
     return roles;
   } catch (error) {
-    console.warn("❌ Roles API not available, using default roles", error);
     // Return default roles if API doesn't exist
     return [
       {
@@ -1319,9 +1281,8 @@ const callAnalyticsAPI = async (url: string, params?: URLSearchParams, timeout: 
   } catch (error) {
     if (isAnalyticsEndpointMissing(error)) {
       // Silently handle 404s for analytics endpoints
-      console.debug(`Analytics endpoint not available: ${url}`);
     } else {
-      console.warn(`Analytics API error for ${url}:`, (error as any)?.message);
+      // Handle other errors
     }
     throw error;
   }
@@ -1339,11 +1300,8 @@ export const getRevenueStats = async (
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
 
-    console.debug('Fetching revenue stats with params:', params.toString());
-    
     // Try dedicated analytics endpoint first with timeout
     const response = await callAnalyticsAPI('/analytics/revenue/stats', params, 3000);
-    console.debug('Revenue stats response received');
     
     // Handle different response structures (supports {data:{data:{...}}})
     const payload = response?.data ?? response;
@@ -1366,7 +1324,7 @@ export const getRevenueStats = async (
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Revenue stats API failed, using fallback:', (error as any)?.message);
+      // console.warn('Revenue stats API failed, using fallback:', (error as any)?.message);
     }
     
     // Fallback: Calculate from existing endpoints
@@ -1392,7 +1350,7 @@ export const getRevenueStats = async (
         },
       };
     } catch (fallbackError) {
-      console.error('Revenue stats fallback failed:', (fallbackError as any)?.message);
+      // console.error('Revenue stats fallback failed:', (fallbackError as any)?.message);
       // Return safe default values instead of throwing
       return {
         totalRevenue: 0,
@@ -1415,11 +1373,11 @@ export const getRevenueChart = async (
     if (period && period !== 'custom') params.append('period', period);
     params.append('groupBy', groupBy);
 
-    console.debug('Fetching revenue chart with params:', params.toString());
+    // console.debug('Fetching revenue chart with params:', params.toString());
     
     // Try dedicated analytics endpoint first with timeout
     const response = await callAnalyticsAPI('/analytics/revenue/chart', params, 3000);
-    console.debug('Revenue chart response received');
+    // console.debug('Revenue chart response received');
     
     // Handle different response structures
     const payload = response?.data ?? response;
@@ -1437,7 +1395,7 @@ export const getRevenueChart = async (
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Revenue chart API failed, using mock data:', (error as any)?.message);
+      // console.warn('Revenue chart API failed, using mock data:', (error as any)?.message);
     }
     
     // Fallback: Generate mock chart data based on existing data
@@ -1467,7 +1425,7 @@ export const getRevenueChart = async (
 
       return chartData;
     } catch (fallbackError) {
-      console.error('Chart data generation failed:', (fallbackError as any)?.message);
+      // console.error('Chart data generation failed:', (fallbackError as any)?.message);
       return [];
     }
   }
@@ -1487,11 +1445,11 @@ export const getTopSellingItems = async (
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
 
-    console.debug('Fetching top selling items with params:', params.toString());
+    // console.debug('Fetching top selling items with params:', params.toString());
     
     // Try analytics endpoint with timeout
     const response = await callAnalyticsAPI('/analytics/menu-items/top-selling', params, 3000);
-    console.debug('Top selling items response received');
+    // console.debug('Top selling items response received');
     
     // Handle different response structures from backend
     const payload = response?.data ?? response;
@@ -1508,12 +1466,12 @@ export const getTopSellingItems = async (
       }));
     }
     
-    console.debug('Backend response is not an array, returning empty array');
+    // console.debug('Backend response is not an array, returning empty array');
     return [];
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Top selling items API failed:', (error as any)?.message);
+      // console.warn('Top selling items API failed:', (error as any)?.message);
     }
     
     // Return empty array - no fallback for top selling items as requested
@@ -1527,11 +1485,11 @@ export const getOrderAnalytics = async (period: string = "30d") => {
     const params = new URLSearchParams();
     if (period && period !== 'custom') params.append('period', period);
 
-    console.debug('Fetching order analytics with params:', params.toString());
+    // console.debug('Fetching order analytics with params:', params.toString());
     
     // Try dedicated analytics endpoint first with timeout
     const response = await callAnalyticsAPI('/analytics/orders/stats', params, 3000);
-    console.debug('Order analytics response received');
+    // console.debug('Order analytics response received');
     
     // Handle different response structures
     const payload = response?.data ?? response;
@@ -1548,7 +1506,7 @@ export const getOrderAnalytics = async (period: string = "30d") => {
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Order analytics API failed, using fallback:', (error as any)?.message);
+      // console.warn('Order analytics API failed, using fallback:', (error as any)?.message);
     }
     
     // Fallback: Calculate from existing order count
@@ -1580,7 +1538,7 @@ export const getOrderAnalytics = async (period: string = "30d") => {
         dailyOrders: [],
       };
     } catch (fallbackError) {
-      console.error('Order analytics fallback failed:', (fallbackError as any)?.message);
+      // console.error('Order analytics fallback failed:', (fallbackError as any)?.message);
       // Return safe defaults instead of throwing
       return {
         totalOrders: 0,
@@ -1600,11 +1558,11 @@ export const getCustomerAnalytics = async (period: string = "30d") => {
     const params = new URLSearchParams();
     if (period && period !== 'custom') params.append('period', period);
 
-    console.debug('Fetching customer analytics with params:', params.toString());
+    // console.debug('Fetching customer analytics with params:', params.toString());
     
     // Try dedicated analytics endpoint first with timeout
     const response = await callAnalyticsAPI('/analytics/customers/stats', params, 3000);
-    console.debug('Customer analytics response received');
+    // console.debug('Customer analytics response received');
     
     // Handle different response structures
     const payload = response?.data ?? response;
@@ -1623,7 +1581,7 @@ export const getCustomerAnalytics = async (period: string = "30d") => {
   } catch (error) {
     // Only log non-404 errors to reduce console spam
     if (!isAnalyticsEndpointMissing(error)) {
-      console.warn('Customer analytics API failed, using fallback:', (error as any)?.message);
+      // console.warn('Customer analytics API failed, using fallback:', (error as any)?.message);
     }
     
     // Fallback: Calculate from existing user count
@@ -1641,7 +1599,7 @@ export const getCustomerAnalytics = async (period: string = "30d") => {
         },
       };
     } catch (fallbackError) {
-      console.error('Customer analytics fallback failed:', (fallbackError as any)?.message);
+      // console.error('Customer analytics fallback failed:', (fallbackError as any)?.message);
       // Return safe defaults instead of throwing
       return {
         totalCustomers: 0,
@@ -1674,7 +1632,7 @@ export const exportRevenueReport = async (
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     return blob;
   } catch (error) {
-    console.warn("Export API not available, using mock data");
+    // console.warn("Export API not available, using mock data");
     throw error;
   }
 };

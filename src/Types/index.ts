@@ -78,6 +78,7 @@ export interface IMenuItem {
   category: string;
   images?: string[];
   available: boolean;
+  stock?: number;
   preparationTime?: number;
   isVegetarian?: boolean;
   isVegan?: boolean;

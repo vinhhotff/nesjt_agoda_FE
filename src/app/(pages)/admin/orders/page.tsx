@@ -80,7 +80,6 @@ const OrdersPage: React.FC = () => {
       setSelectedOrder(details);
       setShowDetailsModal(true);
     } catch (error) {
-      console.error('Error fetching order details:', error);
       setSelectedOrder(order);
       setShowDetailsModal(true);
     }
@@ -88,19 +87,10 @@ const OrdersPage: React.FC = () => {
 
   const handleMarkAsPaid = async (orderId: string, isPaid: boolean) => {
     try {
-      console.log('🔄 Updating payment status:', { orderId, isPaid });
-      const result = await markOrderAsPaid(orderId, isPaid);
-      console.log('✅ Payment status updated:', result);
+      await markOrderAsPaid(orderId, isPaid);
       toast.success(`Order marked as ${isPaid ? 'paid' : 'unpaid'}`);
       refetch();
     } catch (error: any) {
-      console.error('❌ Error updating payment status:', error);
-      console.error('Error details:', {
-        message: error?.message,
-        response: error?.response?.data,
-        status: error?.response?.status
-      });
-      
       const errorMessage = error?.response?.data?.message || 
                           error?.message || 
                           'Failed to update payment status';

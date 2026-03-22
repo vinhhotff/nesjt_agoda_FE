@@ -34,13 +34,10 @@ export const createPayOSPaymentLink = async (
       }
     }
     
-    console.log('Creating PayOS payment link with data:', requestData);
     const response = await api.post(
       '/payment/payos/create-link',
       requestData
     );
-    console.log('PayOS API raw response:', response);
-    console.log('PayOS API response.data:', response.data);
     
     // Backend ResponseInterceptor wraps response as:
     // { statusCode: 200, message: "Success", data: { success: true, paymentLink: "..." } }
@@ -57,35 +54,18 @@ export const createPayOSPaymentLink = async (
       // Try to use response.data directly
       paymentResponse = response.data as CreatePaymentLinkResponse;
     } else {
-      console.error('Unexpected response structure:', {
-        fullResponse: response,
-        responseData: response.data,
-        responseStatus: response.status,
-      });
       throw new Error('Invalid response structure from payment API');
     }
     
     // Validate response has required fields
     if (!paymentResponse.success && !paymentResponse.paymentLink) {
-      console.error('Payment response missing required fields:', paymentResponse);
       throw new Error(
         paymentResponse.message || 'Payment link was not returned from server'
       );
     }
     
-    console.log('Extracted payment response:', paymentResponse);
     return paymentResponse;
   } catch (error: any) {
-    console.error('Error creating PayOS payment link:', error);
-    console.error('Error details:', {
-      message: error?.message,
-      response: error?.response,
-      data: error?.response?.data,
-      status: error?.response?.status,
-      statusText: error?.response?.statusText,
-      code: error?.code, // Network error codes like 'ECONNREFUSED', 'ERR_NETWORK', etc.
-    });
-    
     // Extract error message from various possible locations
     let errorMessage = 'Failed to create payment link';
     
@@ -124,7 +104,6 @@ export const confirmPayOSPayment = async (data: {
     const response = await api.post('/payment/payos/confirm-payment', data);
     return response.data;
   } catch (error) {
-    console.error('Error confirming payment:', error);
     throw error;
   }
 };

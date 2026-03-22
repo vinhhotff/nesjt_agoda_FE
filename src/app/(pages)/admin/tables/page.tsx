@@ -75,16 +75,16 @@ export default function AdminTablesPage() {
   }) {
     setFormLoading(true);
     try {
-      console.log('Saving table:', form);
+      // console.log removed
       if (selectedTable) {
         // When updating, exclude tableName if backend doesn't allow it
         const { tableName, ...updateData } = form;
         const updated = await updateTable(selectedTable._id, updateData);
-        console.log('Updated table:', updated);
+        // console.log removed
         toast.success("✅ Cập nhật bàn thành công!");
       } else {
         const created = await createTable(form);
-        console.log('Created table:', created);
+        // console.log removed
         toast.success("✅ Tạo bàn thành công!");
       }
       // Remove unnecessary delay for faster UI response

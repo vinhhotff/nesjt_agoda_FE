@@ -5,8 +5,6 @@ import { fetchPaginated, PaginationQuery } from './paginationApi';
 export const createOnlineOrder = async (orderData: CreateOnlineOrderDto) => {
   try {
     const response = await api.post('/orders/online', orderData);
-    console.log('Create order raw response:', response);
-    console.log('Create order response.data:', response.data);
     
     // Backend ResponseInterceptor wraps response as:
     // { statusCode: 200, message: "Success", data: Order }
@@ -17,7 +15,6 @@ export const createOnlineOrder = async (orderData: CreateOnlineOrderDto) => {
     // Fallback to direct response.data if no wrapper
     return response.data;
   } catch (error) {
-    console.error('Error creating online order:', error);
     throw error;
   }
 };
@@ -174,7 +171,7 @@ export const updateOrderStatus = async (
 export const getOrderDetails = async (id: string): Promise<Order> => {
   try {
     const order = await getOrder(id);
-    console.log('Order details fetched:', order);
+    // console.log removed
     return order;
   } catch (error) {
     console.error('Error fetching order details:', error);

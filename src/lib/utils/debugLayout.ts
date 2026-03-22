@@ -7,7 +7,7 @@ export function debugLayouts() {
   try {
     const saved = localStorage.getItem('table-layouts');
     if (!saved) {
-      console.log('❌ No layouts found in localStorage');
+      // console.log removed
       return;
     }
 
@@ -32,8 +32,8 @@ export function debugLayouts() {
         tables: activeLayout.tables?.map((t: any) => t.tableName),
       });
     } else {
-      console.log('⚠️ No active layout found!');
-      console.log('First layout:', layouts[0]?.name);
+      // console.log removed
+      // console.log removed
     }
 
     return layouts;
@@ -46,7 +46,7 @@ export function setActiveLayout(layoutId: string) {
   try {
     const saved = localStorage.getItem('table-layouts');
     if (!saved) {
-      console.log('❌ No layouts found');
+      // console.log removed
       return false;
     }
 
@@ -57,7 +57,7 @@ export function setActiveLayout(layoutId: string) {
     }));
 
     localStorage.setItem('table-layouts', JSON.stringify(updated));
-    console.log('✅ Set active layout:', layoutId);
+    // console.log removed
     debugLayouts();
     return true;
   } catch (error) {
@@ -68,7 +68,7 @@ export function setActiveLayout(layoutId: string) {
 
 export function clearLayouts() {
   localStorage.removeItem('table-layouts');
-  console.log('🗑️ Cleared all layouts');
+  // console.log removed
 }
 
 export function exportLayouts() {
@@ -80,7 +80,7 @@ export function exportLayouts() {
     a.href = url;
     a.download = `table-layouts-${Date.now()}.json`;
     a.click();
-    console.log('💾 Exported layouts');
+    // console.log removed
   }
 }
 
@@ -88,7 +88,7 @@ export function importLayouts(jsonString: string) {
   try {
     const layouts = JSON.parse(jsonString);
     localStorage.setItem('table-layouts', JSON.stringify(layouts));
-    console.log('📥 Imported layouts:', layouts.length);
+    // console.log removed
     debugLayouts();
     return true;
   } catch (error) {

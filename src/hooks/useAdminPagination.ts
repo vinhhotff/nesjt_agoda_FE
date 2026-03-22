@@ -22,10 +22,10 @@ export function useAdminPagination({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const fetchData = async () => {
-    console.log('🔍 useAdminPagination fetchData called');
+    // console.log removed
     try {
       setLoading(true);
-      console.log('🔍 Calling fetchFunction with:', { currentPage, itemsPerPage, search, filter, sortBy, sortOrder });
+      // console.log removed
       const response = await fetchFunction(
         currentPage,
         itemsPerPage,
@@ -34,7 +34,7 @@ export function useAdminPagination({
         sortBy,
         sortOrder
       );
-      console.log('🔍 fetchFunction response:', response);
+      // console.log removed
       console.log('🔍 Response structure:', {
         hasItems: !!response.items,
         itemsType: Array.isArray(response.items) ? 'array' : typeof response.items,

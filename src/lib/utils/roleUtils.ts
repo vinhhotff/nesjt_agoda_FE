@@ -87,10 +87,10 @@ export const testRoleMapping = () => {
     { input: undefined, expected: 'User' },
   ];
 
-  console.log('🧪 Testing role mapping...');
+  // console.log removed
   testCases.forEach((testCase, index) => {
     const result = getRoleName(testCase.input);
     const passed = result === testCase.expected;
-    console.log(`Test ${index + 1}: ${passed ? '✅' : '❌'} Input: ${JSON.stringify(testCase.input)} → Expected: ${testCase.expected}, Got: ${result}`);
+    // console.log removed
   });
 };

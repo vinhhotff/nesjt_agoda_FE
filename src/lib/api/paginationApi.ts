@@ -45,7 +45,7 @@ export async function fetchPaginated<T = any>(
   query: PaginationQuery = {}
 ): Promise<PaginatedResult<T>> {
   try {
-    console.log(`🔍 fetchPaginated called for ${endpoint}`);
+    // console.log removed
     const {
       page = 1,
       limit = 10,
@@ -75,11 +75,11 @@ export async function fetchPaginated<T = any>(
       }
     });
 
-    console.log(`🔍 fetchPaginated - Making API call to ${endpoint} with params:`, params);
+    // console.log removed
 
     const response = await api.get(endpoint, { params });
     
-    console.log(`🔍 fetchPaginated - API response status:`, response.status);
+    // console.log removed
     const responseData = response.data;
     
     console.log(`🔍 fetchPaginated response for ${endpoint}:`, {
@@ -107,7 +107,7 @@ export async function fetchPaginated<T = any>(
       // Extract data and meta from nested structure
       data = responseData.data.data;
       meta = responseData.data.meta;
-      console.log(`✅ Extracted ${data.length} items from standard format, total: ${meta.total}, page: ${meta.page}`);
+      // console.log removed
     } 
     // Priority 2: Has statusCode and data.data array (meta might be missing)
     else if (responseData?.statusCode === 200 && responseData?.data?.data && Array.isArray(responseData.data.data)) {
@@ -119,7 +119,7 @@ export async function fetchPaginated<T = any>(
         limit: params.limit || 10,
         totalPages: Math.ceil(data.length / (params.limit || 10)),
       };
-      console.log(`✅ Extracted ${data.length} items from statusCode wrapper, total: ${meta.total}, page: ${meta.page}`);
+      // console.log removed
     }
     // Priority 3: Direct data array (no nesting)
     else if (responseData?.data && Array.isArray(responseData.data)) {
@@ -131,7 +131,7 @@ export async function fetchPaginated<T = any>(
         limit: params.limit || 10,
         totalPages: Math.ceil(data.length / (params.limit || 10)),
       };
-      console.log(`⚠️ Using fallback format: ${data.length} items`);
+      // console.log removed
     } else {
       console.warn(`⚠️ Unexpected response format for ${endpoint}. Expected { data: { data: [...], meta: {...} } }`);
       console.warn('Received:', JSON.stringify(responseData, null, 2));

@@ -43,7 +43,7 @@ export default function TableLayoutPage() {
       setLayouts(Array.isArray(savedLayouts) ? savedLayouts : []);
       
       if (tablesArray.length === 0) {
-        console.log('No tables found. Please create tables first in /admin/tables');
+        // console.log removed
         toast.info('ℹ️ Chưa có bàn nào. Vui lòng tạo bàn trước ở trang Quản lý bàn.');
       }
     } catch (error: any) {

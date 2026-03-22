@@ -79,7 +79,7 @@ const ReservationsPage: React.FC = () => {
 
   const handleViewDetails = (reservation: Reservation) => {
     // TODO: Implement details modal
-    console.log('View details:', reservation);
+    // console.log removed
   };
 
   if (loading) {

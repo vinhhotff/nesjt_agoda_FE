@@ -106,11 +106,11 @@ export default function TableSelectionModal({
     setLayoutError(null);
     try {
       const layout = await getActiveTableLayout();
-      console.log('📋 Fetched active layout:', layout);
+      // console.log removed
       
       // Check if layout exists and has tables
       if (layout && layout.tables && Array.isArray(layout.tables) && layout.tables.length > 0) {
-        console.log('✅ Using active layout from backend:', layout.name || layout._id);
+        // console.log removed
         setSelectedLayout(layout);
         setGridCols(layout.gridCols ?? 12);
         setGridRows(layout.gridRows ?? 10);
@@ -121,13 +121,13 @@ export default function TableSelectionModal({
       if (layout && (!layout.tables || layout.tables.length === 0)) {
         console.warn('⚠️ Active layout found but has no tables, using fallback');
       } else if (!layout) {
-        console.log('ℹ️ No active layout found, using default layout');
+        // console.log removed
       }
 
       // Use fallback default layout
       if (availableTables.length > 0) {
         const fallbackLayout = createDefaultLayout(availableTables);
-        console.log('📐 Using default fallback layout');
+        // console.log removed
         setSelectedLayout(fallbackLayout);
         setGridCols(fallbackLayout.gridCols ?? 12);
         setGridRows(fallbackLayout.gridRows ?? 10);
@@ -153,7 +153,7 @@ export default function TableSelectionModal({
       
       if (availableTables.length > 0) {
         const fallbackLayout = createDefaultLayout(availableTables);
-        console.log('📐 Using default fallback layout (error case)');
+        // console.log removed
         setSelectedLayout(fallbackLayout);
         setGridCols(fallbackLayout.gridCols ?? 12);
         setGridRows(fallbackLayout.gridRows ?? 10);

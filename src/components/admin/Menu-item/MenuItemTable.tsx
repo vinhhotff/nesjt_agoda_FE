@@ -111,6 +111,7 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
                     <tr className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 text-left text-gray-700">
                         <th className="p-5 font-bold text-xs uppercase tracking-wider">Item Name</th>
                         <th className="p-5 font-bold text-xs uppercase tracking-wider">Price</th>
+                        <th className="p-5 font-bold text-xs uppercase tracking-wider">Stock</th>
                         <th className="p-5 font-bold text-xs uppercase tracking-wider">Status</th>
                         <th className="p-5 font-bold text-xs uppercase tracking-wider">Description</th>
                         <th className="p-5 text-center font-bold text-xs uppercase tracking-wider">Actions</th>
@@ -150,6 +151,17 @@ export default function MenuItemTable({ items, onEdit, onDelete }: Props) {
                                     <td className="p-5">
                                         <span className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                                             {item.price.toLocaleString()}đ
+                                        </span>
+                                    </td>
+                                    <td className="p-5">
+                                        <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold border-2 shadow-sm ${
+                                            item.stock === null || item.stock === undefined 
+                                                ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                                : item.stock <= 5 
+                                                    ? 'bg-orange-100 text-orange-700 border-orange-200'
+                                                    : 'bg-green-100 text-green-700 border-green-200'
+                                        }`}>
+                                            {item.stock === null || item.stock === undefined ? '∞' : item.stock}
                                         </span>
                                     </td>
                                     <td className="p-5">

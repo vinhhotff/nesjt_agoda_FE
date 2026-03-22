@@ -22,6 +22,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
         price: '',
         category: 'appetizer',
         available: true,
+        stock: 0,
     });
     const [loading, setLoading] = useState(false);
     const [images, setImages] = useState<string[]>([]);
@@ -37,11 +38,9 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
 
     useEffect(() => {
         if (isOpen && itemId) {
-            console.log('🔄 Modal opened, fetching item:', itemId);
             fetchMenuItem();
         } else if (!isOpen) {
             // Reset state when modal closes
-            console.log('🔄 Modal closed, resetting state');
             setMenuItem(null);
             setFormData({
                 name: '',
@@ -49,6 +48,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                 price: '',
                 category: 'appetizer',
                 available: true,
+                stock: 0,
             });
             setImages([]);
             setInitialImages([]);
@@ -58,10 +58,8 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
     const fetchMenuItem = async () => {
         try {
             setFetchLoading(true);
-            console.log('🔍 Fetching menu item with ID:', itemId);
             
             const item = await getMenuItem(itemId);
-            console.log('✅ Fetched menu item:', item);
             
             // Set menuItem state
             setMenuItem(item);
@@ -73,21 +71,14 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                 price: String(item.price) || '0',
                 category: item.category || 'appetizer',
                 available: item.available ?? true,
+                stock: item.stock ?? 0,
             });
             
             // Set images
             setImages(item.images || []);
             setInitialImages(item.images || []);
             
-            console.log('✅ Form data initialized:', {
-                name: item.name,
-                price: item.price,
-                category: item.category,
-                available: item.available
-            });
-            
         } catch (error: any) {
-            console.error('❌ Failed to fetch menu item:', error);
             toast.error(`Failed to fetch menu item: ${error?.message || 'Unknown error'}`);
             onClose();
         } finally {
@@ -105,6 +96,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                 price: parseFloat(formData.price),
                 category: formData.category,
                 available: formData.available,
+                stock: Number(formData.stock),
             };
             
             
@@ -137,7 +129,6 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
             onSuccess();
             onClose();
         } catch (err: any) {
-            console.error('❌ Failed to update menu item:', err);
             toast.error(err instanceof Error ? err.message : 'Failed to update menu item');
         } finally {
             setLoading(false);
@@ -152,6 +143,7 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
             price: '',
             category: 'appetizer',
             available: true,
+            stock: 0,
         });
         setImages([]);
         setInitialImages([]);
@@ -274,6 +266,22 @@ export default function EditMenuItemModal({ itemId, isOpen, onClose, onSuccess }
                                                 </option>
                                             ))}
                                         </select>
+                                    </div>
+
+                                    {/* Stock */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Stock Quantity
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={formData.stock}
+                                            onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                                            placeholder="0 (leave empty for unlimited)"
+                                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">Set to 0 or leave empty for unlimited stock</p>
                                     </div>
 
                                     {/* Images */}
