@@ -510,10 +510,10 @@ export const getTables = async (
 ): Promise<Table[]> => {
   try {
     // Set default pagination params if not provided
-    // Use large limit to get all tables, or allow custom pagination
+    // Use reasonable limit to avoid loading too much data
     const queryParams = {
       page: params?.page || '1',
-      limit: params?.limit || '1000', // Large limit to get all tables by default
+      limit: params?.limit || '50', // Default 50 items per page for better performance
       qs: params?.qs || '',
       ...params,
     };
@@ -913,6 +913,26 @@ export const getDashboardStats = async () => {
   };
 };
 
+/**
+ * Optimized dashboard stats - tries single endpoint first, falls back to parallel calls
+ * This reduces 9 API calls to 1 when backend supports it
+ */
+export const getDashboardStatsOptimized = async () => {
+  try {
+    // Try to get all stats from a single optimized endpoint
+    const response = await api.get("/dashboard/stats", { timeout: 5000 });
+    if (response.data?.data) {
+      return response.data.data;
+    }
+  } catch (error) {
+    // Fallback to parallel calls if single endpoint doesn't exist
+    console.log("Single dashboard endpoint not available, using parallel calls");
+  }
+
+  // Fallback: use parallel calls (same as original getDashboardStats)
+  return getDashboardStats();
+};
+
 
 export const updateOrderStatus = async (
   id: string,
@@ -1093,10 +1113,23 @@ export const getUsersPaginate = async (
       error
     );
 
-    // Fallback: Try different user endpoints
+    // Fallback: Try different user endpoints with server-side filtering
     try {
-      // Try /users endpoint instead
-      const usersResponse = await api.get("/users");
+      // Build query params for server-side filtering
+      const queryParams: Record<string, string> = {
+        page: page.toString(),
+        limit: limit.toString(),
+      };
+      
+      if (search) queryParams.search = search;
+      if (role && role !== "all") queryParams.role = role;
+      if (sortBy !== "createdAt") {
+        queryParams.sortBy = sortBy;
+        queryParams.sortOrder = sortOrder;
+      }
+
+      // Try /users endpoint with server-side params
+      const usersResponse = await api.get("/users", { params: queryParams });
 
       let users = [];
       if (Array.isArray(usersResponse.data)) {
@@ -1113,115 +1146,40 @@ export const getUsersPaginate = async (
         users = usersResponse.data.users;
       }
 
-      // Apply client-side filtering and pagination
-      let filteredUsers = users;
-
-      if (search) {
-        filteredUsers = users.filter(
-          (user: any) =>
-            user.name?.toLowerCase().includes(search.toLowerCase()) ||
-            user.email?.toLowerCase().includes(search.toLowerCase())
-        );
+      // Handle paginated response from server
+      if (usersResponse.data?.meta || usersResponse.data?.pagination) {
+        const meta = usersResponse.data.meta || usersResponse.data.pagination;
+        return {
+          items: users,
+          total: meta.total || users.length,
+          page: meta.page || page,
+          limit: meta.limit || limit,
+          totalPages: meta.totalPages || 1,
+        };
       }
 
-      if (role && role !== "all") {
-        filteredUsers = filteredUsers.filter((user: any) => user.role === role);
-      }
-
-      // Sort users
-      filteredUsers.sort((a: any, b: any) => {
-        const aValue = a[sortBy] || "";
-        const bValue = b[sortBy] || "";
-        if (sortOrder === "asc") {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
-
-      // Paginate
+      // Simple pagination for non-paginated response
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
-      const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+      const paginatedUsers = users.slice(startIndex, endIndex);
 
       return {
         items: paginatedUsers,
-        total: filteredUsers.length,
+        total: users.length,
         page,
         limit,
-        totalPages: Math.ceil(filteredUsers.length / limit),
+        totalPages: Math.ceil(users.length / limit),
       };
     } catch (fallbackError) {
       console.warn("Fallback user API also failed:", fallbackError);
 
-      // Final fallback: Return mock data for development
-      const mockUsers = [
-        {
-          _id: "1",
-          name: "Admin User",
-          email: "admin@example.com",
-          role: "admin",
-          phone: "+1234567890",
-          address: "123 Admin Street",
-          isMember: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isDeleted: false,
-        },
-        {
-          _id: "2",
-          name: "Staff User",
-          email: "staff@example.com",
-          role: "staff",
-          phone: "+0987654321",
-          address: "456 Staff Avenue",
-          isMember: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isDeleted: false,
-        },
-        {
-          _id: "3",
-          name: "Regular User",
-          email: "user@example.com",
-          role: "user",
-          phone: "+1122334455",
-          address: "789 User Boulevard",
-          isMember: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isDeleted: false,
-        },
-      ];
-
-      // Apply filtering to mock data
-      let filteredMockUsers = mockUsers;
-
-      if (search) {
-        filteredMockUsers = mockUsers.filter(
-          (user) =>
-            user.name.toLowerCase().includes(search.toLowerCase()) ||
-            user.email.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-
-      if (role && role !== "all") {
-        filteredMockUsers = filteredMockUsers.filter(
-          (user) => user.role === role
-        );
-      }
-
-      // Paginate mock data
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedMockUsers = filteredMockUsers.slice(startIndex, endIndex);
-
+      // Final fallback: Return empty paginated response (no mock data)
       return {
-        items: paginatedMockUsers,
-        total: filteredMockUsers.length,
+        items: [],
+        total: 0,
         page,
         limit,
-        totalPages: Math.ceil(filteredMockUsers.length / limit),
+        totalPages: 0,
       };
     }
   }

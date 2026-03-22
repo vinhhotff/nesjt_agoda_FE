@@ -128,20 +128,26 @@ export function useDashboardData(isAuthorized: boolean) {
         cache.clear();
         setLoading({ core: true, today: true, trends: true, orders: true });
 
-        loadCoreStats();
-        loadTodayStats();
-        loadWeeklyTrends();
-        loadRecentOrders();
+        // Call all load functions in parallel for better performance
+        Promise.all([
+            loadCoreStats(),
+            loadTodayStats(),
+            loadWeeklyTrends(),
+            loadRecentOrders()
+        ]);
     }, [cache, loadCoreStats, loadTodayStats, loadWeeklyTrends, loadRecentOrders]);
 
-    // Main effect to load data
+    // Main effect to load data - parallel loading for faster initial load
     useEffect(() => {
         if (!isAuthorized) return;
 
-        loadCoreStats();
-        loadTodayStats();
-        loadWeeklyTrends();
-        loadRecentOrders();
+        // Load all data in parallel instead of sequentially
+        Promise.all([
+            loadCoreStats(),
+            loadTodayStats(),
+            loadWeeklyTrends(),
+            loadRecentOrders()
+        ]);
     }, [isAuthorized, loadCoreStats, loadTodayStats, loadWeeklyTrends, loadRecentOrders]);
 
     // Computed values
