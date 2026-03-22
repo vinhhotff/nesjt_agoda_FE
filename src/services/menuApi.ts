@@ -12,6 +12,9 @@ export interface MenuItem {
   tag?: string[];
   isVegetarian?: boolean;
   isVegan?: boolean;
+  // Stock Management
+  stock?: number | null;
+  soldCount?: number;
   createdBy?: {
     _id: string;
     email: string;
@@ -249,6 +252,32 @@ class MenuAPI {
     filename: string
   ): Promise<{ message: string }> {
     const response = await api.delete(`${this.baseUrl}/${id}/images/${filename}`);
+    return response.data;
+  }
+
+  // Stock Management
+  async checkStock(id: string, quantity: number = 1): Promise<{
+    available: boolean;
+    currentStock: number | null;
+    requested: number;
+    message: string;
+  }> {
+    const response = await api.get(`${this.baseUrl}/${id}/stock?quantity=${quantity}`);
+    return response.data;
+  }
+
+  async updateStock(id: string, stock: number): Promise<MenuItem> {
+    const response = await api.put(`${this.baseUrl}/${id}/stock`, { stock });
+    return response.data;
+  }
+
+  async addStock(id: string, quantity: number): Promise<MenuItem> {
+    const response = await api.post(`${this.baseUrl}/${id}/stock/add`, { quantity });
+    return response.data;
+  }
+
+  async getLowStockItems(): Promise<MenuItem[]> {
+    const response = await api.get(`${this.baseUrl}/low-stock`);
     return response.data;
   }
 
