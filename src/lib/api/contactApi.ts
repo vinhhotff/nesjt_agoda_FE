@@ -45,7 +45,7 @@ export interface ContactListResponse {
 export const createContact = async (data: CreateContactDto): Promise<Contact> => {
   try {
     const response = await api.post('/contact', data);
-    return response.data;
+    return response.data?.data || response.data;
   } catch (error) {
     console.error('Error creating contact:', error);
     throw error;
@@ -63,7 +63,8 @@ export const getContacts = async (
     if (status) params.status = status;
 
     const response = await api.get('/contact', { params });
-    return response.data;
+    // Handle the backend's ResponseInterceptor wrapping: { statusCode: 200, message: 'Success', data: ... }
+    return response.data?.data || response.data;
   } catch (error) {
     console.error('Error fetching contacts:', error);
     throw error;
@@ -74,7 +75,7 @@ export const getContacts = async (
 export const getContactStats = async (): Promise<ContactStats> => {
   try {
     const response = await api.get('/contact/stats');
-    return response.data;
+    return response.data?.data || response.data;
   } catch (error) {
     console.error('Error fetching contact stats:', error);
     return { total: 0, pending: 0, replied: 0, closed: 0 };
@@ -85,7 +86,7 @@ export const getContactStats = async (): Promise<ContactStats> => {
 export const getContact = async (id: string): Promise<Contact> => {
   try {
     const response = await api.get(`/contact/${id}`);
-    return response.data;
+    return response.data?.data || response.data;
   } catch (error) {
     console.error('Error fetching contact:', error);
     throw error;
@@ -96,7 +97,7 @@ export const getContact = async (id: string): Promise<Contact> => {
 export const acceptContact = async (id: string): Promise<Contact> => {
   try {
     const response = await api.post(`/contact/${id}/accept`);
-    return response.data;
+    return response.data?.data || response.data;
   } catch (error) {
     console.error('Error accepting contact:', error);
     throw error;
@@ -107,7 +108,7 @@ export const acceptContact = async (id: string): Promise<Contact> => {
 export const rejectContact = async (id: string, reason?: string): Promise<Contact> => {
   try {
     const response = await api.post(`/contact/${id}/reject`, { reason });
-    return response.data;
+    return response.data?.data || response.data;
   } catch (error) {
     console.error('Error rejecting contact:', error);
     throw error;
@@ -118,7 +119,7 @@ export const rejectContact = async (id: string, reason?: string): Promise<Contac
 export const replyContact = async (id: string, replyMessage: string): Promise<Contact> => {
   try {
     const response = await api.post(`/contact/${id}/reply`, { replyMessage });
-    return response.data;
+    return response.data?.data || response.data;
   } catch (error) {
     console.error('Error replying to contact:', error);
     throw error;
