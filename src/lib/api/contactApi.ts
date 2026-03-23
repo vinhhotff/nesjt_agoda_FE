@@ -61,7 +61,7 @@ export const getContacts = async (
   try {
     const params: Record<string, any> = { page, limit };
     if (status) params.status = status;
-    
+
     const response = await api.get('/contact', { params });
     return response.data;
   } catch (error) {
