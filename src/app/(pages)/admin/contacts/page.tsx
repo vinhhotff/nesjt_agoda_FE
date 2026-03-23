@@ -433,9 +433,7 @@ export default function AdminContactsPage() {
               </p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    setShowReplyModal(true);
-                  }}
+                  onClick={() => setShowReplyModal(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                 >
                   <Reply className="w-4 h-4" />
@@ -568,7 +566,6 @@ export default function AdminContactsPage() {
           </div>
         </Modal>
       )}
-      </div>
     </AdminLayout>
   );
 }
