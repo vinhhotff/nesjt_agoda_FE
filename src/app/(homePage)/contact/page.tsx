@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { MapPin, Phone, Mail, Clock, Send, Sparkles, MessageCircle } from "lucide-react";
+import { createContact } from "@/src/lib/api/contactApi";
 
 const ContactPage = () => {
   const router = useRouter();
@@ -13,6 +14,7 @@ const ContactPage = () => {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     subject: "",
     message: "",
   });
@@ -34,6 +36,10 @@ const ContactPage = () => {
       toast.error("Email cannot be empty!");
       return;
     }
+    if (!form.phone.trim()) {
+      toast.error("Phone cannot be empty!");
+      return;
+    }
     if (!form.subject.trim()) {
       toast.error("Subject cannot be empty!");
       return;
@@ -45,12 +51,23 @@ const ContactPage = () => {
 
     setIsSubmitting(true);
     
-    // Remove unnecessary delay for faster form submission
-    // await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast.success("Your message has been sent successfully!");
-    setForm({ name: "", email: "", subject: "", message: "" });
-    setIsSubmitting(false);
+    try {
+      await createContact({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        subject: form.subject,
+        message: form.message,
+      });
+      
+      toast.success("Your message has been sent successfully! We'll get back to you soon.");
+      setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to send message';
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -197,6 +214,21 @@ const ContactPage = () => {
                     name="email"
                     placeholder="john@example.com"
                     value={form.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-yellow-500/20 focus:border-yellow-500 transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="0123456789"
+                    value={form.phone}
                     onChange={handleChange}
                     className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-yellow-500/20 focus:border-yellow-500 transition-all"
                     required

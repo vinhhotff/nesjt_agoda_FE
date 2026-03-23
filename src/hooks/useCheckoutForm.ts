@@ -3,6 +3,7 @@ import { OrderType, CreateOnlineOrderDto } from "@/src/Types";
 import { useApplyVoucher } from "./useVouchers";
 import { createOnlineOrder } from "@/src/lib/api";
 import { createPayOSPaymentLink } from "@/src/lib/api/payosApi";
+import { checkStockAvailability } from "@/src/lib/api/orderApi";
 import { toast } from "react-toastify";
 
 interface UseCheckoutFormProps {
@@ -96,6 +97,25 @@ export function useCheckoutForm({
     };
 
     try {
+      // Step 0: Check stock availability BEFORE creating order
+      toast.info('Checking stock availability...');
+      const stockCheck = await checkStockAvailability(
+        cartItems.map((ci) => ({
+          item: ci.item._id,
+          quantity: ci.quantity,
+        }))
+      );
+      
+      if (!stockCheck.available) {
+        const unavailableItems = stockCheck.items
+          .filter((i) => !i.isAvailable)
+          .map((i) => `${i.itemName} (${i.message})`)
+          .join('\n• ');
+        toast.error(`❌ Stock không đủ:\n• ${unavailableItems}`);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Step 1: Create order
       const orderResponse = await createOnlineOrder(orderData);
       // console.log removed

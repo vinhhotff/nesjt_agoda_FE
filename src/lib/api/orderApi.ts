@@ -191,6 +191,46 @@ export const markOrderAsPaid = async (orderId: string, isPaid: boolean) => {
   }
 };
 
+// ========== Check Stock Availability ==========
+export interface CheckStockItem {
+  item: string; // MenuItem ID
+  quantity: number;
+}
+
+export interface CheckStockResultItem {
+  itemId: string;
+  itemName: string;
+  requestedQuantity: number;
+  availableStock: number | null;
+  isAvailable: boolean;
+  message: string;
+}
+
+export interface CheckStockResult {
+  success: boolean;
+  available: boolean;
+  items: CheckStockResultItem[];
+  message: string;
+}
+
+export const checkStockAvailability = async (items: CheckStockItem[]): Promise<CheckStockResult> => {
+  try {
+    const response = await api.post('/orders/check-stock', { items });
+    return response.data;
+  } catch (error: any) {
+    // If error response has data, return it for frontend handling
+    if (error.response?.data) {
+      return {
+        success: false,
+        available: false,
+        items: [],
+        message: error.response.data.message || 'Failed to check stock',
+      };
+    }
+    throw error;
+  }
+};
+
 export const setOrderReadyTime = async (
   id: string,
   estimatedReadyTime: Date
