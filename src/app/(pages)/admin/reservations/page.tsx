@@ -84,9 +84,9 @@ const ReservationsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner size="lg" text="Đang tải..." className="min-h-screen" />
-      </div>
+      <AdminLayout>
+        <LoadingSpinner size="lg" text="Đang tải..." />
+      </AdminLayout>
     );
   }
 

@@ -114,9 +114,9 @@ const OrdersPage: React.FC = () => {
 
   if (loading && orders.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner size="lg" text="Loading orders..." className="min-h-screen" />
-      </div>
+      <AdminLayout>
+        <LoadingSpinner size="lg" text="Loading orders..." />
+      </AdminLayout>
     );
   }
 

@@ -20,6 +20,9 @@ import {
   Send
 } from 'lucide-react';
 import Modal from '@/src/components/ui/Modal';
+import { AdminLayout } from '@/src/components/layout';
+import AdminPageHeader from '@/src/components/admin/common/AdminPageHeader';
+import { LoadingSpinner } from '@/src/components/ui';
 
 type ContactStatus = 'pending' | 'read' | 'replied' | 'closed';
 
@@ -155,17 +158,22 @@ export default function AdminContactsPage() {
     );
   };
 
+  if (loading && contacts.length === 0) {
+    return (
+      <AdminLayout>
+        <LoadingSpinner size="lg" text="Loading contacts..." />
+      </AdminLayout>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <MessageSquare className="w-8 h-8 text-yellow-500" />
-            Contact Management
-          </h1>
-          <p className="text-gray-600 mt-2">Manage customer inquiries and messages</p>
-        </div>
+    <AdminLayout>
+      <div className="w-full max-w-7xl mx-auto">
+        <AdminPageHeader
+          title="Contact Management"
+          description="Manage customer inquiries and messages"
+          icon={<MessageSquare className="w-6 h-6 text-white" />}
+        />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -560,6 +568,7 @@ export default function AdminContactsPage() {
           </div>
         </Modal>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

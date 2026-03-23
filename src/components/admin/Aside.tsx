@@ -20,7 +20,8 @@ import {
   ChevronRight,
   LogOut,
   Sparkles,
-  Star
+  Star,
+  MessageSquare
 } from "lucide-react";
 
 const navLinks = [
@@ -29,6 +30,7 @@ const navLinks = [
   { href: "/admin/vouchers", label: "Voucher Management", icon: Ticket },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/reservations", label: "Reservations", icon: Calendar },
+  { href: "/admin/contacts", label: "Contacts", icon: MessageSquare },
   { href: "/admin/tables", label: "Quản lý bàn", icon: Table2 },
   { href: "/admin/tables/layout", label: "Không gian quán", icon: LayoutGrid },
   { href: "/admin/tables/select", label: "Chọn bàn", icon: MousePointerClick },
