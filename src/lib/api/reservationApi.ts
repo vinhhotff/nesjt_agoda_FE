@@ -2,7 +2,8 @@ import { api } from './callApi';
 
 export interface Reservation {
   _id: string;
-  table: {
+  /** Populated from API; may be missing if table was deleted or not assigned */
+  table?: {
     _id: string;
     tableName: string;
     location?: string;

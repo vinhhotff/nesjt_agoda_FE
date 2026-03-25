@@ -109,13 +109,13 @@ export default function ReservationTable({
           </td>
           <td className="py-4 px-6">
             <span className="font-medium text-gray-900">
-              {reservation.table.tableName}
+              {reservation.table?.tableName ?? 'Chưa chọn'}
             </span>
-            {reservation.table.location && (
+            {reservation.table?.location ? (
               <span className="text-xs text-gray-500 block">
                 {reservation.table.location}
               </span>
-            )}
+            ) : null}
           </td>
           <td className="py-4 px-6">
             <div className="flex flex-col">
