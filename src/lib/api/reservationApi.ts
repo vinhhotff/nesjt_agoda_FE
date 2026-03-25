@@ -30,7 +30,7 @@ export interface Reservation {
   bookingType?: 'TABLE_ONLY' | 'FULL_BOOKING';
   items?: Array<{
     _id?: string;
-    item?: string | { _id: string; name: string; price: number; category: string };
+    item?: string | { _id: string; name: string; price: number; category: string; image?: string; description?: string };
     menuItemName?: string;
     quantity: number;
     unitPrice: number;
@@ -115,10 +115,10 @@ export const getReservations = async (
   const items = Array.isArray(inner.reservations)
     ? inner.reservations
     : Array.isArray(inner.items)
-    ? inner.items
-    : Array.isArray(inner)
-    ? inner
-    : [];
+      ? inner.items
+      : Array.isArray(inner)
+        ? inner
+        : [];
 
   console.log('[reservationApi] returning items count:', items.length);
   return {

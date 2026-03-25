@@ -334,12 +334,11 @@ export default function ReservationsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Trạng thái</p>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-                    detailModal.reservation.status === 'confirmed' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                    detailModal.reservation.status === 'cancelled' ? 'bg-red-100 text-red-800 border-red-200' :
-                    detailModal.reservation.status === 'pending_approval' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                    'bg-gray-100 text-gray-800 border-gray-200'
-                  }`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${detailModal.reservation.status === 'confirmed' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                      detailModal.reservation.status === 'cancelled' ? 'bg-red-100 text-red-800 border-red-200' :
+                        detailModal.reservation.status === 'pending_approval' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                          'bg-gray-100 text-gray-800 border-gray-200'
+                    }`}>
                     {statusLabels[detailModal.reservation.status] || detailModal.reservation.status}
                   </span>
                 </div>
@@ -411,18 +410,47 @@ export default function ReservationsPage() {
               {(detailModal.reservation?.items?.length ?? 0) > 0 && (
                 <div className="border-t border-gray-200 pt-4">
                   <h3 className="text-sm font-semibold mb-2 text-gray-700">Danh sách món ăn</h3>
-                  <div className="space-y-2">
-                    {(detailModal.reservation?.items ?? []).map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center text-sm">
-                        <span>
-                          <span className="font-medium">{item.quantity} x </span>
-                          {item.menuItemName || `Món #${idx + 1}`}
-                        </span>
-                        <span className="text-gray-600">
-                          {item.subtotal.toLocaleString('vi-VN')} VNĐ
-                        </span>
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    {(detailModal.reservation?.items ?? []).map((item: any, idx: number) => {
+                      const itemDetails = typeof item.item === 'object' ? item.item : null;
+                      const itemName = itemDetails?.name || item.menuItemName || `Món #${idx + 1}`;
+                      const itemImg = itemDetails?.image;
+
+                      return (
+                        <div key={idx} className="flex justify-between items-center bg-gray-50 border border-gray-100 rounded-xl p-3">
+                          <div className="flex items-center gap-3">
+                            {itemImg ? (
+                              <img src={itemImg} alt={itemName} className="w-14 h-14 object-cover rounded-lg shadow-sm" />
+                            ) : (
+                              <div className="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-[10px] text-center shadow-sm">
+                                No image
+                              </div>
+                            )}
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-gray-800">
+                                {itemName}
+                              </span>
+                              <span className="text-xs text-gray-500 mt-0.5">
+                                Đơn giá: {item.unitPrice?.toLocaleString('vi-VN')} VNĐ
+                              </span>
+                              {item.note && (
+                                <span className="text-xs text-orange-600 mt-1 italic">
+                                  * {item.note}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="bg-white px-2 py-0.5 rounded-md border border-gray-200 text-xs font-semibold text-gray-600 shadow-sm">
+                              x {item.quantity}
+                            </div>
+                            <span className="text-sm text-green-600 font-bold">
+                              {item.subtotal?.toLocaleString('vi-VN')} VNĐ
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -485,28 +513,28 @@ export default function ReservationsPage() {
                 {/* Reject button — for pending / pending_approval */}
                 {(detailModal.reservation?.status === 'pending' ||
                   detailModal.reservation?.status === 'pending_approval') && (
-                  <button
-                    onClick={() => handleOpenRejectModal(detailModal.reservation!)}
-                    disabled={approvalActionLoading}
-                    className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    Từ chối
-                  </button>
-                )}
+                    <button
+                      onClick={() => handleOpenRejectModal(detailModal.reservation!)}
+                      disabled={approvalActionLoading}
+                      className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Từ chối
+                    </button>
+                  )}
 
                 {/* Approve button — for pending / pending_approval */}
                 {(detailModal.reservation?.status === 'pending' ||
                   detailModal.reservation?.status === 'pending_approval') && (
-                  <button
-                    onClick={() => handleApprove(detailModal.reservation?._id!)}
-                    disabled={approvalActionLoading}
-                    className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Đồng ý
-                  </button>
-                )}
+                    <button
+                      onClick={() => handleApprove(detailModal.reservation?._id!)}
+                      disabled={approvalActionLoading}
+                      className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Đồng ý
+                    </button>
+                  )}
 
                 {/* Confirm without deposit button */}
                 {!detailModal.reservation?.isDepositPaid &&

@@ -148,7 +148,7 @@ export default function UserReservationsPage() {
     try {
       const saved = localStorage.getItem("last_reservation_success");
       if (saved) lsPhone = JSON.parse(saved).phone;
-    } catch {}
+    } catch { }
 
     const targetPhone = urlPhone || lsPhone || user?.phone || "";
 
@@ -551,34 +551,49 @@ export default function UserReservationsPage() {
                   <p className="text-xs text-gray-500 mb-3 font-semibold flex items-center gap-2">
                     <span className="text-base">🍽️</span> Món đã đặt ({selectedReservation.items.length} món)
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {selectedReservation.items.map((item: any, idx: number) => {
-                      const itemName = typeof item.item === 'object' && item.item?.name
-                        ? item.item.name
-                        : 'Món';
-                      const itemPrice = typeof item.item === 'object' && item.item?.price
-                        ? item.item.price
-                        : item.unitPrice;
+                      const itemDetails = typeof item.item === 'object' ? item.item : null;
+                      const itemName = itemDetails?.name || item.menuItemName || `Món #${idx + 1}`;
+                      const itemImg = itemDetails?.image;
 
                       return (
-                        <div key={idx} className="flex items-start justify-between gap-3 p-3 bg-gray-50 rounded-xl">
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900 text-sm">{itemName}</p>
-                            {item.note && (
-                              <p className="text-xs text-gray-500 mt-0.5 italic">Ghi chú: {item.note}</p>
+                        <div key={idx} className="flex justify-between items-center bg-gray-50 border border-gray-100 rounded-xl p-3">
+                          <div className="flex items-center gap-3">
+                            {itemImg ? (
+                              <img src={itemImg} alt={itemName} className="w-14 h-14 object-cover rounded-lg shadow-sm" />
+                            ) : (
+                              <div className="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-[10px] text-center shadow-sm">
+                                No image
+                              </div>
                             )}
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-gray-800">
+                                {itemName}
+                              </span>
+                              <span className="text-xs text-gray-500 mt-0.5">
+                                Đơn giá: {item.unitPrice?.toLocaleString('vi-VN')} VNĐ
+                              </span>
+                              {item.note && (
+                                <span className="text-xs text-orange-600 mt-1 italic">
+                                  * {item.note}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="text-sm font-semibold text-gray-900">
-                              {formatCurrency(item.subtotal || itemPrice * item.quantity)}
-                            </p>
-                            <p className="text-xs text-gray-500">x{item.quantity}</p>
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="bg-white px-2 py-0.5 rounded-md border border-gray-200 text-xs font-semibold text-gray-600 shadow-sm">
+                              x {item.quantity}
+                            </div>
+                            <span className="text-sm text-green-600 font-bold">
+                              {item.subtotal?.toLocaleString('vi-VN')} VNĐ
+                            </span>
                           </div>
                         </div>
                       );
                     })}
                     {selectedReservation.totalAmount > 0 && (
-                      <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
+                      <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200 mt-2">
                         <span className="text-sm font-bold text-gray-900">Tổng cộng</span>
                         <span className="text-base font-bold text-amber-600">
                           {formatCurrency(selectedReservation.totalAmount)}
