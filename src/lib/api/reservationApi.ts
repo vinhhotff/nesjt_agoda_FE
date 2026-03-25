@@ -99,25 +99,33 @@ export const getReservations = async (
   if (status) params.status = status;
   if (date) params.date = date;
 
+  console.log('[reservationApi] getReservations → GET /reservations', params);
   const response = await api.get('/reservations', { params });
-  // Backend returns: { reservations: [], total, totalPages }
-  // Axios wraps it as: response.data = { reservations, total, totalPages }
+  console.log('[reservationApi] raw response.data:', JSON.stringify(response.data).slice(0, 300));
+  // Backend: findAll → { reservations, total, totalPages }
+  // ResponseInterceptor bọc: { statusCode, message, data: { reservations, total, totalPages }, timestamp }
+  // Axios unwrap: response.data = { statusCode, message, data: { reservations }, timestamp }
   const body = response.data;
 
-  const items = Array.isArray(body.reservations)
-    ? body.reservations
-    : Array.isArray(body.items)
-    ? body.items
-    : Array.isArray(body.data)
-    ? body.data
+  // Unwrap interceptor wrapper → lấy đúng { reservations, total, totalPages }
+  const inner = body?.data !== undefined ? body.data : body;
+  console.log('[reservationApi] inner after unwrap:', JSON.stringify(inner).slice(0, 300));
+
+  const items = Array.isArray(inner.reservations)
+    ? inner.reservations
+    : Array.isArray(inner.items)
+    ? inner.items
+    : Array.isArray(inner)
+    ? inner
     : [];
 
+  console.log('[reservationApi] returning items count:', items.length);
   return {
     items,
-    total: body.total ?? items.length,
-    page: body.page ?? page,
-    limit: body.limit ?? limit,
-    totalPages: body.totalPages ?? 1,
+    total: inner.total ?? items.length,
+    page: inner.page ?? page,
+    limit: inner.limit ?? limit,
+    totalPages: inner.totalPages ?? 1,
   };
 };
 

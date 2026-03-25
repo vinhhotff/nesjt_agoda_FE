@@ -54,19 +54,25 @@ export default function ReservationsPage() {
   const [approvalActionLoading, setApprovalActionLoading] = useState(false);
 
   const fetchReservations = async () => {
+    console.log('[DEBUG] fetchReservations called — statusFilter:', statusFilter, 'dateFilter:', dateFilter);
     try {
       setLoading(true);
+      console.log('[DEBUG] calling getReservations...');
       const result = await getReservations(
         1,
         100,
         statusFilter === 'all' ? undefined : statusFilter,
         dateFilter || undefined
       );
+      console.log('[DEBUG] getReservations raw result:', JSON.stringify(result, null, 2));
+      console.log('[DEBUG] items count:', result.items?.length, 'total:', result.total);
       setReservations(result.items);
-    } catch (error) {
-      console.error('Error fetching reservations:', error);
-      toast.error('Không thể tải danh sách đặt bàn');
+      console.log('[DEBUG] setReservations done, items:', result.items.length);
+    } catch (error: any) {
+      console.error('[DEBUG] fetchReservations ERROR:', error?.response?.status, error?.response?.data, error?.message);
+      toast.error('Không thể tải danh sách đặt bàn: ' + (error?.response?.data?.message || error.message));
     } finally {
+      console.log('[DEBUG] fetchReservations finally — loading=false');
       setLoading(false);
     }
   };
@@ -228,6 +234,7 @@ export default function ReservationsPage() {
               >
                 <option value="all">Tất cả</option>
                 <option value="pending">Chờ xác nhận</option>
+                <option value="pending_approval">Chờ phê duyệt</option>
                 <option value="confirmed">Đã xác nhận</option>
                 <option value="arrived">Đã đến</option>
                 <option value="seated">Đã ngồi</option>

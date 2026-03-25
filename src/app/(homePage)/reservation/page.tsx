@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/lib/utils/toast";
 import { reservationsAPI, CreateReservationDto } from "@/src/lib/api/reservationsApi";
+import { createFullBooking } from "@/src/lib/api/reservationApprovalApi";
 import TableSelectionModal from "@/src/components/reservations/TableSelectionModal";
 import { createPayOSPaymentLink } from "@/src/lib/api/payosApi";
 import { useCart } from "@/src/Context/CartContext";
@@ -18,7 +19,7 @@ const SKIP_TABLE_DEPOSIT_PAYMENT = true;
 
 export default function ReservationPage() {
   const router = useRouter();
-  const { cartItems, getCartTotal } = useCart();
+  const { cartItems, getCartTotal, clearCart } = useCart();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -46,6 +47,7 @@ export default function ReservationPage() {
 
   const cartTotal = getCartTotal();
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const hasPreorderItems = preOrderFood && cartItemCount > 0;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -81,9 +83,16 @@ export default function ReservationPage() {
       return;
     }
 
+    const reservationDate = `${form.date}T${form.time}:00`;
+    const preorderLineItems = hasPreorderItems
+      ? cartItems.map(({ item, quantity }) => ({
+          menuItemId: item._id,
+          quantity,
+        }))
+      : [];
+
     // Đã chọn bàn: demo bỏ qua PayOS → gửi đặt bàn chờ admin xác nhận; hoặc thanh toán cọc 300k qua PayOS
     if (form.tableNumber) {
-      const reservationDate = `${form.date}T${form.time}:00`;
       const reservationData: CreateReservationDto = {
         customerName: form.name,
         customerPhone: form.phone,
@@ -97,7 +106,26 @@ export default function ReservationPage() {
 
       if (SKIP_TABLE_DEPOSIT_PAYMENT) {
         try {
-          await reservationsAPI.createReservationPublic(reservationData);
+          if (hasPreorderItems) {
+            const fb = await createFullBooking({
+              customerName: form.name,
+              customerPhone: form.phone,
+              customerEmail: form.email || undefined,
+              reservationDate,
+              reservationTime: form.time,
+              numberOfGuests: Number(form.guests) || 1,
+              specialRequests: form.specialRequests || undefined,
+              tableId: form.tableId || undefined,
+              items: preorderLineItems,
+            });
+            if (!fb.success) {
+              throw new Error(fb.message || "Không thể lưu đặt bàn kèm món ăn.");
+            }
+            toast.success(fb.message || "Đã gửi đặt bàn kèm món ăn.");
+            clearCart();
+          } else {
+            await reservationsAPI.createReservationPublic(reservationData);
+          }
           // Lưu thông tin đặt bàn vào localStorage để hiển thị trang success
           localStorage.setItem("last_reservation_success", JSON.stringify({
             name: form.name,
@@ -136,7 +164,12 @@ export default function ReservationPage() {
         const reservationId = `reservation_${Date.now()}`;
         localStorage.setItem(
           "pending_reservation",
-          JSON.stringify({ reservationId, reservationData })
+          JSON.stringify({
+            reservationId,
+            reservationData,
+            tableId: form.tableId || undefined,
+            preorderItems: hasPreorderItems ? preorderLineItems : undefined,
+          })
         );
 
         const depositAmount = 300000;
@@ -169,8 +202,6 @@ export default function ReservationPage() {
     } else {
       // Nếu không chọn bàn, tạo reservation trực tiếp (không cần thanh toán)
       try {
-        const reservationDate = `${form.date}T${form.time}:00`;
-
         const reservationData: CreateReservationDto = {
           customerName: form.name,
           customerPhone: form.phone,
@@ -181,17 +212,28 @@ export default function ReservationPage() {
           specialRequests: form.specialRequests || undefined,
         };
 
-        await reservationsAPI.createReservationPublic(reservationData);
-
-        const successMessage = preOrderFood && cartItemCount > 0
-          ? `Đặt bàn thành công! Bạn đã đặt trước ${cartItemCount} món ăn. Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.`
-          : "Đặt bàn của bạn đã được gửi thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.";
-        toast.success(successMessage);
-        setForm({ name: "", email: "", phone: "", date: "", time: "", guests: 1, specialRequests: "", tableNumber: "", tableId: "" });
-        // Keep cart if pre-order was selected
-        if (!preOrderFood) {
-          // Clear cart only if not pre-ordering
+        if (hasPreorderItems) {
+          const fb = await createFullBooking({
+            customerName: form.name,
+            customerPhone: form.phone,
+            customerEmail: form.email || undefined,
+            reservationDate,
+            reservationTime: form.time,
+            numberOfGuests: Number(form.guests) || 1,
+            specialRequests: form.specialRequests || undefined,
+            items: preorderLineItems,
+          });
+          if (!fb.success) {
+            throw new Error(fb.message || "Không thể lưu đặt bàn kèm món ăn.");
+          }
+          toast.success(fb.message || `Đặt bàn thành công! Đã ghi nhận ${cartItemCount} món.`);
+          clearCart();
+        } else {
+          await reservationsAPI.createReservationPublic(reservationData);
+          toast.success("Đặt bàn của bạn đã được gửi thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.");
         }
+
+        setForm({ name: "", email: "", phone: "", date: "", time: "", guests: 1, specialRequests: "", tableNumber: "", tableId: "" });
       } catch (error: any) {
         console.error("Error creating reservation:", error);
         const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra khi gửi đặt bàn. Vui lòng thử lại.";

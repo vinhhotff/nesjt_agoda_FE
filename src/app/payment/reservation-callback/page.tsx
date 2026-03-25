@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { confirmPayOSPayment } from '@/src/lib/api/payosApi';
 import { reservationsAPI } from '@/src/lib/api/reservationsApi';
+import { createFullBooking } from '@/src/lib/api/reservationApprovalApi';
 
 function ReservationCallbackContent() {
   const searchParams = useSearchParams();
@@ -42,10 +43,28 @@ function ReservationCallbackContent() {
             throw new Error('Không tìm thấy thông tin đặt bàn');
           }
 
-          const { reservationData } = JSON.parse(pendingReservation);
+          const pending = JSON.parse(pendingReservation);
+          const { reservationData, tableId, preorderItems } = pending;
 
-          // Tạo reservation sau khi payment thành công
-          await reservationsAPI.createReservationPublic(reservationData);
+          // Tạo reservation sau khi payment thành công (kèm món nếu có)
+          if (Array.isArray(preorderItems) && preorderItems.length > 0) {
+            const fb = await createFullBooking({
+              customerName: reservationData.customerName,
+              customerPhone: reservationData.customerPhone,
+              customerEmail: reservationData.customerEmail,
+              reservationDate: reservationData.reservationDate,
+              reservationTime: reservationData.reservationTime,
+              numberOfGuests: reservationData.numberOfGuests,
+              specialRequests: reservationData.specialRequests,
+              tableId,
+              items: preorderItems,
+            });
+            if (!fb.success) {
+              throw new Error(fb.message || 'Không thể tạo đặt bàn kèm món');
+            }
+          } else {
+            await reservationsAPI.createReservationPublic(reservationData);
+          }
 
           // Xóa pending reservation
           localStorage.removeItem('pending_reservation');

@@ -138,10 +138,11 @@ const reservationApi = {
     return response.data;
   },
 
-  // Create full booking
+  // Create full booking (unwrap Nest ResponseInterceptor: { data: payload })
   createFullBooking: async (data: CreateFullBookingData): Promise<FullBookingResponse> => {
     const response = await api.post('/reservations/full-booking', data);
-    return response.data;
+    const body = response.data;
+    return (body?.data !== undefined ? body.data : body) as FullBookingResponse;
   },
 
   // Check table availability
@@ -266,4 +267,5 @@ export const {
   confirmWithoutDeposit,
   getApprovalSettings,
   updateApprovalSettings,
+  createFullBooking,
 } = reservationApi;
