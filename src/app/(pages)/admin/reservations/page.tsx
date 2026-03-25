@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Calendar, X, RotateCcw, History } from 'lucide-react';
+import { Calendar, X, RotateCcw, History, CheckCircle, XCircle } from 'lucide-react';
 import { AdminLayout } from '@/src/components/layout';
 import AdminPageHeader from '@/src/components/admin/common/AdminPageHeader';
 import ReservationTable from '@/src/components/admin/reservations/ReservationTable';
@@ -47,6 +47,11 @@ export default function ReservationsPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelRefund, setCancelRefund] = useState(true);
   const [cancelLoading, setCancelLoading] = useState(false);
+
+  // Approve / Reject modals
+  const [rejectModal, setRejectModal] = useState<{ visible: boolean; reservation: Reservation | null }>({ visible: false, reservation: null });
+  const [rejectReason, setRejectReason] = useState('');
+  const [approvalActionLoading, setApprovalActionLoading] = useState(false);
 
   const fetchReservations = async () => {
     try {
@@ -139,7 +144,7 @@ export default function ReservationsPage() {
 
   const handleConfirmWithoutDeposit = async (reservationId: string, adminNotes?: string) => {
     if (!confirm(`Xác nhận đặt bàn này mà không cần đặt cọc qua PayOS?`)) return;
-    setCancelLoading(true);
+    setApprovalActionLoading(true);
     try {
       await confirmWithoutDeposit(reservationId, adminNotes);
       toast.success('Đã xác nhận đặt bàn (không đặt cọc)');
@@ -148,7 +153,48 @@ export default function ReservationsPage() {
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Không thể xác nhận đặt bàn');
     } finally {
-      setCancelLoading(false);
+      setApprovalActionLoading(false);
+    }
+  };
+
+  const handleApprove = async (reservationId: string, adminNotes?: string) => {
+    if (!confirm('Đồng ý đơn đặt bàn này?')) return;
+    setApprovalActionLoading(true);
+    try {
+      await confirmWithoutDeposit(reservationId, adminNotes);
+      toast.success('Đã đồng ý đơn đặt bàn');
+      setDetailModal({ visible: false, reservation: null });
+      fetchReservations();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể đồng ý đơn đặt bàn');
+    } finally {
+      setApprovalActionLoading(false);
+    }
+  };
+
+  const handleOpenRejectModal = (reservation: Reservation) => {
+    setRejectReason('');
+    setRejectModal({ visible: true, reservation });
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal.reservation) return;
+    if (!rejectReason.trim()) {
+      toast.error('Vui lòng nhập lý do từ chối');
+      return;
+    }
+    setApprovalActionLoading(true);
+    try {
+      const { rejectReservation } = await import('@/src/lib/api/reservationApprovalApi');
+      await rejectReservation(rejectModal.reservation._id, rejectReason);
+      toast.success('Đã từ chối đơn đặt bàn');
+      setRejectModal({ visible: false, reservation: null });
+      setDetailModal({ visible: false, reservation: null });
+      fetchReservations();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể từ chối đơn đặt bàn');
+    } finally {
+      setApprovalActionLoading(false);
     }
   };
 
@@ -429,14 +475,40 @@ export default function ReservationsPage() {
 
               {/* Action buttons */}
               <div className="border-t border-gray-200 pt-4 mt-4 flex flex-wrap gap-3 justify-end">
+                {/* Reject button — for pending / pending_approval */}
+                {(detailModal.reservation?.status === 'pending' ||
+                  detailModal.reservation?.status === 'pending_approval') && (
+                  <button
+                    onClick={() => handleOpenRejectModal(detailModal.reservation!)}
+                    disabled={approvalActionLoading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Từ chối
+                  </button>
+                )}
+
+                {/* Approve button — for pending / pending_approval */}
+                {(detailModal.reservation?.status === 'pending' ||
+                  detailModal.reservation?.status === 'pending_approval') && (
+                  <button
+                    onClick={() => handleApprove(detailModal.reservation?._id!)}
+                    disabled={approvalActionLoading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Đồng ý
+                  </button>
+                )}
+
                 {/* Confirm without deposit button */}
                 {!detailModal.reservation?.isDepositPaid &&
                   (detailModal.reservation?.status === 'pending' ||
                     detailModal.reservation?.status === 'pending_approval') && (
                     <button
                       onClick={() => handleConfirmWithoutDeposit(detailModal.reservation?._id!)}
-                      disabled={cancelLoading}
-                      className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                      disabled={approvalActionLoading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -590,6 +662,84 @@ export default function ReservationsPage() {
                   <RotateCcw className="w-4 h-4" />
                 )}
                 Xác nhận hủy đặt bàn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== Reject Modal ========== */}
+      {rejectModal.visible && rejectModal.reservation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between rounded-t-2xl">
+              <div className="flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-red-500" />
+                <h2 className="text-lg font-semibold">Từ chối đơn đặt bàn</h2>
+              </div>
+              <button
+                onClick={() => setRejectModal({ visible: false, reservation: null })}
+                className="p-1 rounded-lg hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Customer info summary */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+                <p className="text-sm">
+                  <span className="text-gray-500">Khách hàng: </span>
+                  <span className="font-medium">{rejectModal.reservation?.customerName}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="text-gray-500">Điện thoại: </span>
+                  <span className="font-medium">{rejectModal.reservation?.customerPhone}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="text-gray-500">Ngày giờ: </span>
+                  <span className="font-medium">
+                    {rejectModal.reservation?.reservationDate
+                      ? format(new Date(rejectModal.reservation.reservationDate), 'dd/MM/yyyy', { locale: vi })
+                      : '-'}{' '}
+                    {rejectModal.reservation?.reservationTime}
+                  </span>
+                </p>
+              </div>
+
+              {/* Reason */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lý do từ chối <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Nhập lý do từ chối đơn đặt bàn (khách hàng sẽ được thông báo)..."
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-2xl">
+              <button
+                onClick={() => setRejectModal({ visible: false, reservation: null })}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={approvalActionLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {approvalActionLoading ? (
+                  <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )}
+                Xác nhận từ chối
               </button>
             </div>
           </div>

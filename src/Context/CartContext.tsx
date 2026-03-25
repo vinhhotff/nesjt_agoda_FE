@@ -27,22 +27,25 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize state from localStorage synchronously on the client side.
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    if (typeof window === 'undefined') {
-      return [];
-    }
+  // Luôn bắt đầu [] để SSR và lần hydrate đầu khớp nhau; đọc localStorage trong useEffect.
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
     try {
       const storedCart = localStorage.getItem('cart');
-      return storedCart ? JSON.parse(storedCart) : [];
+      if (storedCart) {
+        setCartItems(JSON.parse(storedCart));
+      }
     } catch (error) {
-      console.error("Failed to parse cart from localStorage on init", error);
-      return [];
+      console.error('Failed to parse cart from localStorage on init', error);
     }
-  });
+    setHydrated(true);
+  }, []);
 
   // Save cart to localStorage whenever it changes.
   useEffect(() => {
+    if (!hydrated) return;
     try {
       // The check for window is not strictly necessary here since useEffect only runs on the client,
       // but it's good practice for safety.
@@ -52,7 +55,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Failed to save cart to localStorage", error);
     }
-  }, [cartItems]);
+  }, [cartItems, hydrated]);
 
 
   const addToCart = useCallback((itemToAdd: IMenuItem) => {

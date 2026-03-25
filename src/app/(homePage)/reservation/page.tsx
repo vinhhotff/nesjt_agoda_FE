@@ -11,7 +11,7 @@ import { reservationsAPI, CreateReservationDto } from "@/src/lib/api/reservation
 import TableSelectionModal from "@/src/components/reservations/TableSelectionModal";
 import { createPayOSPaymentLink } from "@/src/lib/api/payosApi";
 import { useCart } from "@/src/Context/CartContext";
-import { MapPin, Calendar, Clock, Users, Mail, Phone, User, MessageSquare, Sparkles, AlertCircle, UtensilsCrossed } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, Mail, Phone, User, MessageSquare, Sparkles, AlertCircle, UtensilsCrossed, PartyPopper } from "lucide-react";
 
 /** Demo: luôn bỏ qua PayOS khi chọn bàn → gửi đơn chờ admin duyệt. */
 const SKIP_TABLE_DEPOSIT_PAYMENT = true;
@@ -323,6 +323,29 @@ export default function ReservationPage() {
                       <span className="leading-relaxed">We'll contact you to confirm your booking</span>
                     </li>
                   </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Book for Event — link to Contact page */}
+            <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-violet-50 rounded-3xl border-2 border-purple-200 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 p-3 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl shadow-md">
+                  <PartyPopper className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 mb-2 text-lg">Book for Event</h3>
+                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                    Hosting a birthday party, corporate event, or private gathering? Our team will craft a
+                    personalized experience for your special occasion.
+                  </p>
+                  <a
+                    href="/contact"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Contact Manager
+                  </a>
                 </div>
               </div>
             </div>
