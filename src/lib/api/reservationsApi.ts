@@ -1,6 +1,21 @@
 import { api } from './callApi';
 
 // Types
+export interface ReservationItem {
+  item: {
+    _id: string;
+    name: string;
+    price: number;
+    category?: string;
+    image?: string;
+    description?: string;
+  } | string; // string = ObjectId khi chưa populate
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  note?: string;
+}
+
 export interface Reservation {
   _id: string;
   customerName: string;
@@ -14,7 +29,33 @@ export interface Reservation {
   table?: string;
   /** Tên hiển thị bàn từ backend (nếu có) */
   tableNumber?: string;
+  /** Chi tiết bàn từ populate */
+  tableDetails?: {
+    _id: string;
+    tableName: string;
+    location?: string;
+    status?: string;
+    capacity?: number;
+  };
   specialRequests?: string;
+  /** Danh sách món đã đặt */
+  items?: ReservationItem[];
+  /** Tổng tiền */
+  totalAmount?: number;
+  /** Tiền cọc */
+  depositAmount?: number;
+  depositPaid?: number;
+  isDepositPaid?: boolean;
+  bookingType?: string;
+  /** Lịch sử trạng thái */
+  statusHistory?: Array<{
+    status: string;
+    changedBy?: string;
+    changedByName?: string;
+    reason?: string;
+    note?: string;
+    timestamp: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -153,6 +194,14 @@ class ReservationsAPI {
       table: tableRef || undefined,
       tableNumber: tableNumberLabel || undefined,
       specialRequests: reservation.specialRequests,
+      items: reservation.items,
+      totalAmount: reservation.totalAmount,
+      depositAmount: reservation.depositAmount,
+      depositPaid: reservation.depositPaid,
+      isDepositPaid: reservation.isDepositPaid,
+      bookingType: reservation.bookingType,
+      statusHistory: reservation.statusHistory,
+      tableDetails: reservation.table,
       createdAt: reservation.createdAt || new Date().toISOString(),
       updatedAt: reservation.updatedAt || new Date().toISOString(),
     };

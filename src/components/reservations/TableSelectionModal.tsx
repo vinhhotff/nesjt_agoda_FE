@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { X, Check, Users, MapPin, RotateCw, Layout } from 'lucide-react';
+import { X, Check, Users, MapPin, RotateCw, Layout, AlertCircle } from 'lucide-react';
 import { Table, TableLayout } from '@/src/Types';
 import { getTables } from '@/src/lib/api';
 import { reservationsAPI } from '@/src/lib/api/reservationsApi';
 import { getActiveTableLayout } from '@/src/lib/api/tableLayoutApi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from '@/src/lib/utils/toast';
 import {
   getTableCellColor,
   getEmptyCellColor,
@@ -320,7 +321,7 @@ export default function TableSelectionModal({
     }
   }, [reservationDate, reservationTime]);
 
-  // Update filtered tables when tables or layout changes
+  // Update filtered tables when tables, layout, or date/time changes
   useEffect(() => {
     if (selectedLayout && tables.length > 0) {
       // Filter tables to only show those in the selected layout
@@ -328,7 +329,7 @@ export default function TableSelectionModal({
       if (!selectedLayout.tables) return;
       const layoutTableIds = selectedLayout.tables.map(t => t.tableId);
       const layoutTableNames = selectedLayout.tables.map(t => t.tableName);
-      
+
       const filtered = tables.filter(table => {
         // Match by tableId (preferred)
         if (layoutTableIds.includes(table._id)) {
@@ -340,7 +341,7 @@ export default function TableSelectionModal({
         }
         return false;
       });
-      
+
       setFilteredTables(filtered);
       // Check availability after filtering
       checkTableAvailability(filtered);
@@ -349,7 +350,7 @@ export default function TableSelectionModal({
       setFilteredTables(tables);
       checkTableAvailability(tables);
     }
-  }, [tables, selectedLayout, checkTableAvailability]);
+  }, [tables, selectedLayout, checkTableAvailability, reservationDate, reservationTime]);
 
   const handleTableClick = (table: Table) => {
     if (table.status === 'maintenance') return;
@@ -362,11 +363,22 @@ export default function TableSelectionModal({
       if (!availability) return;
       isAvailable = availability.isAvailable && !availability.isReserved;
     } else {
-      isAvailable = table.status === 'available' || table.status === 'reserved';
+      // Khi không có context đặt bàn, chỉ cho phép chọn bàn available
+      // KHÔNG cho phép chọn bàn reserved (đã có người đặt)
+      isAvailable = table.status === 'available';
     }
 
     if (isAvailable) {
       onSelectTable(table._id, table.tableName);
+    } else {
+      // Thông báo ngay lập tức nếu bàn không khả dụng
+      if (availability?.isReserved) {
+        toast.error(`Bàn ${table.tableName} đã được đặt bởi ${availability.reservedBy}. Vui lòng chọn bàn khác!`);
+      } else if (table.status === 'occupied') {
+        toast.error(`Bàn ${table.tableName} đang có khách ngồi. Vui lòng chọn bàn khác!`);
+      } else if (table.status === 'reserved') {
+        toast.error(`Bàn ${table.tableName} đã được đặt. Vui lòng chọn bàn khác!`);
+      }
     }
   };
 
@@ -395,7 +407,7 @@ export default function TableSelectionModal({
     if (isHovered && isAvailable) {
       return 'bg-amber-100 border-amber-400 text-amber-900 shadow-md';
     }
-    if (!isAvailable || (availability?.isReserved) || table.status === 'occupied') {
+    if (!isAvailable || (availability?.isReserved) || table.status === 'occupied' || table.status === 'reserved') {
       return 'bg-red-100 border-red-300 text-red-800 cursor-not-allowed opacity-75';
     }
     if (table.status === 'maintenance') {
@@ -525,10 +537,6 @@ export default function TableSelectionModal({
               <span className="text-gray-700 font-medium">Trống - Có thể chọn</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-amber-100 border-2 border-amber-300 shadow-sm"></div>
-              <span className="text-gray-700 font-medium">Đã đặt - Có thể chọn</span>
-            </div>
-            <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-red-100 border-2 border-red-300 shadow-sm relative">
                 <X className="w-3 h-3 text-red-600 absolute inset-0 m-auto" />
               </div>
@@ -656,7 +664,7 @@ export default function TableSelectionModal({
                             availability.isAvailable &&
                             !availability.isReserved
                         )
-                      : table.status === 'available' || table.status === 'reserved'
+                      : table.status === 'available'
                     : false;
 
                   // Sử dụng shared color function
@@ -695,6 +703,8 @@ export default function TableSelectionModal({
                           setHoveredTable(table._id);
                           if (availability?.isReserved) {
                             setHoveredReservedTable(availability);
+                            // Thông báo ngay khi hover vào bàn đã đặt
+                            toast.error(`Bàn ${table.tableName} đã được đặt bởi ${availability.reservedBy}. Vui lòng chọn bàn khác!`);
                           }
                         }
                       }}
@@ -749,16 +759,14 @@ export default function TableSelectionModal({
                     exit={{ opacity: 0, y: 4 }}
                     className="absolute left-1/2 -translate-x-1/2 mt-2 z-50 pointer-events-none"
                   >
-                    <div className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-xl whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <X className="w-4 h-4 flex-shrink-0" />
-                        <span>
-                          Đã được đặt bởi <strong>{hoveredReservedTable.reservedBy}</strong>
-                          {hoveredReservedTable.reservationTime && (
-                            <> lúc {hoveredReservedTable.reservationTime}</>
-                          )}
-                        </span>
-                      </div>
+                    <div className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>
+                        Đã được đặt bởi <strong>{hoveredReservedTable.reservedBy}</strong>
+                        {hoveredReservedTable.reservationTime && (
+                          <> lúc {hoveredReservedTable.reservationTime}</>
+                        )}
+                      </span>
                     </div>
                   </motion.div>
                 )}

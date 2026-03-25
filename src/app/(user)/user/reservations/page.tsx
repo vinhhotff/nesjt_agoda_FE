@@ -250,6 +250,13 @@ export default function UserReservationsPage() {
               </div>
             )}
 
+            {reservation.items && reservation.items.length > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-orange-600">
+                <span className="text-base">🍽️</span>
+                {reservation.items.length} món • {formatCurrency(reservation.totalAmount || 0)}
+              </div>
+            )}
+
             {reservation.status === "cancelled" && reservation.specialRequests && (
               <div className="text-xs text-gray-500 italic truncate">
                 {reservation.specialRequests}
@@ -535,6 +542,50 @@ export default function UserReservationsPage() {
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     Đơn đang chờ nhà hàng xác nhận. Bạn sẽ được thông báo khi đặt bàn được duyệt.
                   </p>
+                </div>
+              )}
+
+              {/* Menu Items */}
+              {selectedReservation.items && selectedReservation.items.length > 0 && (
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-xs text-gray-500 mb-3 font-semibold flex items-center gap-2">
+                    <span className="text-base">🍽️</span> Món đã đặt ({selectedReservation.items.length} món)
+                  </p>
+                  <div className="space-y-2">
+                    {selectedReservation.items.map((item: any, idx: number) => {
+                      const itemName = typeof item.item === 'object' && item.item?.name
+                        ? item.item.name
+                        : 'Món';
+                      const itemPrice = typeof item.item === 'object' && item.item?.price
+                        ? item.item.price
+                        : item.unitPrice;
+
+                      return (
+                        <div key={idx} className="flex items-start justify-between gap-3 p-3 bg-gray-50 rounded-xl">
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900 text-sm">{itemName}</p>
+                            {item.note && (
+                              <p className="text-xs text-gray-500 mt-0.5 italic">Ghi chú: {item.note}</p>
+                            )}
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {formatCurrency(item.subtotal || itemPrice * item.quantity)}
+                            </p>
+                            <p className="text-xs text-gray-500">x{item.quantity}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {selectedReservation.totalAmount > 0 && (
+                      <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
+                        <span className="text-sm font-bold text-gray-900">Tổng cộng</span>
+                        <span className="text-base font-bold text-amber-600">
+                          {formatCurrency(selectedReservation.totalAmount)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
