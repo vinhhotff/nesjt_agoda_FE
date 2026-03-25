@@ -98,9 +98,15 @@ export default function ReservationPage() {
       if (SKIP_TABLE_DEPOSIT_PAYMENT) {
         try {
           await reservationsAPI.createReservationPublic(reservationData);
-          toast.success(
-            "Đặt bàn đã gửi thành công! Bàn bạn chọn đang chờ nhà hàng xác nhận (không cần thanh toán trước trong chế độ demo)."
-          );
+          // Lưu thông tin đặt bàn vào localStorage để hiển thị trang success
+          localStorage.setItem("last_reservation_success", JSON.stringify({
+            name: form.name,
+            phone: form.phone,
+            date: reservationDate,
+            time: form.time,
+            guests: Number(form.guests) || 1,
+            tableNumber: form.tableNumber || undefined,
+          }));
           setForm({
             name: "",
             email: "",
@@ -113,7 +119,7 @@ export default function ReservationPage() {
             tableId: "",
           });
           setIsSubmitting(false);
-          router.push("/user/reservations");
+          router.push("/reservation/success");
         } catch (error: any) {
           console.error("Error creating reservation:", error);
           const errorMessage =

@@ -132,13 +132,37 @@ export default function UserReservationsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  /** Banner xác nhận đặt bàn thành công */
+  const [justBooked, setJustBooked] = useState(false);
 
-  // Auto-load reservations if user is logged in
+  // Auto-load: ưu tiên URL ?phone=, rồi localStorage, rồi logged-in user
   useEffect(() => {
-    if (!authLoading && user?.phone) {
-      setPhone(user.phone);
-      setPhoneInput(user.phone);
-      fetchReservations(user.phone);
+    if (authLoading) return;
+
+    // 1. URL query param
+    const params = new URLSearchParams(window.location.search);
+    const urlPhone = params.get("phone");
+
+    // 2. localStorage (từ trang success vừa đặt bàn)
+    let lsPhone: string | null = null;
+    try {
+      const saved = localStorage.getItem("last_reservation_success");
+      if (saved) lsPhone = JSON.parse(saved).phone;
+    } catch {}
+
+    const targetPhone = urlPhone || lsPhone || user?.phone || "";
+
+    if (targetPhone) {
+      setPhone(targetPhone);
+      setPhoneInput(targetPhone);
+      fetchReservations(targetPhone);
+
+      // Nếu có trong localStorage → hiện banner, rồi xóa để không hiện lại
+      if (lsPhone) {
+        setJustBooked(true);
+        localStorage.removeItem("last_reservation_success");
+        setTimeout(() => setJustBooked(false), 8000);
+      }
     }
   }, [authLoading, user]);
 
@@ -272,6 +296,28 @@ export default function UserReservationsPage() {
             <h1 className="text-3xl font-extrabold text-gray-900">Đơn đặt bàn của tôi</h1>
           </div>
         </div>
+
+        {/* Success Banner — hiện khi vừa đặt bàn thành công */}
+        {justBooked && (
+          <div className="flex items-start gap-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-5 shadow-lg animate-fade-in">
+            <div className="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+              <CheckCircle className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-green-800 text-lg">Đặt bàn thành công!</p>
+              <p className="text-sm text-green-700 mt-1 leading-relaxed">
+                Yêu cầu đã được gửi. Nhà hàng sẽ gọi điện xác nhận trong <strong>30 phút</strong>.
+                Bạn có thể xem trạng thái đơn bên dưới.
+              </p>
+            </div>
+            <button
+              onClick={() => setJustBooked(false)}
+              className="flex-shrink-0 p-1 text-green-400 hover:text-green-600 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Search form */}
         <form
