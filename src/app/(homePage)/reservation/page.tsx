@@ -4,7 +4,7 @@
 // This page allows guests to make reservations without logging in
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/lib/utils/toast";
 import { reservationsAPI, CreateReservationDto } from "@/src/lib/api/reservationsApi";
@@ -33,6 +33,16 @@ export default function ReservationPage() {
   const [preOrderFood, setPreOrderFood] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
+  /** Tránh hydration mismatch: không dùng new Date() trong render (SSR vs client / SSG). */
+  const [minDateStr, setMinDateStr] = useState("");
+
+  useEffect(() => {
+    const t = new Date();
+    const y = t.getFullYear();
+    const m = String(t.getMonth() + 1).padStart(2, "0");
+    const d = String(t.getDate()).padStart(2, "0");
+    setMinDateStr(`${y}-${m}-${d}`);
+  }, []);
 
   const cartTotal = getCartTotal();
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -79,7 +89,8 @@ export default function ReservationPage() {
         customerPhone: form.phone,
         customerEmail: form.email || undefined,
         reservationDate: reservationDate,
-        numberOfGuests: form.guests,
+        reservationTime: form.time,
+        numberOfGuests: Number(form.guests) || 1,
         specialRequests: form.specialRequests || undefined,
         tableNumber: form.tableNumber,
       };
@@ -101,6 +112,7 @@ export default function ReservationPage() {
             tableNumber: "",
             tableId: "",
           });
+          setIsSubmitting(false);
           router.push("/user/reservations");
         } catch (error: any) {
           console.error("Error creating reservation:", error);
@@ -158,7 +170,8 @@ export default function ReservationPage() {
           customerPhone: form.phone,
           customerEmail: form.email || undefined,
           reservationDate: reservationDate,
-          numberOfGuests: form.guests,
+          reservationTime: form.time,
+          numberOfGuests: Number(form.guests) || 1,
           specialRequests: form.specialRequests || undefined,
         };
 
@@ -403,7 +416,7 @@ export default function ReservationPage() {
                       name="date"
                       value={form.date}
                       onChange={handleChange}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={minDateStr || undefined}
                       className="w-full px-5 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-yellow-500/20 focus:border-yellow-500 focus:bg-white transition-all hover:border-gray-300"
                       required
                     />

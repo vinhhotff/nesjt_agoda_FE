@@ -31,6 +31,8 @@ export interface CreateReservationDto {
   customerEmail?: string;
   numberOfGuests: number;
   reservationDate: string;
+  /** Khớp schema backend (HH:mm); nếu thiếu backend vẫn suy ra từ reservationDate */
+  reservationTime?: string;
   specialRequests?: string;
   tableNumber?: string;
 }
