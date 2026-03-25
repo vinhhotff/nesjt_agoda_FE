@@ -1,7 +1,7 @@
-feat(user): add "My Reservations" page and skip PayOS for table bookings
+fix(reservation): handle missing table field gracefully
 
-- Hardcode SKIP_TABLE_DEPOSIT_PAYMENT=true → booking with table skips PayOS
-- After table booking, redirect to /user/reservations
-- Create /user/reservations page: search by phone, show status, detail modal
-- Add "Đơn đặt bàn của tôi" link in user home sidebar
-- Add getByPhone() to reservationsApi.ts
+- Add optional chaining (?.) and nullish coalescing (??) on
+  reservation.table in ReservationTable and detail modal
+- Update Reservation interface table field to optional
+- Fixes "Cannot read properties of undefined (reading 'tableName')"
+  crash when reservation has no table assigned
