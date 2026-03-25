@@ -335,9 +335,9 @@ export default function ReservationsPage() {
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Trạng thái</p>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${detailModal.reservation.status === 'confirmed' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                      detailModal.reservation.status === 'cancelled' ? 'bg-red-100 text-red-800 border-red-200' :
-                        detailModal.reservation.status === 'pending_approval' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                          'bg-gray-100 text-gray-800 border-gray-200'
+                    detailModal.reservation.status === 'cancelled' ? 'bg-red-100 text-red-800 border-red-200' :
+                      detailModal.reservation.status === 'pending_approval' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                        'bg-gray-100 text-gray-800 border-gray-200'
                     }`}>
                     {statusLabels[detailModal.reservation.status] || detailModal.reservation.status}
                   </span>
@@ -414,7 +414,7 @@ export default function ReservationsPage() {
                     {(detailModal.reservation?.items ?? []).map((item: any, idx: number) => {
                       const itemDetails = typeof item.item === 'object' ? item.item : null;
                       const itemName = itemDetails?.name || item.menuItemName || `Món #${idx + 1}`;
-                      const itemImg = itemDetails?.image;
+                      const itemImg = itemDetails?.images?.[0] || itemDetails?.image;
 
                       return (
                         <div key={idx} className="flex justify-between items-center bg-gray-50 border border-gray-100 rounded-xl p-3">

@@ -555,7 +555,7 @@ export default function UserReservationsPage() {
                     {selectedReservation.items.map((item: any, idx: number) => {
                       const itemDetails = typeof item.item === 'object' ? item.item : null;
                       const itemName = itemDetails?.name || item.menuItemName || `Món #${idx + 1}`;
-                      const itemImg = itemDetails?.image;
+                      const itemImg = itemDetails?.images?.[0] || itemDetails?.image;
 
                       return (
                         <div key={idx} className="flex justify-between items-center bg-gray-50 border border-gray-100 rounded-xl p-3">
