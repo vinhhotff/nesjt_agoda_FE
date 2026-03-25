@@ -7,20 +7,24 @@ import AdminTable from '../admin/common/AdminTable';
 
 const statusColors: Record<ReservationStatus, string> = {
   pending: 'bg-amber-100 text-amber-800 border-amber-300',
+  pending_approval: 'bg-orange-100 text-orange-800 border-orange-300',
   confirmed: 'bg-green-100 text-green-800 border-green-300',
+  arrived: 'bg-sky-100 text-sky-800 border-sky-300',
   seated: 'bg-purple-100 text-purple-800 border-purple-300',
   completed: 'bg-blue-100 text-blue-800 border-blue-300',
   cancelled: 'bg-red-100 text-red-800 border-red-300',
-  'no-show': 'bg-gray-100 text-gray-800 border-gray-300',
+  no_show: 'bg-gray-100 text-gray-800 border-gray-300',
 };
 
 const statusIcons: Record<ReservationStatus, string> = {
   pending: '⏳',
+  pending_approval: '📋',
   confirmed: '✅',
+  arrived: '🚶',
   seated: '🪑',
   completed: '🍽️',
   cancelled: '❌',
-  'no-show': '👻',
+  no_show: '👻',
 };
 
 interface ReservationTableProps {

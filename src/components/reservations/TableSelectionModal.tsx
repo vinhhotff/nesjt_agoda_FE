@@ -48,6 +48,8 @@ export default function TableSelectionModal({
   const [loading, setLoading] = useState(false);
   const [hoveredTable, setHoveredTable] = useState<string | null>(null);
   const [tableAvailability, setTableAvailability] = useState<Record<string, TableAvailability>>({});
+  /** Đang tải lịch đặt — tránh fallback table.status khiến chọn nhầm bàn đã đặt */
+  const [availabilityBusy, setAvailabilityBusy] = useState(false);
   const [gridCols, setGridCols] = useState(12); // Default grid columns
   const [gridRows, setGridRows] = useState(10); // Default grid rows
   const [selectedLayout, setSelectedLayout] = useState<TableLayout | null>(null);
@@ -205,6 +207,9 @@ export default function TableSelectionModal({
     if (isOpen) {
       // Reset selected layout khi mở modal
       setSelectedLayout(null);
+      if (reservationDate && reservationTime) {
+        setAvailabilityBusy(true);
+      }
       loadTables();
     }
   }, [isOpen]);
@@ -220,10 +225,6 @@ export default function TableSelectionModal({
   useEffect(() => {
     if (!isOpen) return;
     if (tables.length === 0) return;
-    
-    // Log for debugging
-    console.log('🔄 Checking availability for:', { reservationDate, reservationTime, tableCount: tables.length });
-    
     checkTableAvailability(tables);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, reservationDate, reservationTime, tables]);
@@ -244,96 +245,50 @@ export default function TableSelectionModal({
   };
 
   const checkTableAvailability = useCallback(async (tablesToCheck: Table[]) => {
+    if (reservationDate && reservationTime) {
+      setAvailabilityBusy(true);
+    }
     try {
       // Get all reservations for the selected date/time
       if (reservationDate && reservationTime) {
-        // Fetch reservations for the selected date specifically
-        const reservations = await reservationsAPI.getReservations(1, 100, undefined, reservationDate);
-        
-        // Helper to get date string from various formats
-        const getDateStr = (dateValue: any): string => {
-          if (!dateValue) return '';
-          try {
-            // If it's a Date object or ISO string
-            const date = new Date(dateValue);
-            if (isNaN(date.getTime())) return '';
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-          } catch {
-            return '';
-          }
-        };
+        const reservations = await reservationsAPI.getReservations(1, 200, undefined, reservationDate);
 
-        // Helper to get time string from various formats
-        const getTimeStr = (dateValue: any): string => {
-          if (!dateValue) return '';
-          try {
-            const date = new Date(dateValue);
-            if (isNaN(date.getTime())) return '';
-            return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-          } catch {
-            return '';
-          }
-        };
-
-        // Helper to calculate time difference in minutes
         const getTimeDiffMinutes = (time1: string, time2: string): number => {
           const [h1, m1] = time1.split(':').map(Number);
           const [h2, m2] = time2.split(':').map(Number);
           return Math.abs((h1 * 60 + m1) - (h2 * 60 + m2));
         };
 
-        const selectedDateStr = reservationDate; // YYYY-MM-DD from input
-        const selectedTimeStr = reservationTime; // HH:mm from input
+        /** Trạng thái chiếm bàn (khớp backend conflict check) */
+        const blocksTable = (status: string) =>
+          ['pending', 'pending_approval', 'confirmed', 'arrived', 'seated'].includes(status);
 
-        // Filter reservations: same date, within 2 hours time slot, active status
+        const selectedDateStr = reservationDate;
+        const selectedTimeStr = reservationTime;
+
         const relevantReservations = reservations.items.filter((res) => {
-          const resDateStr = getDateStr(res.reservationDate);
-          const resTimeStr = getTimeStr(res.reservationDate);
-          
-          // Must be same date
-          if (resDateStr !== selectedDateStr) return false;
-          
-          // Must be within 2 hours of selected time
-          const timeDiff = getTimeDiffMinutes(resTimeStr, selectedTimeStr);
-          if (timeDiff > 120) return false;
-          
-          // Must be an active reservation
-          return res.status === 'pending' || res.status === 'confirmed' || res.status === 'seated';
+          if (res.reservationDate !== selectedDateStr) return false;
+          const resTimeStr = res.reservationTime;
+          if (!resTimeStr) return false;
+          if (getTimeDiffMinutes(resTimeStr, selectedTimeStr) > 120) return false;
+          return blocksTable(String(res.status));
         });
 
-        // Log for debugging
-        console.log('📋 Reservations from API:', reservations.items.length, 'items');
-        console.log('📅 Selected date:', selectedDateStr, 'time:', selectedTimeStr);
-        console.log('🔍 Relevant reservations:', relevantReservations.length, relevantReservations.map(r => ({
-          id: r._id,
-          date: getDateStr(r.reservationDate),
-          time: getTimeStr(r.reservationDate),
-          status: r.status,
-          table: r.table,
-          customer: r.customerName
-        })));
+        const reservationMatchesTable = (res: (typeof reservations.items)[0], table: Table): boolean => {
+          const ref = (res.table ?? '').trim();
+          if (!ref) return false;
+          if (ref === String(table._id)) return true;
+          if (ref === table.tableName) return true;
+          return false;
+        };
 
         // Create availability map
         const availability: Record<string, TableAvailability> = {};
 
         if (Array.isArray(tablesToCheck)) {
           tablesToCheck.forEach((table) => {
-            // Compare table._id with reservation's table
-            const tableIdStr = String(table._id);
-            const reserved = (relevantReservations as any[]).find((res: any) => {
-              const resTable = res.table;
-              if (!resTable) return false;
-              const resTableIdStr = typeof resTable === 'object'
-                ? String(resTable._id)
-                : String(resTable);
-              return resTableIdStr === tableIdStr;
-            });
-            
-            console.log(`🪑 Table ${table.tableName} (${tableIdStr}):`, reserved ? `RESERVED by ${reserved.customerName}` : 'AVAILABLE');
-            
+            const reserved = relevantReservations.find((res) => reservationMatchesTable(res, table));
+
             availability[table._id] = {
               tableId: table._id,
               isAvailable: !reserved,
@@ -373,6 +328,11 @@ export default function TableSelectionModal({
       }
       setTableAvailability(availability);
     }
+    finally {
+      if (reservationDate && reservationTime) {
+        setAvailabilityBusy(false);
+      }
+    }
   }, [reservationDate, reservationTime]);
 
   // Update filtered tables when tables or layout changes
@@ -407,15 +367,20 @@ export default function TableSelectionModal({
   }, [tables, selectedLayout, checkTableAvailability]);
 
   const handleTableClick = (table: Table) => {
+    if (table.status === 'maintenance') return;
+    const hasBookingContext = Boolean(reservationDate && reservationTime);
+    if (hasBookingContext && availabilityBusy) return;
+
     const availability = tableAvailability[table._id];
-    // Allow selection if:
-    // 1. Availability check says it's available, OR
-    // 2. Availability check hasn't run yet (fallback to table status)
-    const isAvailable = availability 
-      ? (availability.isAvailable && !availability.isReserved)
-      : (table.status === 'available' || table.status === 'reserved');
-    
-    if (isAvailable && table.status !== 'maintenance') {
+    let isAvailable: boolean;
+    if (hasBookingContext) {
+      if (!availability) return;
+      isAvailable = availability.isAvailable && !availability.isReserved;
+    } else {
+      isAvailable = table.status === 'available' || table.status === 'reserved';
+    }
+
+    if (isAvailable) {
       onSelectTable(table._id, table.tableName);
     }
   };
@@ -429,11 +394,18 @@ export default function TableSelectionModal({
     if (isSelected) {
       return 'bg-amber-500 border-amber-600 text-white shadow-lg ring-2 ring-amber-400 ring-offset-2';
     }
-    
-    // Fallback to table status if availability check hasn't completed
-    const isAvailable = availability 
-      ? (availability.isAvailable && !availability.isReserved)
-      : (table.status === 'available' || table.status === 'reserved');
+
+    const hasBookingContext = Boolean(reservationDate && reservationTime);
+    let isAvailable: boolean;
+    if (hasBookingContext) {
+      if (availabilityBusy || !availability) {
+        isAvailable = false;
+      } else {
+        isAvailable = availability.isAvailable && !availability.isReserved;
+      }
+    } else {
+      isAvailable = table.status === 'available' || table.status === 'reserved';
+    }
     
     if (isHovered && isAvailable) {
       return 'bg-amber-100 border-amber-400 text-amber-900 shadow-md';
@@ -531,6 +503,9 @@ export default function TableSelectionModal({
                 </>
               )}
             </p>
+            <p className="text-xs text-gray-500 mt-2 max-w-3xl">
+              Sơ đồ bàn giữ nguyên; chỉ trạng thái màu thay đổi theo ngày và khung giờ bạn chọn (đỏ = đã có người đặt trong khoảng ±2 giờ).
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -585,7 +560,9 @@ export default function TableSelectionModal({
           </div>
           {reservationDate && reservationTime && (
             <p className="text-xs text-gray-500 mt-2">
-              Hover vào bàn đã đặt để xem tên người đặt
+              {availabilityBusy
+                ? 'Đang tải lịch đặt bàn…'
+                : 'Hover vào bàn đã đặt để xem tên người đặt'}
             </p>
           )}
         </div>
@@ -683,11 +660,19 @@ export default function TableSelectionModal({
                   const availability = table ? tableAvailability[table._id] : undefined;
                   const isSelected = table ? selectedTableId === table._id : false;
                   const isHovered = table ? hoveredTable === table._id : false;
+                  const hasBookingContext = Boolean(reservationDate && reservationTime);
                   
                   // Xác định có thể chọn không
-                  const isSelectable = table ? (availability 
-                    ? (availability.isAvailable && !availability.isReserved)
-                    : (table.status === 'available' || table.status === 'reserved')) : false;
+                  const isSelectable = table
+                    ? hasBookingContext
+                      ? Boolean(
+                          !availabilityBusy &&
+                            availability &&
+                            availability.isAvailable &&
+                            !availability.isReserved
+                        )
+                      : table.status === 'available' || table.status === 'reserved'
+                    : false;
 
                   // Sử dụng shared color function
                   const cellColor = layoutTable && isMainCell && table

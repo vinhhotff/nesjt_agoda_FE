@@ -10,7 +10,10 @@ export interface Reservation {
   reservationDate: string;
   reservationTime: string;
   status: ReservationStatus;
+  /** Bàn: MongoDB id (ưu tiên) hoặc tên bàn khi API chỉ có tableNumber */
   table?: string;
+  /** Tên hiển thị bàn từ backend (nếu có) */
+  tableNumber?: string;
   specialRequests?: string;
   createdAt: string;
   updatedAt: string;
@@ -18,11 +21,13 @@ export interface Reservation {
 
 export enum ReservationStatus {
   PENDING = 'pending',
+  PENDING_APPROVAL = 'pending_approval',
   CONFIRMED = 'confirmed',
+  ARRIVED = 'arrived',
   SEATED = 'seated',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
-  NO_SHOW = 'no-show',
+  NO_SHOW = 'no_show',
 }
 
 export interface CreateReservationDto {
@@ -86,30 +91,54 @@ class ReservationsAPI {
 
   // Helper to transform reservation from backend to frontend format
   private transformReservation(reservation: any): Reservation {
-    // Extract time from reservationDate (ISO string like "2025-11-03T07:30:00.000Z")
     let reservationTime = '';
     let reservationDateFormatted = '';
-    
+
+    const rawTable = reservation.table;
+    let tableRef = '';
+    let tableNumberLabel = reservation.tableNumber?.trim?.() || '';
+
+    if (rawTable && typeof rawTable === 'object' && rawTable._id) {
+      tableRef = String(rawTable._id);
+      if (!tableNumberLabel && rawTable.tableName) {
+        tableNumberLabel = String(rawTable.tableName);
+      }
+    } else if (typeof rawTable === 'string' && rawTable.trim()) {
+      tableRef = rawTable.trim();
+    } else if (tableNumberLabel) {
+      // Chỉ có tên bàn — khớp theo table.tableName ở UI
+      tableRef = tableNumberLabel;
+    }
+
     if (reservation.reservationDate) {
       try {
         const date = new Date(reservation.reservationDate);
-        // Get local time (convert from UTC to local)
-        reservationTime = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-        // Format date as YYYY-MM-DD
-        reservationDateFormatted = date.toISOString().split('T')[0];
+        if (!isNaN(date.getTime())) {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, '0');
+          const d = String(date.getDate()).padStart(2, '0');
+          reservationDateFormatted = `${y}-${m}-${d}`;
+        }
       } catch (e) {
         console.error('Error parsing reservationDate:', e);
-        // Fallback: try to extract from string
-        if (typeof reservation.reservationDate === 'string') {
-          const parts = reservation.reservationDate.split('T');
-          if (parts[0]) reservationDateFormatted = parts[0];
-          if (parts[1]) {
-            const timePart = parts[1].split(':');
-            if (timePart.length >= 2) {
-              reservationTime = `${timePart[0]}:${timePart[1]}`;
-            }
-          }
+      }
+      if (!reservationDateFormatted && typeof reservation.reservationDate === 'string') {
+        const parts = reservation.reservationDate.split('T');
+        if (parts[0]) reservationDateFormatted = parts[0];
+      }
+    }
+
+    if (typeof reservation.reservationTime === 'string' && reservation.reservationTime.trim()) {
+      const t = reservation.reservationTime.trim();
+      reservationTime = t.length >= 5 ? t.slice(0, 5) : t;
+    } else if (reservation.reservationDate) {
+      try {
+        const date = new Date(reservation.reservationDate);
+        if (!isNaN(date.getTime())) {
+          reservationTime = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
         }
+      } catch {
+        /* ignore */
       }
     }
 
@@ -122,7 +151,8 @@ class ReservationsAPI {
       reservationDate: reservationDateFormatted,
       reservationTime: reservationTime,
       status: (reservation.status as ReservationStatus) || ReservationStatus.PENDING,
-      table: reservation.tableNumber || reservation.table,
+      table: tableRef || undefined,
+      tableNumber: tableNumberLabel || undefined,
       specialRequests: reservation.specialRequests,
       createdAt: reservation.createdAt || new Date().toISOString(),
       updatedAt: reservation.updatedAt || new Date().toISOString(),
@@ -274,7 +304,9 @@ class ReservationsAPI {
   getStatusColor(status: ReservationStatus): string {
     const colors = {
       [ReservationStatus.PENDING]: '#fbbf24', // amber-400
+      [ReservationStatus.PENDING_APPROVAL]: '#fb923c', // orange-400
       [ReservationStatus.CONFIRMED]: '#10b981', // emerald-500
+      [ReservationStatus.ARRIVED]: '#0ea5e9', // sky-500
       [ReservationStatus.SEATED]: '#3b82f6', // blue-500
       [ReservationStatus.COMPLETED]: '#6b7280', // gray-500
       [ReservationStatus.CANCELLED]: '#ef4444', // red-500
@@ -286,7 +318,9 @@ class ReservationsAPI {
   getStatusText(status: ReservationStatus): string {
     const texts = {
       [ReservationStatus.PENDING]: 'Chờ xác nhận',
+      [ReservationStatus.PENDING_APPROVAL]: 'Chờ phê duyệt',
       [ReservationStatus.CONFIRMED]: 'Đã xác nhận',
+      [ReservationStatus.ARRIVED]: 'Đã đến',
       [ReservationStatus.SEATED]: 'Đã nhận bàn',
       [ReservationStatus.COMPLETED]: 'Hoàn thành',
       [ReservationStatus.CANCELLED]: 'Đã hủy',
