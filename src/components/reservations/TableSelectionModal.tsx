@@ -225,7 +225,8 @@ export default function TableSelectionModal({
     console.log('🔄 Checking availability for:', { reservationDate, reservationTime, tableCount: tables.length });
     
     checkTableAvailability(tables);
-  }, [isOpen, reservationDate, reservationTime, tables, checkTableAvailability]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, reservationDate, reservationTime, tables]);
 
   const loadTables = async () => {
     setLoading(true);
