@@ -74,10 +74,12 @@ class ReservationsAPI {
     return response.data;
   }
 
-  // Get reservations by phone (public — no auth required)
+  // Get reservations by phone (public — no auth required, uses my-bookings endpoint)
   async getByPhone(phone: string): Promise<Reservation[]> {
-    const response = await api.get(`${this.baseUrl}/phone/${phone}`);
-    return response.data;
+    const response = await api.get(`${this.baseUrl}/my-bookings?phone=${encodeURIComponent(phone)}`);
+    // ResponseInterceptor wraps data: extract data from { statusCode, message, data, timestamp }
+    const data = response.data?.data ?? response.data ?? [];
+    return Array.isArray(data) ? data : [];
   }
 
   // Helper to transform reservation from backend to frontend format
