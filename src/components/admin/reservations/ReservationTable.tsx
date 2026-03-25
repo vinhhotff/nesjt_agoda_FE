@@ -1,10 +1,11 @@
 import React from 'react';
 import { Reservation } from '@/src/lib/api/reservationApi';
-import { Eye, Trash2, CheckCircle, UserCheck, XCircle } from 'lucide-react';
+import { Eye, Trash2, CheckCircle, UserCheck, XCircle, RotateCcw } from 'lucide-react';
 import AdminTable from '../common/AdminTable';
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800 border-amber-200',
+  pending_approval: 'bg-orange-100 text-orange-800 border-orange-200',
   confirmed: 'bg-blue-100 text-blue-800 border-blue-200',
   arrived: 'bg-purple-100 text-purple-800 border-purple-200',
   seated: 'bg-green-100 text-green-800 border-green-200',
@@ -13,8 +14,9 @@ const statusColors = {
   no_show: 'bg-orange-100 text-orange-800 border-orange-200',
 };
 
-const statusLabels = {
+const statusLabels: Record<string, string> = {
   pending: 'Chờ xác nhận',
+  pending_approval: 'Chờ phê duyệt',
   confirmed: 'Đã xác nhận',
   arrived: 'Đã đến',
   seated: 'Đã ngồi',
@@ -23,12 +25,31 @@ const statusLabels = {
   no_show: 'Không đến',
 };
 
+const refundStatusColors: Record<string, string> = {
+  not_applicable: 'bg-gray-100 text-gray-500',
+  pending: 'bg-yellow-100 text-yellow-800',
+  processing: 'bg-blue-100 text-blue-800',
+  completed: 'bg-green-100 text-green-800',
+  failed: 'bg-red-100 text-red-800',
+  not_requested: 'bg-gray-100 text-gray-500',
+};
+
+const refundStatusLabels: Record<string, string> = {
+  not_applicable: '-',
+  pending: 'Chờ hoàn tiền',
+  processing: 'Đang hoàn tiền',
+  completed: 'Đã hoàn tiền',
+  failed: 'Hoàn tiền thất bại',
+  not_requested: 'Không hoàn tiền',
+};
+
 interface ReservationTableProps {
   reservations: Reservation[];
   onViewDetails: (reservation: Reservation) => void;
   onMarkArrived: (id: string) => void;
   onMarkSeated: (id: string) => void;
   onDelete: (id: string) => void;
+  onCancelConfirmed?: (reservation: Reservation) => void;
 }
 
 export default function ReservationTable({
@@ -37,6 +58,7 @@ export default function ReservationTable({
   onMarkArrived,
   onMarkSeated,
   onDelete,
+  onCancelConfirmed,
 }: ReservationTableProps) {
   const headers = [
     'Khách hàng',
@@ -109,13 +131,25 @@ export default function ReservationTable({
             <span className="text-gray-600">{reservation.numberOfGuests} người</span>
           </td>
           <td className="py-4 px-6">
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
-                statusColors[reservation.status]
-              }`}
-            >
-              {statusLabels[reservation.status]}
-            </span>
+            <div className="flex flex-col gap-1">
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
+                  statusColors[reservation.status] || 'bg-gray-100 text-gray-800'
+                }`}
+              >
+                {statusLabels[reservation.status] || reservation.status}
+              </span>
+              {reservation.refundStatus && reservation.refundStatus !== 'not_applicable' && (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
+                    refundStatusColors[reservation.refundStatus] || 'bg-gray-100 text-gray-500'
+                  }`}
+                  title={reservation.refundNotes}
+                >
+                  {refundStatusLabels[reservation.refundStatus] || reservation.refundStatus}
+                </span>
+              )}
+            </div>
           </td>
           <td className="py-4 px-6">
             <div className="flex items-center justify-center space-x-2">
@@ -146,6 +180,16 @@ export default function ReservationTable({
               >
                 <Eye className="w-4 h-4" />
               </button>
+
+              {reservation.status === 'confirmed' && onCancelConfirmed && (
+                <button
+                  onClick={() => onCancelConfirmed(reservation)}
+                  className="p-2 rounded-lg text-orange-600 bg-orange-50 hover:bg-orange-200 shadow transition-colors"
+                  title="Hủy đặt bàn (hoàn tiền)"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              )}
 
               <button
                 onClick={() => onDelete(reservation._id)}

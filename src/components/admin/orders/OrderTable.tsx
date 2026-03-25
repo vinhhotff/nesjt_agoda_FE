@@ -68,7 +68,11 @@ export default function OrderTable({
           </td>
           <td className="py-4 px-6">
             <span className="font-semibold text-green-600">
-              {order.totalPrice.toLocaleString()} VND
+              {order.isFree ? (
+                <span className="text-purple-600">FREE (0 VND)</span>
+              ) : (
+                `${order.totalPrice.toLocaleString()} VND`
+              )}
             </span>
           </td>
           <td className="py-4 px-6">

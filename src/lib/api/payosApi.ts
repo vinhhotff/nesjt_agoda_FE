@@ -108,4 +108,52 @@ export const confirmPayOSPayment = async (data: {
   }
 };
 
+export interface ProcessFreeOrderResponse {
+  success: boolean;
+  message?: string;
+  orderId?: string;
+  status?: string;
+  isFree?: boolean;
+  isPaid?: boolean;
+  totalPrice?: number;
+}
+
+export const processFreeOrder = async (orderId: string, autoServe: boolean = true): Promise<ProcessFreeOrderResponse> => {
+  try {
+    const response = await api.post('/payment/payos/process-free-order', {
+      orderId,
+      autoServe,
+    });
+
+    let result: ProcessFreeOrderResponse;
+
+    if (response.data?.data) {
+      result = response.data.data;
+    } else if (response.data) {
+      result = response.data as ProcessFreeOrderResponse;
+    } else {
+      throw new Error('Invalid response structure from server');
+    }
+
+    return result;
+  } catch (error: any) {
+    let errorMessage = 'Failed to process free order';
+    if (!error?.response) {
+      if (error?.code === 'ECONNREFUSED' || error?.code === 'ERR_NETWORK') {
+        errorMessage = 'Cannot connect to server. Please check if the backend is running.';
+      } else if (error?.message) {
+        errorMessage = `Network error: ${error.message}`;
+      }
+    } else {
+      errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        `Server error (${error.response.status})`;
+    }
+    throw new Error(errorMessage);
+  }
+};
+
 

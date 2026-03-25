@@ -37,6 +37,8 @@ export interface Reservation {
   depositAmount: number;
   depositPaid: number;
   isDepositPaid: boolean;
+  depositPaymentMethod?: string;
+  depositPaidAt?: string;
   usageDate?: string;
   // Approval fields
   requiresApproval?: boolean;
@@ -51,6 +53,23 @@ export interface Reservation {
     kitchenNotes?: string;
   };
   approvalExpiresAt?: string;
+  // Refund fields
+  refundStatus?: 'not_applicable' | 'pending' | 'processing' | 'completed' | 'failed' | 'not_requested';
+  refundAmount?: number;
+  refundRequestedAt?: string;
+  refundProcessedAt?: string;
+  refundReason?: string;
+  refundNotes?: string;
+  refundTransactionId?: string;
+  // Audit trail
+  statusHistory?: Array<{
+    status: string;
+    changedBy?: string;
+    changedByName?: string;
+    reason?: string;
+    note?: string;
+    timestamp: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -189,6 +208,15 @@ const reservationApi = {
     return response.data;
   },
 
+  // Cancel confirmed reservation (after deposit paid)
+  cancelConfirmedReservation: async (
+    id: string,
+    data: { reason: string; requestRefund?: boolean }
+  ) => {
+    const response = await api.post(`/reservations/${id}/cancel-confirmed`, data);
+    return response.data;
+  },
+
   // Get approval settings
   getApprovalSettings: async (): Promise<ApprovalSettings> => {
     const response = await api.get('/reservations/approval-settings');
@@ -221,3 +249,14 @@ const reservationApi = {
 };
 
 export default reservationApi;
+
+// Named export for convenience
+export const {
+  getPendingApprovals,
+  getApprovalStats,
+  approveReservation,
+  rejectReservation,
+  cancelConfirmedReservation,
+  getApprovalSettings,
+  updateApprovalSettings,
+} = reservationApi;

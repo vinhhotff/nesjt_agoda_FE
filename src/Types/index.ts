@@ -124,6 +124,17 @@ export interface Order {
   specialInstructions?: string;
   paid?: boolean;
   isPaid?: boolean;
+  isFree?: boolean;
+  reservationDate?: string;
+  inventoryReserved?: boolean;
+  isStockReserved?: boolean;
+  reservedStockItems?: Array<{
+    ingredient: string;
+    ingredientName: string;
+    menuItem: string;
+    quantity: number;
+    unit: string;
+  }>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -508,4 +519,5 @@ export interface CreateOnlineOrderDto {
   orderType: OrderType;
   deliveryAddress?: string;
   specialInstructions?: string;
+  reservationDate?: string;
 }

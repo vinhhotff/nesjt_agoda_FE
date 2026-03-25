@@ -14,7 +14,7 @@ export interface Reservation {
   numberOfGuests: number;
   reservationDate: string;
   reservationTime: string;
-  status: 'pending' | 'confirmed' | 'arrived' | 'seated' | 'completed' | 'cancelled' | 'no_show';
+  status: 'pending' | 'pending_approval' | 'confirmed' | 'arrived' | 'seated' | 'completed' | 'cancelled' | 'no_show';
   specialRequests?: string;
   notes?: string;
   guest?: {
@@ -25,6 +25,49 @@ export interface Reservation {
   arrivedAt?: string;
   seatedAt?: string;
   completedAt?: string;
+  // Full booking fields
+  bookingType?: 'TABLE_ONLY' | 'FULL_BOOKING';
+  items?: Array<{
+    _id?: string;
+    item?: string | { _id: string; name: string; price: number; category: string };
+    menuItemName?: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    note?: string;
+  }>;
+  totalAmount?: number;
+  depositAmount?: number;
+  depositPaid?: number;
+  isDepositPaid?: boolean;
+  depositPaymentMethod?: string;
+  depositPaidAt?: string;
+  usageDate?: string;
+  // Refund fields
+  refundStatus?: 'not_applicable' | 'pending' | 'processing' | 'completed' | 'failed' | 'not_requested';
+  refundAmount?: number;
+  refundRequestedAt?: string;
+  refundProcessedAt?: string;
+  refundReason?: string;
+  refundNotes?: string;
+  refundTransactionId?: string;
+  // Audit trail
+  statusHistory?: Array<{
+    status: string;
+    changedBy?: string;
+    changedByName?: string;
+    reason?: string;
+    note?: string;
+    timestamp: string;
+  }>;
+  // Approval fields
+  requiresApproval?: boolean;
+  approvalStatus?: 'not_applicable' | 'pending' | 'approved' | 'rejected' | 'expired';
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectedReason?: string;
+  approvalNotes?: { adminNotes?: string; kitchenNotes?: string };
+  approvalExpiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -93,12 +93,17 @@ export default function OrderDetailsModal({
               }`}>
                 {order.isPaid ? 'Paid' : 'Unpaid'}
               </span>
+              {order.isFree && (
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  Free Order
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-gray-500" />
               <span className="text-sm text-gray-600">Total:</span>
-              <span className="font-semibold text-green-600">
-                {order.totalPrice ? order.totalPrice.toLocaleString() : '0'} VND
+              <span className={`font-semibold ${order.isFree ? 'text-purple-600' : 'text-green-600'}`}>
+                {order.isFree ? 'FREE (0 VND)' : `${order.totalPrice ? order.totalPrice.toLocaleString() : '0'} VND`}
               </span>
             </div>
           </div>

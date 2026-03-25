@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { OrderType, CreateOnlineOrderDto } from "@/src/Types";
 import { useApplyVoucher } from "./useVouchers";
 import { createOnlineOrder } from "@/src/lib/api";
-import { createPayOSPaymentLink } from "@/src/lib/api/payosApi";
+import { createPayOSPaymentLink, processFreeOrder } from "@/src/lib/api/payosApi";
 import { checkStockAvailability } from "@/src/lib/api/orderApi";
 import { toast } from "react-toastify";
 
@@ -137,12 +137,42 @@ export function useCheckoutForm({
         throw new Error('Failed to get order ID from response. Please check console for details.');
       }
 
-      // console.log removed
+      // Step 2: Check if order is free (total = 0)
+      const isFreeOrder = finalTotal === 0;
+
+      if (isFreeOrder) {
+        // Step 2a: Process free order — marks as paid, serves, deducts stock
+        toast.info('Free order detected. Processing...');
+
+        try {
+          const freeOrderResult = await processFreeOrder(orderId!, true);
+
+          if (freeOrderResult.success) {
+            clearCart();
+            toast.success('Order placed successfully! No payment required.');
+            
+            // Redirect to home after short delay
+            setTimeout(() => {
+              if (onSuccess) onSuccess(orderData);
+              if (onClose) onClose();
+              window.location.href = '/user/home';
+            }, 1500);
+          } else {
+            throw new Error(freeOrderResult.message || 'Failed to process free order');
+          }
+        } catch (err: any) {
+          console.error("Error processing free order:", err);
+          const errorMessage = err?.message || "Failed to process free order. Please try again.";
+          toast.error(errorMessage);
+          setIsSubmitting(false);
+          return;
+        }
+        return;
+      }
+
+      // Step 3: Create PayOS payment link for paid orders
       toast.success("Order created! Redirecting to payment...");
 
-      // Step 2: Create PayOS payment link
-      // console.log removed
-      
       const paymentLinkResponse = await createPayOSPaymentLink({
         orderId,
         amount: finalTotal,

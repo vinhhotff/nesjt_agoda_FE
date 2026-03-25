@@ -1,0 +1,9 @@
+feat(reservation): add cancel-confirmed modal with refund flow + audit trail UI
+
+- Add CancelConfirmedDto + cancelConfirmedReservation API method
+- Add Detail Modal: shows payment info, refund status, status history, menu items
+- Add Cancel Confirmed Modal: requires reason, refund toggle, sends notification
+- Add cancel button (orange) in ReservationTable for confirmed reservations
+- Add refund status badges in table + update Reservation interface with new fields
+- Fix free order flow: processFreeOrder bypasses PayOS, marks order as served
+- Fix: Add isFree badge in OrderTable and OrderDetailsModal
