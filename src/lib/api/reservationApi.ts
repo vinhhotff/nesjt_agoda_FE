@@ -100,24 +100,24 @@ export const getReservations = async (
   if (date) params.date = date;
 
   const response = await api.get('/reservations', { params });
-  const payload = response.data;
+  // Backend returns: { reservations: [], total, totalPages }
+  // Axios wraps it as: response.data = { reservations, total, totalPages }
+  const body = response.data;
 
-  if (payload?.data) {
-    return {
-      items: payload.data.data || payload.data.items || [],
-      total: payload.data.total || 0,
-      page: payload.data.page || page,
-      limit: payload.data.limit || limit,
-      totalPages: payload.data.totalPages || 0,
-    };
-  }
+  const items = Array.isArray(body.reservations)
+    ? body.reservations
+    : Array.isArray(body.items)
+    ? body.items
+    : Array.isArray(body.data)
+    ? body.data
+    : [];
 
   return {
-    items: [],
-    total: 0,
-    page,
-    limit,
-    totalPages: 0,
+    items,
+    total: body.total ?? items.length,
+    page: body.page ?? page,
+    limit: body.limit ?? limit,
+    totalPages: body.totalPages ?? 1,
   };
 };
 

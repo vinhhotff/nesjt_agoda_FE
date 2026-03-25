@@ -252,12 +252,20 @@ export default function TableSelectionModal({
 
         // Create availability map
         const availability: Record<string, TableAvailability> = {};
-        
+
         if (Array.isArray(tablesToCheck)) {
           tablesToCheck.forEach((table) => {
-            const reserved = relevantReservations.find(
-              (res) => res.table === table.tableName
-            );
+            // Compare table._id (string) against reservation's table._id (populated) or table (ObjectId string)
+            const tableIdStr = String(table._id);
+            // Cast items as any[] to avoid TypeScript narrowing issues with generic Reservation type
+            const reserved = (reservations.items as any[]).find((res: any) => {
+              const resTable = res.table as any;
+              if (!resTable) return false;
+              const resTableIdStr = typeof resTable === 'object'
+                ? String(resTable._id)
+                : String(resTable);
+              return resTableIdStr === tableIdStr;
+            });
             
             availability[table._id] = {
               tableId: table._id,
