@@ -106,9 +106,10 @@ class ReservationsAPI {
     } else if (typeof rawTable === 'string' && rawTable.trim()) {
       tableRef = rawTable.trim();
     } else if (tableNumberLabel) {
-      // Chỉ có tên bàn — khớp theo table.tableName ở UI
       tableRef = tableNumberLabel;
     }
+
+    console.log('[transformReservation] rawTable:', JSON.stringify(rawTable), '-> tableRef:', tableRef, 'tableNumberLabel:', tableNumberLabel);
 
     if (reservation.reservationDate) {
       try {
@@ -176,9 +177,13 @@ class ReservationsAPI {
 
     const response = await api.get(`${this.baseUrl}?${params.toString()}`);
     
+    console.log('[getReservations] raw response:', JSON.stringify(response.data).slice(0, 500));
+    
     // Backend response format: { statusCode, message, data: { reservations: [], total, totalPages } }
     const responseData = response.data?.data || response.data;
     const reservations = responseData?.reservations || responseData?.items || [];
+    
+    console.log('[getReservations] reservations count:', reservations.length, 'first item:', JSON.stringify(reservations[0]));
     
     // Transform reservations to match frontend interface
     const transformedReservations = Array.isArray(reservations) 

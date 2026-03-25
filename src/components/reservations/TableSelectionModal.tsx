@@ -233,6 +233,7 @@ export default function TableSelectionModal({
     setLoading(true);
     try {
       const data = await getTables({});
+      console.log('[loadTables] raw tables data:', JSON.stringify(data).slice(0, 300));
       // Ensure data is always an array
       const tablesArray = Array.isArray(data) ? data : [];
       setTables(tablesArray);
@@ -267,6 +268,13 @@ export default function TableSelectionModal({
         const selectedTimeStr = reservationTime;
 
         const relevantReservations = reservations.items.filter((res) => {
+          console.log('[filter] res:', {
+            id: res._id,
+            reservationDate: res.reservationDate,
+            reservationTime: res.reservationTime,
+            status: res.status,
+            table: res.table,
+          });
           if (res.reservationDate !== selectedDateStr) return false;
           const resTimeStr = res.reservationTime;
           if (!resTimeStr) return false;
@@ -274,8 +282,13 @@ export default function TableSelectionModal({
           return blocksTable(String(res.status));
         });
 
+        console.log('[checkTableAvailability] relevantReservations count:', relevantReservations.length);
+        console.log('[checkTableAvailability] tablesToCheck count:', tablesToCheck.length);
+        console.log('[checkTableAvailability] tablesToCheck[0]:', tablesToCheck[0]?._id, tablesToCheck[0]?.tableName);
+
         const reservationMatchesTable = (res: (typeof reservations.items)[0], table: Table): boolean => {
           const ref = (res.table ?? '').trim();
+          console.log('[reservationMatchesTable] comparing res.table ref:', ref, 'with table._id:', String(table._id), 'table.tableName:', table.tableName, 'MATCH:', ref === String(table._id) || ref === table.tableName);
           if (!ref) return false;
           if (ref === String(table._id)) return true;
           if (ref === table.tableName) return true;
