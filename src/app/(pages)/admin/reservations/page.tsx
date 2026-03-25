@@ -523,18 +523,17 @@ export default function ReservationsPage() {
                     </button>
                   )}
 
-                {/* Approve button — for pending / pending_approval */}
-                {(detailModal.reservation?.status === 'pending' ||
-                  detailModal.reservation?.status === 'pending_approval') && (
-                    <button
-                      onClick={() => handleApprove(detailModal.reservation?._id!)}
-                      disabled={approvalActionLoading}
-                      className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      Đồng ý
-                    </button>
-                  )}
+                {/* Approve button — for pending_approval only */}
+                {detailModal.reservation?.status === 'pending_approval' && (
+                  <button
+                    onClick={() => handleApprove(detailModal.reservation?._id!)}
+                    disabled={approvalActionLoading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Đồng ý
+                  </button>
+                )}
 
                 {/* Confirm without deposit button */}
                 {!detailModal.reservation?.isDepositPaid &&
