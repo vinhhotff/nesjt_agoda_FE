@@ -216,6 +216,12 @@ export default function TableSelectionModal({
     fetchActiveLayout(tables);
   }, [tables, isOpen]);
 
+  // Re-check availability when date/time changes
+  useEffect(() => {
+    if (tables.length === 0) return;
+    checkTableAvailability(tables);
+  }, [reservationDate, reservationTime, tables, checkTableAvailability]);
+
   const loadTables = async () => {
     setLoading(true);
     try {
@@ -235,19 +241,50 @@ export default function TableSelectionModal({
     try {
       // Get all reservations for the selected date/time
       if (reservationDate && reservationTime) {
-        const reservations = await reservationsAPI.getReservations(1, 100);
+        // Fetch reservations for the selected date specifically
+        const reservations = await reservationsAPI.getReservations(1, 100, undefined, reservationDate);
         
-        // Filter reservations for the same date/time slot
+        // Helper to normalize date to YYYY-MM-DD
+        const normalizeDate = (dateStr: string): string => {
+          if (!dateStr) return '';
+          const date = new Date(dateStr);
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, '0');
+          const d = String(date.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        };
+
+        // Helper to extract time in HH:mm format
+        const extractTime = (dateStr: string): string => {
+          if (!dateStr) return '';
+          const date = new Date(dateStr);
+          return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        };
+
+        // Helper to calculate time difference in minutes
+        const getTimeDiffMinutes = (time1: string, time2: string): number => {
+          const [h1, m1] = time1.split(':').map(Number);
+          const [h2, m2] = time2.split(':').map(Number);
+          return Math.abs((h1 * 60 + m1) - (h2 * 60 + m2));
+        };
+
+        const selectedDateStr = reservationDate; // Already in YYYY-MM-DD format
+        const selectedTimeStr = reservationTime; // Already in HH:mm format
+
+        // Filter reservations: same date, within 2 hours time slot, active status
         const relevantReservations = reservations.items.filter((res) => {
-          if (!res.reservationDate || !res.reservationTime) return false;
+          const resDateStr = normalizeDate(res.reservationDate);
+          const resTimeStr = extractTime(res.reservationDate);
           
-          const resDate = new Date(res.reservationDate);
-          const selectedDate = new Date(`${reservationDate}T${reservationTime}`);
+          // Must be same date
+          if (resDateStr !== selectedDateStr) return false;
           
-          // Check if same date and within 2 hours
-          const timeDiff = Math.abs(resDate.getTime() - selectedDate.getTime());
-          return timeDiff < 2 * 60 * 60 * 1000 && // Within 2 hours
-                 (res.status === 'pending' || res.status === 'confirmed');
+          // Must be within 2 hours of selected time
+          const timeDiff = getTimeDiffMinutes(resTimeStr, selectedTimeStr);
+          if (timeDiff > 120) return false;
+          
+          // Must be an active reservation
+          return res.status === 'pending' || res.status === 'confirmed' || res.status === 'seated';
         });
 
         // Create availability map
@@ -255,11 +292,10 @@ export default function TableSelectionModal({
 
         if (Array.isArray(tablesToCheck)) {
           tablesToCheck.forEach((table) => {
-            // Compare table._id (string) against reservation's table._id (populated) or table (ObjectId string)
+            // Compare table._id with reservation's table
             const tableIdStr = String(table._id);
-            // Cast items as any[] to avoid TypeScript narrowing issues with generic Reservation type
-            const reserved = (reservations.items as any[]).find((res: any) => {
-              const resTable = res.table as any;
+            const reserved = (relevantReservations as any[]).find((res: any) => {
+              const resTable = res.table;
               if (!resTable) return false;
               const resTableIdStr = typeof resTable === 'object'
                 ? String(resTable._id)
@@ -269,7 +305,7 @@ export default function TableSelectionModal({
             
             availability[table._id] = {
               tableId: table._id,
-              isAvailable: !reserved && (table.status === 'available' || table.status === 'reserved'),
+              isAvailable: !reserved,
               isReserved: !!reserved,
               reservedBy: reserved?.customerName,
             };
@@ -502,8 +538,10 @@ export default function TableSelectionModal({
               <span className="text-gray-700 font-medium">Đã đặt - Có thể chọn</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-red-100 border-2 border-red-300 shadow-sm"></div>
-              <span className="text-gray-700 font-medium">Đã được chọn - Không thể chọn</span>
+              <div className="w-6 h-6 rounded-lg bg-red-100 border-2 border-red-300 shadow-sm relative">
+                <X className="w-3 h-3 text-red-600 absolute inset-0 m-auto" />
+              </div>
+              <span className="text-gray-700 font-medium">Đã được đặt (không thể chọn)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 border-2 border-amber-600 shadow-md"></div>
@@ -514,6 +552,11 @@ export default function TableSelectionModal({
               <span className="text-gray-700 font-medium">Bảo trì</span>
             </div>
           </div>
+          {reservationDate && reservationTime && (
+            <p className="text-xs text-gray-500 mt-2">
+              Hover vào bàn đã đặt để xem tên người đặt
+            </p>
+          )}
         </div>
 
         {/* Content */}
