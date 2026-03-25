@@ -52,7 +52,13 @@ export default function ReservationPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Nếu đổi ngày hoặc giờ xử lý reset bàn
+    if (name === "date" || name === "time") {
+      setForm({ ...form, [name]: value, tableNumber: "", tableId: "" });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,9 +92,9 @@ export default function ReservationPage() {
     const reservationDate = `${form.date}T${form.time}:00`;
     const preorderLineItems = hasPreorderItems
       ? cartItems.map(({ item, quantity }) => ({
-          menuItemId: item._id,
-          quantity,
-        }))
+        menuItemId: item._id,
+        quantity,
+      }))
       : [];
 
     // Đã chọn bàn: demo bỏ qua PayOS → gửi đặt bàn chờ admin xác nhận; hoặc thanh toán cọc 300k qua PayOS
@@ -257,7 +263,7 @@ export default function ReservationPage() {
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
-        
+
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center space-y-6 px-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white text-sm font-medium">
@@ -276,7 +282,7 @@ export default function ReservationPage() {
         {/* Decorative wave */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 120" fill="none" className="w-full">
-            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V120Z" fill="rgb(248, 250, 252)"/>
+            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V120Z" fill="rgb(248, 250, 252)" />
           </svg>
         </div>
       </div>
@@ -552,7 +558,7 @@ export default function ReservationPage() {
 
                 {/* Pre-order Food Option */}
                 <div className="group">
-                  <div 
+                  <div
                     onClick={() => setPreOrderFood(!preOrderFood)}
                     className="relative w-full px-5 py-4 bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-2xl hover:from-orange-100 hover:to-yellow-100 hover:border-orange-400 transition-all cursor-pointer"
                   >
@@ -578,7 +584,7 @@ export default function ReservationPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {preOrderFood && (
                     <div className="mt-3 space-y-3 animate-fade-in">
                       <p className="text-sm text-gray-600 flex items-start gap-2">
@@ -739,7 +745,7 @@ export default function ReservationPage() {
                     </>
                   )}
                 </button>
-                
+
                 {/* Pre-order Notice */}
                 {preOrderFood && cartItemCount > 0 && (
                   <div className="mt-3 p-4 bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-300 rounded-2xl">
@@ -748,7 +754,7 @@ export default function ReservationPage() {
                       <div className="flex-1">
                         <p className="font-semibold text-gray-900 mb-1">Pre-order Summary</p>
                         <p className="text-sm text-gray-600 mb-2">
-                          You have <strong>{cartItemCount} items</strong> worth <strong>{cartTotal.toLocaleString('vi-VN')} VND</strong> in your cart. 
+                          You have <strong>{cartItemCount} items</strong> worth <strong>{cartTotal.toLocaleString('vi-VN')} VND</strong> in your cart.
                           Your food will be ready when you arrive!
                         </p>
                         <p className="text-xs text-gray-500">

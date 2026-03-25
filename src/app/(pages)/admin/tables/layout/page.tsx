@@ -41,7 +41,7 @@ export default function TableLayoutPage() {
       const tablesArray = Array.isArray(tablesData) ? tablesData : [];
       setTables(tablesArray);
       setLayouts(Array.isArray(savedLayouts) ? savedLayouts : []);
-      
+
       if (tablesArray.length === 0) {
         // console.log removed
         toast.info('ℹ️ Chưa có bàn nào. Vui lòng tạo bàn trước ở trang Quản lý bàn.');
@@ -91,16 +91,32 @@ export default function TableLayoutPage() {
 
   async function handleSaveLayout(layout: TableLayout) {
     try {
+      // Dọn dẹp các trường mà backend không cho phép update (VD: _id, __v, createdAt, updatedAt)
+      const cleanLayout: any = { ...layout };
+      delete cleanLayout._id;
+      delete cleanLayout.createdAt;
+      delete cleanLayout.updatedAt;
+      delete cleanLayout.__v;
+
+      // Xử lý các zones để frontend khớp với DTO của backend (yêu cầu zoneId, zoneName thay vì _id, name)
+      if (cleanLayout.zones) {
+        cleanLayout.zones = cleanLayout.zones.map((z: any) => ({
+          zoneId: z.zoneId || z._id || `zone-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          zoneName: z.zoneName || z.name || 'Zone',
+          bounds: z.bounds,
+        }));
+      }
+
       if (layout._id) {
-        const updatedLayout = await updateTableLayout(layout._id, layout);
+        const updatedLayout = await updateTableLayout(layout._id, cleanLayout);
         setLayouts((prev) =>
           prev.map((l) => (l._id === updatedLayout._id ? updatedLayout : l))
         );
         toast.success("💾 Đã cập nhật layout thành công!");
       } else {
         const payload: Partial<TableLayout> = {
-          ...layout,
-          isActive: layouts.length === 0 ? true : layout.isActive,
+          ...cleanLayout,
+          isActive: layouts.length === 0 ? true : cleanLayout.isActive,
         };
         const createdLayout = await createTableLayout(payload);
         setLayouts((prev) => [...prev, createdLayout]);
@@ -186,8 +202,8 @@ export default function TableLayoutPage() {
                       Layout Chính
                     </h3>
                     <p className="text-sm text-gray-700 leading-relaxed">
-                      Layout được đánh dấu <strong className="text-blue-700">"LAYOUT CHÍNH"</strong> sẽ được hiển thị cho khách hàng khi họ đặt bàn trên trang web. 
-                      Bạn có thể tạo nhiều layouts khác nhau cho các mục đích khác nhau (ví dụ: layout ngày thường, layout cuối tuần, layout sự kiện), 
+                      Layout được đánh dấu <strong className="text-blue-700">"LAYOUT CHÍNH"</strong> sẽ được hiển thị cho khách hàng khi họ đặt bàn trên trang web.
+                      Bạn có thể tạo nhiều layouts khác nhau cho các mục đích khác nhau (ví dụ: layout ngày thường, layout cuối tuần, layout sự kiện),
                       nhưng chỉ có một layout được active tại một thời điểm.
                     </p>
                     <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
@@ -198,127 +214,126 @@ export default function TableLayoutPage() {
                 </div>
               </div>
             )}
-            
+
             <div className="space-y-4">
-            {layouts.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
-                <Layout className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Chưa có layout nào
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  Tạo layout mới để bắt đầu quản lý không gian quán
-                </p>
-                <button
-                  onClick={handleCreateLayout}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-semibold rounded-xl"
-                >
-                  <Plus className="w-5 h-5" />
-                  Tạo layout đầu tiên
-                </button>
-              </div>
-            ) : (
-              layouts.map((layout) => (
-                <div
-                  key={layout._id}
-                  className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all ${
-                    layout.isActive 
-                      ? 'border-yellow-400 ring-2 ring-yellow-200' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">
-                          {layout.name}
-                        </h3>
-                        {layout.isActive && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-xs font-bold rounded-full shadow-md">
-                            <Star className="w-3.5 h-3.5 fill-current" />
-                            LAYOUT CHÍNH
-                          </span>
+              {layouts.length === 0 ? (
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
+                  <Layout className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Chưa có layout nào
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Tạo layout mới để bắt đầu quản lý không gian quán
+                  </p>
+                  <button
+                    onClick={handleCreateLayout}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-semibold rounded-xl"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Tạo layout đầu tiên
+                  </button>
+                </div>
+              ) : (
+                layouts.map((layout) => (
+                  <div
+                    key={layout._id}
+                    className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all ${layout.isActive
+                        ? 'border-yellow-400 ring-2 ring-yellow-200'
+                        : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {layout.name}
+                          </h3>
+                          {layout.isActive && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-xs font-bold rounded-full shadow-md">
+                              <Star className="w-3.5 h-3.5 fill-current" />
+                              LAYOUT CHÍNH
+                            </span>
+                          )}
+                        </div>
+                        {layout.description && (
+                          <p className="text-gray-600 mb-3">{layout.description}</p>
                         )}
-                      </div>
-                      {layout.description && (
-                        <p className="text-gray-600 mb-3">{layout.description}</p>
-                      )}
-                      <div className="flex flex-wrap items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Kích thước grid:</span>
-                          <span className="font-semibold text-gray-900">{layout.gridCols} x {layout.gridRows}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Số bàn:</span>
-                          <span className="font-semibold text-gray-900">{layout.tables?.length || 0}</span>
-                        </div>
-                        {layout.zones && layout.zones.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-4 text-sm">
                           <div className="flex items-center gap-2">
-                            <span className="text-gray-500">Số khu:</span>
-                            <span className="font-semibold text-gray-900">{layout.zones.length}</span>
-                            <span className="text-gray-400">({layout.zones.map(z => z.name).join(', ')})</span>
+                            <span className="text-gray-500">Kích thước grid:</span>
+                            <span className="font-semibold text-gray-900">{layout.gridCols} x {layout.gridRows}</span>
                           </div>
-                        )}
-                        {layout.tables && layout.tables.length > 0 && (
                           <div className="flex items-center gap-2">
-                            <span className="text-gray-500">Bàn:</span>
-                            <div className="flex flex-wrap gap-1">
-                              {layout.tables.slice(0, 5).map((table, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium"
-                                >
-                                  {table.tableName}
-                                  {table.zone && ` (${table.zone})`}
-                                </span>
-                              ))}
-                              {layout.tables.length > 5 && (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                  +{layout.tables.length - 5} bàn khác
-                                </span>
-                              )}
+                            <span className="text-gray-500">Số bàn:</span>
+                            <span className="font-semibold text-gray-900">{layout.tables?.length || 0}</span>
+                          </div>
+                          {layout.zones && layout.zones.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500">Số khu:</span>
+                              <span className="font-semibold text-gray-900">{layout.zones.length}</span>
+                              <span className="text-gray-400">({layout.zones.map(z => z.name).join(', ')})</span>
                             </div>
+                          )}
+                          {layout.tables && layout.tables.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500">Bàn:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {layout.tables.slice(0, 5).map((table, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium"
+                                  >
+                                    {table.tableName}
+                                    {table.zone && ` (${table.zone})`}
+                                  </span>
+                                ))}
+                                {layout.tables.length > 5 && (
+                                  <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                    +{layout.tables.length - 5} bàn khác
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Set Active Button */}
+                        {!layout.isActive && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <button
+                              onClick={() => layout._id && handleSetActiveLayout(layout._id)}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105"
+                            >
+                              <Check className="w-4 h-4" />
+                              Đặt làm layout chính
+                            </button>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Layout chính sẽ được hiển thị cho khách hàng khi đặt bàn
+                            </p>
                           </div>
                         )}
                       </div>
-                      
-                      {/* Set Active Button */}
-                      {!layout.isActive && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <button
-                            onClick={() => layout._id && handleSetActiveLayout(layout._id)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105"
-                          >
-                            <Check className="w-4 h-4" />
-                            Đặt làm layout chính
-                          </button>
-                          <p className="text-xs text-gray-500 mt-2">
-                            Layout chính sẽ được hiển thị cho khách hàng khi đặt bàn
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => handleEditLayout(layout)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Sửa layout"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => layout._id && handleDeleteLayout(layout._id, layout.isActive)}
-                        disabled={layout.isActive}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={layout.isActive ? "Không thể xóa layout chính" : "Xóa layout"}
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleEditLayout(layout)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Sửa layout"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => layout._id && handleDeleteLayout(layout._id, layout.isActive)}
+                          disabled={layout.isActive}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={layout.isActive ? "Không thể xóa layout chính" : "Xóa layout"}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
             </div>
           </div>
         )}

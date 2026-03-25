@@ -70,14 +70,14 @@ export default function TableSelectionModal({
     if (selectedLayout?.tables) {
       for (const table of selectedLayout.tables) {
         if (!table.position) continue;
-        
+
         const tableWidth = table.width || 1;
         const tableHeight = table.height || 1;
         const rotation = table.position.rotation || 0;
         const isRotated = rotation === 90 || rotation === 270;
         const displayWidth = isRotated ? tableHeight : tableWidth;
         const displayHeight = isRotated ? tableWidth : tableHeight;
-        
+
         for (let dy = 0; dy < displayHeight; dy++) {
           for (let dx = 0; dx < displayWidth; dx++) {
             const x = table.position.x + dx;
@@ -114,7 +114,7 @@ export default function TableSelectionModal({
     try {
       const layout = await getActiveTableLayout();
       // console.log removed
-      
+
       // Check if layout exists and has tables
       if (layout && layout.tables && Array.isArray(layout.tables) && layout.tables.length > 0) {
         // console.log removed
@@ -157,7 +157,7 @@ export default function TableSelectionModal({
         // 404 or missing endpoint - use fallback silently
         setLayoutError(null);
       }
-      
+
       if (availableTables.length > 0) {
         const fallbackLayout = createDefaultLayout(availableTables);
         // console.log removed
@@ -175,11 +175,11 @@ export default function TableSelectionModal({
   // Helper: Tạo layout mặc định
   const createDefaultLayout = (tables: Table[]): TableLayout => {
     const tablesPerRow = 4;
-    
+
     const layoutTables = tables.map((table, index) => {
       const row = Math.floor(index / tablesPerRow);
       const col = index % tablesPerRow;
-      
+
       return {
         tableId: table._id,
         tableName: table.tableName,
@@ -403,7 +403,7 @@ export default function TableSelectionModal({
     } else {
       isAvailable = table.status === 'available' || table.status === 'reserved';
     }
-    
+
     if (isHovered && isAvailable) {
       return 'bg-amber-100 border-amber-400 text-amber-900 shadow-md';
     }
@@ -425,7 +425,7 @@ export default function TableSelectionModal({
   // Helper: Lấy bàn tại vị trí (x, y) từ layout (OPTIMIZED với spatial map)
   const getTableAtPosition = useCallback((x: number, y: number) => {
     if (!selectedLayout || !selectedLayout.tables) return null;
-    
+
     // Use spatial map for O(1) lookup
     const tableId = spatialMapRef.current.get(`${x},${y}`);
     if (tableId) {
@@ -612,7 +612,7 @@ export default function TableSelectionModal({
               </div>
 
               {/* Grid Layout - Đồng bộ với TableLayoutEditor */}
-              <div 
+              <div
                 className="grid"
                 style={getGridContainerStyle(selectedLayout.gridCols ?? 12, selectedLayout.gridRows ?? 10)}
               >
@@ -627,7 +627,7 @@ export default function TableSelectionModal({
                       <div
                         key={`${rowIndex}-${colIndex}`}
                         className="w-12 h-12"
-                        style={{ 
+                        style={{
                           gridColumn: colIndex + 1,
                           gridRow: rowIndex + 1
                         }}
@@ -642,7 +642,7 @@ export default function TableSelectionModal({
                     const tableWidth = layoutTable.width ?? 1;
                     const tableHeight = layoutTable.height ?? 1;
                     const rotation = layoutTable.position?.rotation || 0;
-                    
+
                     const isRotated = rotation === 90 || rotation === 270;
                     displayWidth = isRotated ? tableHeight : tableWidth;
                     displayHeight = isRotated ? tableWidth : tableHeight;
@@ -654,38 +654,38 @@ export default function TableSelectionModal({
                   const isSelected = table ? selectedTableId === table._id : false;
                   const isHovered = table ? hoveredTable === table._id : false;
                   const hasBookingContext = Boolean(reservationDate && reservationTime);
-                  
+
                   // Xác định có thể chọn không
                   const isSelectable = table
                     ? hasBookingContext
                       ? Boolean(
-                          !availabilityBusy &&
-                            availability &&
-                            availability.isAvailable &&
-                            !availability.isReserved
-                        )
+                        !availabilityBusy &&
+                        availability &&
+                        availability.isAvailable &&
+                        !availability.isReserved
+                      )
                       : table.status === 'available'
                     : false;
 
                   // Sử dụng shared color function
                   const cellColor = layoutTable && isMainCell && table
                     ? getTableCellColor({
-                        isMainCell: true,
-                        isSelected: isSelected,
-                        isHovered: isHovered,
-                        isAvailable: isSelectable,
-                        isReserved: availability?.isReserved || table.status === 'reserved',
-                        isOccupied: table.status === 'occupied',
-                        isMaintenance: table.status === 'maintenance',
-                        isInEditor: false,
-                      })
+                      isMainCell: true,
+                      isSelected: isSelected,
+                      isHovered: isHovered,
+                      isAvailable: isSelectable,
+                      isReserved: hasBookingContext ? (availability?.isReserved ?? false) : table.status === 'reserved',
+                      isOccupied: hasBookingContext ? false : table.status === 'occupied',
+                      isMaintenance: table.status === 'maintenance',
+                      isInEditor: false,
+                    })
                     : getEmptyCellColor({
-                        isDragOver: false,
-                        isSelectable: false,
-                        isInZone: false,
-                        isInZoneSelection: false,
-                      });
-                  
+                      isDragOver: false,
+                      isSelectable: false,
+                      isInZone: false,
+                      isInZoneSelection: false,
+                    });
+
                   const cursorStyle = layoutTable && isMainCell && table && isSelectable
                     ? 'cursor-pointer'
                     : 'cursor-default';
@@ -727,7 +727,7 @@ export default function TableSelectionModal({
                             transform: `rotate(${layoutTable.position?.rotation || 0}deg)`,
                           }}
                         >
-                          <div 
+                          <div
                             className="text-xs font-bold absolute inset-0 flex items-center justify-center pointer-events-none"
                             style={{
                               transform: `rotate(${-(layoutTable.position?.rotation || 0)}deg)`,
