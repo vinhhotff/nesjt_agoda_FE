@@ -32,6 +32,8 @@ interface TableAvailability {
   isAvailable: boolean;
   isReserved: boolean;
   reservedBy?: string; // Customer name who reserved
+  /** Thời gian đặt — để hiện tooltip khi hover bàn đã đặt */
+  reservationTime?: string;
 }
 
 export default function TableSelectionModal({
@@ -55,6 +57,8 @@ export default function TableSelectionModal({
   const [selectedLayout, setSelectedLayout] = useState<TableLayout | null>(null);
   const [isLayoutFetching, setIsLayoutFetching] = useState(false);
   const [layoutError, setLayoutError] = useState<string | null>(null);
+  /** Bàn đang hover — để hiện tooltip thông báo */
+  const [hoveredReservedTable, setHoveredReservedTable] = useState<TableAvailability | null>(null);
 
   // SPATIAL MAP: Tạo map để lookup nhanh hơn cho getTableAtPosition
   const spatialMapRef = useRef<Map<string, string>>(new Map());
@@ -242,22 +246,40 @@ export default function TableSelectionModal({
     }
     try {
       if (reservationDate && reservationTime) {
-        const result = await reservationsAPI.getAvailableTablesForSlot(
-          reservationDate,
-          reservationTime,
-          numberOfGuests
-        );
-        const availableIds = new Set(result.availableTables.map((t) => String(t._id)));
+        // Lấy TẤT CẢ đặt bàn trong ngày → lọc trùng giờ tại FE → lấy tên + giờ cho tooltip
+        const result = await reservationsAPI.getReservations(1, 200, undefined, reservationDate);
+
+        const getTimeDiffMinutes = (t1: string, t2: string) => {
+          const [h1, m1] = t1.split(':').map(Number);
+          const [h2, m2] = t2.split(':').map(Number);
+          return Math.abs((h1 * 60 + m1) - (h2 * 60 + m2));
+        };
+
+        const blockingStatuses = ['pending', 'pending_approval', 'confirmed', 'arrived', 'seated'];
+
+        const reservedTableMap: Record<string, { customerName: string; reservationTime: string }> = {};
+        for (const res of result.items) {
+          if (!blockingStatuses.includes(String(res.status))) continue;
+          if (!res.reservationTime) continue;
+          if (getTimeDiffMinutes(res.reservationTime, reservationTime) > 120) continue;
+
+          const tableId = String(res.table ?? '');
+          if (!tableId || reservedTableMap[tableId]) continue;
+          reservedTableMap[tableId] = {
+            customerName: res.customerName || 'Khách',
+            reservationTime: res.reservationTime,
+          };
+        }
 
         const availability: Record<string, TableAvailability> = {};
         tablesToCheck.forEach((table) => {
-          const inSlot = availableIds.has(String(table._id));
-          const isMaintenance = table.status === 'maintenance';
-          const canSelect = inSlot && !isMaintenance;
+          const info = reservedTableMap[String(table._id)];
           availability[table._id] = {
             tableId: table._id,
-            isAvailable: canSelect,
-            isReserved: !inSlot && !isMaintenance,
+            isAvailable: !info,
+            isReserved: !!info,
+            reservedBy: info?.customerName,
+            reservationTime: info?.reservationTime,
           };
         });
         setTableAvailability(availability);
@@ -296,7 +318,7 @@ export default function TableSelectionModal({
         setAvailabilityBusy(false);
       }
     }
-  }, [reservationDate, reservationTime, numberOfGuests]);
+  }, [reservationDate, reservationTime]);
 
   // Update filtered tables when tables or layout changes
   useEffect(() => {
@@ -671,10 +693,14 @@ export default function TableSelectionModal({
                       onMouseEnter={() => {
                         if (layoutTable && isMainCell && table) {
                           setHoveredTable(table._id);
+                          if (availability?.isReserved) {
+                            setHoveredReservedTable(availability);
+                          }
                         }
                       }}
                       onMouseLeave={() => {
                         setHoveredTable(null);
+                        setHoveredReservedTable(null);
                       }}
                       className={`${CELL_BASE_CLASSES} ${cellColor} ${cursorStyle}`}
                       style={getCellGridStyle(
@@ -683,11 +709,6 @@ export default function TableSelectionModal({
                         layoutTable && isMainCell ? displayWidth : 1,
                         layoutTable && isMainCell ? displayHeight : 1
                       )}
-                      title={
-                        layoutTable && isMainCell && table
-                          ? `${table.tableName} - ${table.location || 'Chưa có vị trí'}${availability?.isReserved ? ` - Đã được đặt bởi ${availability.reservedBy}` : ''}`
-                          : ''
-                      }
                     >
                       {layoutTable && isMainCell && table ? (
                         <div
@@ -718,6 +739,30 @@ export default function TableSelectionModal({
                   );
                 })}
               </div>
+
+              {/* Tooltip thông báo bàn đã đặt */}
+              <AnimatePresence>
+                {hoveredReservedTable?.isReserved && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    className="absolute left-1/2 -translate-x-1/2 mt-2 z-50 pointer-events-none"
+                  >
+                    <div className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-xl whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <X className="w-4 h-4 flex-shrink-0" />
+                        <span>
+                          Đã được đặt bởi <strong>{hoveredReservedTable.reservedBy}</strong>
+                          {hoveredReservedTable.reservationTime && (
+                            <> lúc {hoveredReservedTable.reservationTime}</>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
