@@ -74,6 +74,12 @@ class ReservationsAPI {
     return response.data;
   }
 
+  // Get reservations by phone (public — no auth required)
+  async getByPhone(phone: string): Promise<Reservation[]> {
+    const response = await api.get(`${this.baseUrl}/phone/${phone}`);
+    return response.data;
+  }
+
   // Helper to transform reservation from backend to frontend format
   private transformReservation(reservation: any): Reservation {
     // Extract time from reservationDate (ISO string like "2025-11-03T07:30:00.000Z")

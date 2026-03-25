@@ -5,6 +5,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "@/src/lib/utils/toast";
 import { reservationsAPI, CreateReservationDto } from "@/src/lib/api/reservationsApi";
 import TableSelectionModal from "@/src/components/reservations/TableSelectionModal";
@@ -12,7 +13,11 @@ import { createPayOSPaymentLink } from "@/src/lib/api/payosApi";
 import { useCart } from "@/src/Context/CartContext";
 import { MapPin, Calendar, Clock, Users, Mail, Phone, User, MessageSquare, Sparkles, AlertCircle, UtensilsCrossed } from "lucide-react";
 
+/** Demo: luôn bỏ qua PayOS khi chọn bàn → gửi đơn chờ admin duyệt. */
+const SKIP_TABLE_DEPOSIT_PAYMENT = true;
+
 export default function ReservationPage() {
+  const router = useRouter();
   const { cartItems, getCartTotal } = useCart();
   const [form, setForm] = useState({
     name: "",
@@ -66,34 +71,59 @@ export default function ReservationPage() {
       return;
     }
 
-    // Nếu đã chọn bàn, cần thanh toán 300k trước
+    // Đã chọn bàn: demo bỏ qua PayOS → gửi đặt bàn chờ admin xác nhận; hoặc thanh toán cọc 300k qua PayOS
     if (form.tableNumber) {
+      const reservationDate = `${form.date}T${form.time}:00`;
+      const reservationData: CreateReservationDto = {
+        customerName: form.name,
+        customerPhone: form.phone,
+        customerEmail: form.email || undefined,
+        reservationDate: reservationDate,
+        numberOfGuests: form.guests,
+        specialRequests: form.specialRequests || undefined,
+        tableNumber: form.tableNumber,
+      };
+
+      if (SKIP_TABLE_DEPOSIT_PAYMENT) {
+        try {
+          await reservationsAPI.createReservationPublic(reservationData);
+          toast.success(
+            "Đặt bàn đã gửi thành công! Bàn bạn chọn đang chờ nhà hàng xác nhận (không cần thanh toán trước trong chế độ demo)."
+          );
+          setForm({
+            name: "",
+            email: "",
+            phone: "",
+            date: "",
+            time: "",
+            guests: 1,
+            specialRequests: "",
+            tableNumber: "",
+            tableId: "",
+          });
+          router.push("/user/reservations");
+        } catch (error: any) {
+          console.error("Error creating reservation:", error);
+          const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            "Có lỗi xảy ra khi gửi đặt bàn. Vui lòng thử lại.";
+          toast.error(errorMessage);
+          setIsSubmitting(false);
+        }
+        return;
+      }
+
       try {
-        // Combine date and time into ISO string format
-        const reservationDate = `${form.date}T${form.time}:00`;
-
-        // Prepare reservation data
-        const reservationData: CreateReservationDto = {
-          customerName: form.name,
-          customerPhone: form.phone,
-          customerEmail: form.email || undefined,
-          reservationDate: reservationDate,
-          numberOfGuests: form.guests,
-          specialRequests: form.specialRequests || undefined,
-          tableNumber: form.tableNumber,
-        };
-
-        // Lưu reservation data vào localStorage để tạo sau khi payment thành công
         const reservationId = `reservation_${Date.now()}`;
-        localStorage.setItem('pending_reservation', JSON.stringify({
-          reservationId,
-          reservationData,
-        }));
+        localStorage.setItem(
+          "pending_reservation",
+          JSON.stringify({ reservationId, reservationData })
+        );
 
-        // Tạo payment link với PayOS (300,000 VND = 300k)
         const depositAmount = 300000;
         toast.info("Đang tạo liên kết thanh toán...");
-        
+
         const paymentLinkResponse = await createPayOSPaymentLink({
           orderId: reservationId,
           amount: depositAmount,
@@ -104,16 +134,18 @@ export default function ReservationPage() {
 
         if (paymentLinkResponse.success && paymentLinkResponse.paymentLink) {
           toast.success("Vui lòng thanh toán 300,000 VND để giữ bàn. Đang chuyển hướng...");
-          // Redirect to PayOS payment page
           window.location.href = paymentLinkResponse.paymentLink;
         } else {
-          throw new Error(paymentLinkResponse.message || 'Không thể tạo liên kết thanh toán');
+          throw new Error(paymentLinkResponse.message || "Không thể tạo liên kết thanh toán");
         }
       } catch (error: any) {
         console.error("Error creating payment link:", error);
-        const errorMessage = error.message || error.response?.data?.message || "Có lỗi xảy ra khi tạo liên kết thanh toán. Vui lòng thử lại.";
+        const errorMessage =
+          error.message ||
+          error.response?.data?.message ||
+          "Có lỗi xảy ra khi tạo liên kết thanh toán. Vui lòng thử lại.";
         toast.error(errorMessage);
-        localStorage.removeItem('pending_reservation');
+        localStorage.removeItem("pending_reservation");
         setIsSubmitting(false);
       }
     } else {
@@ -259,7 +291,11 @@ export default function ReservationPage() {
                       <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold text-xs group-hover/item:bg-yellow-500 group-hover/item:text-white transition-colors">
                         1
                       </span>
-                      <span className="leading-relaxed">Select a specific table requires 300,000 VND deposit</span>
+                      <span className="leading-relaxed">
+                        {SKIP_TABLE_DEPOSIT_PAYMENT
+                          ? "Select a table: request is sent for admin approval (demo — no deposit)"
+                          : "Select a specific table requires 300,000 VND deposit"}
+                      </span>
                     </li>
                     <li className="flex items-start gap-3 group/item">
                       <span className="flex-shrink-0 w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold text-xs group-hover/item:bg-yellow-500 group-hover/item:text-white transition-colors">
@@ -538,7 +574,11 @@ export default function ReservationPage() {
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                       <p className="text-xs text-blue-700 flex items-start gap-2">
                         <span className="text-base">💡</span>
-                        <span className="leading-relaxed">Select a specific table to guarantee your seat. Requires 300,000 VND deposit.</span>
+                        <span className="leading-relaxed">
+                          {SKIP_TABLE_DEPOSIT_PAYMENT
+                            ? "Select a table to request that seat. Admin will confirm — no online payment in demo mode."
+                            : "Select a specific table to guarantee your seat. Requires 300,000 VND deposit."}
+                        </span>
                       </p>
                     </div>
                   )}
@@ -553,16 +593,30 @@ export default function ReservationPage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
-                          Deposit Required
-                          <span className="px-2 py-0.5 bg-yellow-500 text-white text-xs rounded-full">Required</span>
+                          {SKIP_TABLE_DEPOSIT_PAYMENT ? "Demo — no payment" : "Deposit Required"}
+                          <span className="px-2 py-0.5 bg-yellow-500 text-white text-xs rounded-full">
+                            {SKIP_TABLE_DEPOSIT_PAYMENT ? "Admin approval" : "Required"}
+                          </span>
                         </p>
                         <p className="text-sm text-gray-700 mb-3 leading-relaxed">
-                          You've selected <strong className="text-yellow-700">Table {form.tableNumber}</strong>. To secure this table, a deposit of <strong className="text-yellow-700 text-base">300,000 VND</strong> is required via PayOS.
+                          {SKIP_TABLE_DEPOSIT_PAYMENT ? (
+                            <>
+                              You selected <strong className="text-yellow-700">Table {form.tableNumber}</strong>. Submit to send your request —{" "}
+                              <strong>no PayOS step</strong>. The restaurant will confirm your booking in the admin panel.
+                            </>
+                          ) : (
+                            <>
+                              You&apos;ve selected <strong className="text-yellow-700">Table {form.tableNumber}</strong>. To secure this table, a deposit of{" "}
+                              <strong className="text-yellow-700 text-base">300,000 VND</strong> is required via PayOS.
+                            </>
+                          )}
                         </p>
                         <div className="flex items-start gap-2 p-3 bg-yellow-100/50 rounded-lg">
                           <span className="text-yellow-600">⚠️</span>
                           <p className="text-xs text-gray-700 leading-relaxed">
-                            Your reservation will be automatically confirmed after successful payment.
+                            {SKIP_TABLE_DEPOSIT_PAYMENT
+                              ? "Set NEXT_PUBLIC_SKIP_TABLE_DEPOSIT_PAYMENT=false in .env to require the 300k deposit again."
+                              : "Your reservation will be automatically confirmed after successful payment."}
                           </p>
                         </div>
                       </div>
@@ -584,9 +638,13 @@ export default function ReservationPage() {
                   ) : form.tableNumber ? (
                     <>
                       <Calendar className="w-6 h-6" />
-                      {preOrderFood && cartItemCount > 0
-                        ? `Reserve Table + Pay 300k (${cartItemCount} food items)`
-                        : 'Pay 300k to Reserve Table'}
+                      {SKIP_TABLE_DEPOSIT_PAYMENT
+                        ? preOrderFood && cartItemCount > 0
+                          ? `Send request — Table + ${cartItemCount} items (no payment)`
+                          : "Send table request (await admin)"
+                        : preOrderFood && cartItemCount > 0
+                          ? `Reserve Table + Pay 300k (${cartItemCount} food items)`
+                          : "Pay 300k to Reserve Table"}
                     </>
                   ) : (
                     <>

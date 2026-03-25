@@ -1,6 +1,7 @@
-feat(reservation): add confirmWithoutDeposit button in admin detail modal
+feat(user): add "My Reservations" page and skip PayOS for table bookings
 
-- Add confirmWithoutDeposit API call in reservationApprovalApi
-- Add "Xác nhận không đặt cọc" green button in reservation detail modal
-- Button shows only for pending/pending_approval reservations without deposit
-- Rename handleCancelConfirmed to handleOpenCancelModal for clarity
+- Hardcode SKIP_TABLE_DEPOSIT_PAYMENT=true → booking with table skips PayOS
+- After table booking, redirect to /user/reservations
+- Create /user/reservations page: search by phone, show status, detail modal
+- Add "Đơn đặt bàn của tôi" link in user home sidebar
+- Add getByPhone() to reservationsApi.ts

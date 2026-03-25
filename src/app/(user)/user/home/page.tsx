@@ -389,6 +389,12 @@ export default function UserDashboardPage() {
                 Cập nhật thông tin cá nhân
               </Link>
               <Link
+                href="/user/reservations"
+                className="block rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:bg-amber-50 hover:translate-x-1 transition-all duration-300"
+              >
+                Đơn đặt bàn của tôi
+              </Link>
+              <Link
                 href="/contact"
                 className="block rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:border-amber-300 hover:bg-amber-50 hover:translate-x-1 transition-all duration-300"
               >
