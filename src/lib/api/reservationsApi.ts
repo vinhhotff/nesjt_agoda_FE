@@ -109,8 +109,6 @@ class ReservationsAPI {
       tableRef = tableNumberLabel;
     }
 
-    console.log('[transformReservation] rawTable:', JSON.stringify(rawTable), '-> tableRef:', tableRef, 'tableNumberLabel:', tableNumberLabel);
-
     if (reservation.reservationDate) {
       try {
         const date = new Date(reservation.reservationDate);
@@ -176,26 +174,52 @@ class ReservationsAPI {
     if (date) params.append('date', date);
 
     const response = await api.get(`${this.baseUrl}?${params.toString()}`);
-    
-    console.log('[getReservations] raw response:', JSON.stringify(response.data).slice(0, 500));
-    
-    // Backend response format: { statusCode, message, data: { reservations: [], total, totalPages } }
-    const responseData = response.data?.data || response.data;
-    const reservations = responseData?.reservations || responseData?.items || [];
-    
-    console.log('[getReservations] reservations count:', reservations.length, 'first item:', JSON.stringify(reservations[0]));
-    
-    // Transform reservations to match frontend interface
-    const transformedReservations = Array.isArray(reservations) 
-      ? reservations.map((r: any) => this.transformReservation(r))
-      : [];
+
+    // NestJS ResponseInterceptor: { statusCode, message, data: { reservations, total, totalPages }, timestamp }
+    const root = response.data as any;
+    const payload = root?.data !== undefined ? root.data : root;
+    const reservations = Array.isArray(payload?.reservations)
+      ? payload.reservations
+      : Array.isArray(payload?.items)
+        ? payload.items
+        : [];
+
+    const transformedReservations = reservations.map((r: any) => this.transformReservation(r));
     
     return {
       items: transformedReservations,
-      total: responseData?.total || transformedReservations.length,
-      page: responseData?.page || page,
-      limit: responseData?.limit || limit,
-      totalPages: responseData?.totalPages || 1,
+      total: payload?.total ?? transformedReservations.length,
+      page: payload?.page ?? page,
+      limit: payload?.limit ?? limit,
+      totalPages: payload?.totalPages ?? 1,
+    };
+  }
+
+  /**
+   * Bàn còn trống trong khung giờ (cùng logic backend conflict / time window).
+   * Dùng cho modal chọn bàn — đáng tin cậy hơn tự parse danh sách GET /reservations.
+   */
+  async getAvailableTablesForSlot(
+    date: string,
+    time: string,
+    guests: number
+  ): Promise<{
+    available: boolean;
+    availableTables: Array<{ _id: string; tableName: string; location?: string; status?: string }>;
+    message: string;
+  }> {
+    const params = new URLSearchParams({
+      date,
+      time,
+      guests: String(Math.max(1, guests || 1)),
+    });
+    const response = await api.get(`${this.baseUrl}/available-tables?${params.toString()}`);
+    const root = response.data as any;
+    const payload = root?.data !== undefined ? root.data : root;
+    return {
+      available: Boolean(payload?.available),
+      availableTables: Array.isArray(payload?.availableTables) ? payload.availableTables : [],
+      message: typeof payload?.message === 'string' ? payload.message : '',
     };
   }
 

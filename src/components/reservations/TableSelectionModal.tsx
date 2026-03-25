@@ -221,19 +221,10 @@ export default function TableSelectionModal({
     fetchActiveLayout(tables);
   }, [tables, isOpen]);
 
-  // Re-check availability when date/time changes or modal opens
-  useEffect(() => {
-    if (!isOpen) return;
-    if (tables.length === 0) return;
-    checkTableAvailability(tables);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, reservationDate, reservationTime, tables]);
-
   const loadTables = async () => {
     setLoading(true);
     try {
       const data = await getTables({});
-      console.log('[loadTables] raw tables data:', JSON.stringify(data).slice(0, 300));
       // Ensure data is always an array
       const tablesArray = Array.isArray(data) ? data : [];
       setTables(tablesArray);
@@ -250,87 +241,28 @@ export default function TableSelectionModal({
       setAvailabilityBusy(true);
     }
     try {
-      // Get all reservations for the selected date/time
       if (reservationDate && reservationTime) {
-        const reservations = await reservationsAPI.getReservations(1, 200, undefined, reservationDate);
+        const result = await reservationsAPI.getAvailableTablesForSlot(
+          reservationDate,
+          reservationTime,
+          numberOfGuests
+        );
+        const availableIds = new Set(result.availableTables.map((t) => String(t._id)));
 
-        const getTimeDiffMinutes = (time1: string, time2: string): number => {
-          const [h1, m1] = time1.split(':').map(Number);
-          const [h2, m2] = time2.split(':').map(Number);
-          return Math.abs((h1 * 60 + m1) - (h2 * 60 + m2));
-        };
-
-        /** Trạng thái chiếm bàn (khớp backend conflict check) */
-        const blocksTable = (status: string) =>
-          ['pending', 'pending_approval', 'confirmed', 'arrived', 'seated'].includes(status);
-
-        const selectedDateStr = reservationDate;
-        const selectedTimeStr = reservationTime;
-
-        const relevantReservations = reservations.items.filter((res) => {
-          console.log('[filter] res:', {
-            id: res._id,
-            reservationDate: res.reservationDate,
-            reservationTime: res.reservationTime,
-            status: res.status,
-            table: res.table,
-          });
-          if (res.reservationDate !== selectedDateStr) return false;
-          const resTimeStr = res.reservationTime;
-          if (!resTimeStr) return false;
-          if (getTimeDiffMinutes(resTimeStr, selectedTimeStr) > 120) return false;
-          return blocksTable(String(res.status));
-        });
-
-        console.log('[checkTableAvailability] relevantReservations count:', relevantReservations.length);
-        console.log('[checkTableAvailability] tablesToCheck count:', tablesToCheck.length);
-        console.log('[checkTableAvailability] tablesToCheck[0]:', tablesToCheck[0]?._id, tablesToCheck[0]?.tableName);
-
-        const reservationMatchesTable = (res: (typeof reservations.items)[0], table: Table): boolean => {
-          const ref = (res.table ?? '').trim();
-          console.log('[reservationMatchesTable] comparing res.table ref:', ref, 'with table._id:', String(table._id), 'table.tableName:', table.tableName, 'MATCH:', ref === String(table._id) || ref === table.tableName);
-          if (!ref) return false;
-          if (ref === String(table._id)) return true;
-          if (ref === table.tableName) return true;
-          return false;
-        };
-
-        // Create availability map
         const availability: Record<string, TableAvailability> = {};
-
-        if (Array.isArray(tablesToCheck)) {
-          tablesToCheck.forEach((table) => {
-            const reserved = relevantReservations.find((res) => reservationMatchesTable(res, table));
-
-            availability[table._id] = {
-              tableId: table._id,
-              isAvailable: !reserved,
-              isReserved: !!reserved,
-              reservedBy: reserved?.customerName,
-            };
-          });
-        }
-
+        tablesToCheck.forEach((table) => {
+          const inSlot = availableIds.has(String(table._id));
+          const isMaintenance = table.status === 'maintenance';
+          const canSelect = inSlot && !isMaintenance;
+          availability[table._id] = {
+            tableId: table._id,
+            isAvailable: canSelect,
+            isReserved: !inSlot && !isMaintenance,
+          };
+        });
         setTableAvailability(availability);
       } else {
-        // If no date/time, all tables are available
         const availability: Record<string, TableAvailability> = {};
-        if (Array.isArray(tablesToCheck)) {
-          tablesToCheck.forEach((table) => {
-            availability[table._id] = {
-              tableId: table._id,
-              isAvailable: true,
-              isReserved: false,
-            };
-          });
-        }
-        setTableAvailability(availability);
-      }
-    } catch (error) {
-      console.error('Error checking availability:', error);
-      // Fallback: all tables available
-      const availability: Record<string, TableAvailability> = {};
-      if (Array.isArray(tablesToCheck)) {
         tablesToCheck.forEach((table) => {
           availability[table._id] = {
             tableId: table._id,
@@ -338,15 +270,33 @@ export default function TableSelectionModal({
             isReserved: false,
           };
         });
+        setTableAvailability(availability);
       }
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      const availability: Record<string, TableAvailability> = {};
+      tablesToCheck.forEach((table) => {
+        if (reservationDate && reservationTime) {
+          availability[table._id] = {
+            tableId: table._id,
+            isAvailable: false,
+            isReserved: true,
+          };
+        } else {
+          availability[table._id] = {
+            tableId: table._id,
+            isAvailable: true,
+            isReserved: false,
+          };
+        }
+      });
       setTableAvailability(availability);
-    }
-    finally {
+    } finally {
       if (reservationDate && reservationTime) {
         setAvailabilityBusy(false);
       }
     }
-  }, [reservationDate, reservationTime]);
+  }, [reservationDate, reservationTime, numberOfGuests]);
 
   // Update filtered tables when tables or layout changes
   useEffect(() => {
