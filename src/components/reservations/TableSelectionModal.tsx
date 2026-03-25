@@ -216,11 +216,16 @@ export default function TableSelectionModal({
     fetchActiveLayout(tables);
   }, [tables, isOpen]);
 
-  // Re-check availability when date/time changes
+  // Re-check availability when date/time changes or modal opens
   useEffect(() => {
+    if (!isOpen) return;
     if (tables.length === 0) return;
+    
+    // Log for debugging
+    console.log('🔄 Checking availability for:', { reservationDate, reservationTime, tableCount: tables.length });
+    
     checkTableAvailability(tables);
-  }, [reservationDate, reservationTime, tables, checkTableAvailability]);
+  }, [isOpen, reservationDate, reservationTime, tables, checkTableAvailability]);
 
   const loadTables = async () => {
     setLoading(true);
@@ -244,21 +249,32 @@ export default function TableSelectionModal({
         // Fetch reservations for the selected date specifically
         const reservations = await reservationsAPI.getReservations(1, 100, undefined, reservationDate);
         
-        // Helper to normalize date to YYYY-MM-DD
-        const normalizeDate = (dateStr: string): string => {
-          if (!dateStr) return '';
-          const date = new Date(dateStr);
-          const y = date.getFullYear();
-          const m = String(date.getMonth() + 1).padStart(2, '0');
-          const d = String(date.getDate()).padStart(2, '0');
-          return `${y}-${m}-${d}`;
+        // Helper to get date string from various formats
+        const getDateStr = (dateValue: any): string => {
+          if (!dateValue) return '';
+          try {
+            // If it's a Date object or ISO string
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) return '';
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+          } catch {
+            return '';
+          }
         };
 
-        // Helper to extract time in HH:mm format
-        const extractTime = (dateStr: string): string => {
-          if (!dateStr) return '';
-          const date = new Date(dateStr);
-          return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        // Helper to get time string from various formats
+        const getTimeStr = (dateValue: any): string => {
+          if (!dateValue) return '';
+          try {
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) return '';
+            return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+          } catch {
+            return '';
+          }
         };
 
         // Helper to calculate time difference in minutes
@@ -268,13 +284,13 @@ export default function TableSelectionModal({
           return Math.abs((h1 * 60 + m1) - (h2 * 60 + m2));
         };
 
-        const selectedDateStr = reservationDate; // Already in YYYY-MM-DD format
-        const selectedTimeStr = reservationTime; // Already in HH:mm format
+        const selectedDateStr = reservationDate; // YYYY-MM-DD from input
+        const selectedTimeStr = reservationTime; // HH:mm from input
 
         // Filter reservations: same date, within 2 hours time slot, active status
         const relevantReservations = reservations.items.filter((res) => {
-          const resDateStr = normalizeDate(res.reservationDate);
-          const resTimeStr = extractTime(res.reservationDate);
+          const resDateStr = getDateStr(res.reservationDate);
+          const resTimeStr = getTimeStr(res.reservationDate);
           
           // Must be same date
           if (resDateStr !== selectedDateStr) return false;
@@ -286,6 +302,18 @@ export default function TableSelectionModal({
           // Must be an active reservation
           return res.status === 'pending' || res.status === 'confirmed' || res.status === 'seated';
         });
+
+        // Log for debugging
+        console.log('📋 Reservations from API:', reservations.items.length, 'items');
+        console.log('📅 Selected date:', selectedDateStr, 'time:', selectedTimeStr);
+        console.log('🔍 Relevant reservations:', relevantReservations.length, relevantReservations.map(r => ({
+          id: r._id,
+          date: getDateStr(r.reservationDate),
+          time: getTimeStr(r.reservationDate),
+          status: r.status,
+          table: r.table,
+          customer: r.customerName
+        })));
 
         // Create availability map
         const availability: Record<string, TableAvailability> = {};
@@ -303,6 +331,8 @@ export default function TableSelectionModal({
               return resTableIdStr === tableIdStr;
             });
             
+            console.log(`🪑 Table ${table.tableName} (${tableIdStr}):`, reserved ? `RESERVED by ${reserved.customerName}` : 'AVAILABLE');
+            
             availability[table._id] = {
               tableId: table._id,
               isAvailable: !reserved,
@@ -314,14 +344,14 @@ export default function TableSelectionModal({
 
         setTableAvailability(availability);
       } else {
-        // If no date/time, just check current status
+        // If no date/time, all tables are available
         const availability: Record<string, TableAvailability> = {};
         if (Array.isArray(tablesToCheck)) {
           tablesToCheck.forEach((table) => {
             availability[table._id] = {
               tableId: table._id,
-              isAvailable: table.status === 'available' || table.status === 'reserved',
-              isReserved: table.status === 'occupied',
+              isAvailable: true,
+              isReserved: false,
             };
           });
         }
@@ -329,14 +359,14 @@ export default function TableSelectionModal({
       }
     } catch (error) {
       console.error('Error checking availability:', error);
-      // Fallback: set availability based on table status only
+      // Fallback: all tables available
       const availability: Record<string, TableAvailability> = {};
       if (Array.isArray(tablesToCheck)) {
         tablesToCheck.forEach((table) => {
           availability[table._id] = {
             tableId: table._id,
-            isAvailable: table.status === 'available' || table.status === 'reserved',
-            isReserved: table.status === 'occupied',
+            isAvailable: true,
+            isReserved: false,
           };
         });
       }
