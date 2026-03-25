@@ -246,6 +246,12 @@ const reservationApi = {
     const response = await api.get('/reservations/stats');
     return response.data;
   },
+
+  // Confirm reservation without PayOS deposit (admin direct confirm)
+  confirmWithoutDeposit: async (id: string, adminNotes?: string) => {
+    const response = await api.post(`/reservations/${id}/confirm-without-deposit`, { adminNotes });
+    return response.data;
+  },
 };
 
 export default reservationApi;
@@ -257,6 +263,7 @@ export const {
   approveReservation,
   rejectReservation,
   cancelConfirmedReservation,
+  confirmWithoutDeposit,
   getApprovalSettings,
   updateApprovalSettings,
 } = reservationApi;

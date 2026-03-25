@@ -12,7 +12,7 @@ import {
   deleteReservation,
   Reservation,
 } from '@/src/lib/api/reservationApi';
-import { cancelConfirmedReservation } from '@/src/lib/api/reservationApprovalApi';
+import { cancelConfirmedReservation, confirmWithoutDeposit } from '@/src/lib/api/reservationApprovalApi';
 import { toast } from '@/src/lib/utils/toast';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -109,7 +109,7 @@ export default function ReservationsPage() {
     setDetailModal({ visible: true, reservation });
   };
 
-  const handleCancelConfirmed = (reservation: Reservation) => {
+  const handleOpenCancelModal = (reservation: Reservation) => {
     setCancelReason('');
     setCancelRefund(true);
     setCancelModal({ visible: true, reservation });
@@ -132,6 +132,21 @@ export default function ReservationsPage() {
       fetchReservations();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Không thể hủy đặt bàn');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const handleConfirmWithoutDeposit = async (reservationId: string, adminNotes?: string) => {
+    if (!confirm(`Xác nhận đặt bàn này mà không cần đặt cọc qua PayOS?`)) return;
+    setCancelLoading(true);
+    try {
+      await confirmWithoutDeposit(reservationId, adminNotes);
+      toast.success('Đã xác nhận đặt bàn (không đặt cọc)');
+      setDetailModal({ visible: false, reservation: null });
+      fetchReservations();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể xác nhận đặt bàn');
     } finally {
       setCancelLoading(false);
     }
@@ -209,7 +224,7 @@ export default function ReservationsPage() {
             onMarkArrived={handleMarkArrived}
             onMarkSeated={handleMarkSeated}
             onDelete={handleDelete}
-            onCancelConfirmed={handleCancelConfirmed}
+            onCancelConfirmed={handleOpenCancelModal}
           />
         </div>
       </div>
@@ -411,6 +426,47 @@ export default function ReservationsPage() {
                   <p className="text-sm text-gray-600">{detailModal.reservation?.specialRequests}</p>
                 </div>
               )}
+
+              {/* Action buttons */}
+              <div className="border-t border-gray-200 pt-4 mt-4 flex flex-wrap gap-3 justify-end">
+                {/* Confirm without deposit button */}
+                {!detailModal.reservation?.isDepositPaid &&
+                  (detailModal.reservation?.status === 'pending' ||
+                    detailModal.reservation?.status === 'pending_approval') && (
+                    <button
+                      onClick={() => handleConfirmWithoutDeposit(detailModal.reservation?._id!)}
+                      disabled={cancelLoading}
+                      className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Xác nhận không đặt cọc
+                    </button>
+                  )}
+
+                {/* Cancel confirmed button */}
+                {detailModal.reservation?.status === 'confirmed' && (
+                  <button
+                    onClick={() => {
+                      const r = detailModal.reservation;
+                      setDetailModal({ visible: false, reservation: null });
+                      if (r) setCancelModal({ visible: true, reservation: r });
+                    }}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors flex items-center gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Hủy đặt bàn
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setDetailModal({ visible: false, reservation: null })}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         </div>
