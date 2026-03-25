@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export const metadata = {
   title: "Restaurant",
-  description: "Vinh IT",
+  description: "",
   icons: {
     icon: '/favicon.ico',
   },
